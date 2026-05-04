@@ -65,9 +65,9 @@ Next build slice:
 
 - Next.js review workspace with document/chunk inspection, answer review, and evaluation dashboard.
 
-## Why This Exists
+## Design Goals
 
-The system started from a real workflow: turning ML/NLP papers, technical articles, repos, and dataset notes into durable Markdown knowledge artifacts. The architecture deliberately uses controls that also matter in high-stakes professional document workflows: structured outputs, source citations, evaluation, provenance, audit logs, and human review.
+The workspace is designed for long-form technical documents where answers need to stay tied to source evidence. It stores document versions, chunk hashes, retrieval metadata, generated outputs, and review decisions so the system remains inspectable after the initial model call.
 
 ## Repository Layout
 
@@ -280,9 +280,9 @@ The eval report includes:
 
 `answer-llm` and `eval` persist an `ai_runs` record by default. `answer-llm` also creates a pending review suggestion by default. Use `--no-log-run` and `--no-create-suggestion` for throwaway local checks.
 
-## Interview-Ready Evidence Targets
+## Roadmap
 
-- 50-100 golden evaluation cases.
-- Hybrid retrieval with PostgreSQL full-text search and pgvector embeddings.
-- Retrieval recall@5, citation validity, JSON/schema validity, refusal correctness, latency, and cost report.
-- Screenshots for ingestion, cited answer, structured extraction, review queue, AI-run provenance, and evaluation output.
+- Expand the golden evaluation set.
+- Add PostgreSQL full-text search to the hybrid retrieval path.
+- Report retrieval recall@5, citation validity, schema validity, refusal correctness, latency, and estimated cost.
+- Add a richer review UI for document, chunk, answer, citation, and evaluation inspection.

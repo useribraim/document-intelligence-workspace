@@ -16,13 +16,13 @@ The project should not rely on spot-checking or "looks good" demos. Evaluation i
 
 ## Starter Evaluation Sets
 
-Target for first publish:
+Initial target:
 
 - 20 ML/NLP paper cases.
 - 20 professional document extraction cases.
 - 10 refusal/insufficient-evidence cases.
 
-Target for interview:
+Release target:
 
 - 50-100 total golden cases.
 - At least one saved evaluation report in `docs/eval-results.md`.
