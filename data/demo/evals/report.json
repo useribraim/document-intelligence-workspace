@@ -1,0 +1,818 @@
+{
+  "llm_provider": "local",
+  "llm_model": "deterministic-structured-v1",
+  "summary": {
+    "total_cases": 12,
+    "passed_cases": 11,
+    "pass_rate": 0.9167,
+    "citation_valid_cases": 12,
+    "citation_valid_rate": 1.0,
+    "retrieval_hit_cases": 10,
+    "retrieval_hit_rate": 0.8333,
+    "refusal_cases": 2,
+    "correct_refusals": 1,
+    "refusal_accuracy": 0.5,
+    "task_summary": {
+      "conflicting_evidence": {
+        "total_cases": 1,
+        "passed_cases": 1,
+        "pass_rate": 1.0
+      },
+      "near_miss_retrieval": {
+        "total_cases": 1,
+        "passed_cases": 1,
+        "pass_rate": 1.0
+      },
+      "refusal": {
+        "total_cases": 2,
+        "passed_cases": 1,
+        "pass_rate": 0.5
+      },
+      "structured_extraction": {
+        "total_cases": 4,
+        "passed_cases": 4,
+        "pass_rate": 1.0
+      },
+      "supported_qa": {
+        "total_cases": 4,
+        "passed_cases": 4,
+        "pass_rate": 1.0
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "paper-method-001",
+      "task": "structured_extraction",
+      "passed": true,
+      "citation_valid": true,
+      "citation_errors": [],
+      "insufficient_evidence": false,
+      "expected_fields": [
+        "method",
+        "dataset",
+        "metric",
+        "limitation"
+      ],
+      "present_fields": [
+        "dataset",
+        "limitation",
+        "method",
+        "metric"
+      ],
+      "missing_fields": [],
+      "expected_chunk_phrases": [
+        "contrastive retrieval-augmented classification"
+      ],
+      "retrieved_phrases": [
+        "contrastive retrieval-augmented classification"
+      ],
+      "missing_phrases": [],
+      "retrieval_hit": true,
+      "retrieved_chunk_count": 4,
+      "answer": {
+        "query": "Extract the method, dataset, metric, and limitation from the cited paper section.",
+        "answer": "Dataset: synthetic ML/NLP paper excerpts with labelled method, dataset, metric, and limitation fields. [C1] ## Cited Paper Section [C2] Dataset: synthetic long-form research notes and paper excerpts. [C3]",
+        "insufficient_evidence": false,
+        "citations": [
+          {
+            "label": "C1",
+            "chunk_id": "175b3a3a-2a76-54c9-b5b4-fd2f2118cccf:1",
+            "document_id": "51a5b9ff-512e-54c0-bc65-f6aac708eed0",
+            "version_id": "175b3a3a-2a76-54c9-b5b4-fd2f2118cccf",
+            "heading_path": [
+              "Demo ML Paper Excerpt",
+              "Cited Paper Section"
+            ],
+            "quote": "Dataset: synthetic ML/NLP paper excerpts with labelled method, dataset, metric, and limitation fields.",
+            "score": 0.762524
+          },
+          {
+            "label": "C2",
+            "chunk_id": "b749398d-d851-5064-973e-b720fbbab5e6:1",
+            "document_id": "eb9f7de5-3edb-5466-b409-41a9118fc5d7",
+            "version_id": "b749398d-d851-5064-973e-b720fbbab5e6",
+            "heading_path": [
+              "Demo Ablation Paper Excerpt",
+              "Cited Paper Section"
+            ],
+            "quote": "## Cited Paper Section",
+            "score": 0.758473
+          },
+          {
+            "label": "C3",
+            "chunk_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb:1",
+            "document_id": "44d993bb-4e06-5277-9e84-669f1d0cd2b7",
+            "version_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb",
+            "heading_path": [
+              "RAG Systems Paper",
+              "Retrieval Pipeline"
+            ],
+            "quote": "Dataset: synthetic long-form research notes and paper excerpts.",
+            "score": 0.583046
+          }
+        ],
+        "extracted_fields": {
+          "method": "contrastive retrieval-augmented classification over chunked technical documents.",
+          "dataset": "synthetic ML/NLP paper excerpts with labelled method, dataset, metric, and limitation fields.",
+          "metric": "recall@5 for retrieval and exact-field coverage for structured extraction.",
+          "limitation": "the demo corpus is small and does not represent production-scale literature review."
+        },
+        "model": "deterministic-structured-v1",
+        "provider": "local",
+        "prompt_version": "source-cited-qa-v1"
+      }
+    },
+    {
+      "id": "paper-ablation-002",
+      "task": "structured_extraction",
+      "passed": true,
+      "citation_valid": true,
+      "citation_errors": [],
+      "insufficient_evidence": false,
+      "expected_fields": [
+        "method",
+        "dataset",
+        "metric",
+        "limitation"
+      ],
+      "present_fields": [
+        "dataset",
+        "limitation",
+        "method",
+        "metric"
+      ],
+      "missing_fields": [],
+      "expected_chunk_phrases": [
+        "ablation study comparing lexical retrieval"
+      ],
+      "retrieved_phrases": [
+        "ablation study comparing lexical retrieval"
+      ],
+      "missing_phrases": [],
+      "retrieval_hit": true,
+      "retrieved_chunk_count": 4,
+      "answer": {
+        "query": "Extract the method, dataset, metric, and limitation from the ablation paper section.",
+        "answer": "Dataset: synthetic document QA cases generated from ML/NLP paper notes. [C1] Dataset: synthetic ML/NLP paper excerpts with labelled method, dataset, metric, and limitation fields. [C2] Dataset: synthetic long-form research notes and paper excerpts. [C3]",
+        "insufficient_evidence": false,
+        "citations": [
+          {
+            "label": "C1",
+            "chunk_id": "b749398d-d851-5064-973e-b720fbbab5e6:1",
+            "document_id": "eb9f7de5-3edb-5466-b409-41a9118fc5d7",
+            "version_id": "b749398d-d851-5064-973e-b720fbbab5e6",
+            "heading_path": [
+              "Demo Ablation Paper Excerpt",
+              "Cited Paper Section"
+            ],
+            "quote": "Dataset: synthetic document QA cases generated from ML/NLP paper notes.",
+            "score": 0.718869
+          },
+          {
+            "label": "C2",
+            "chunk_id": "175b3a3a-2a76-54c9-b5b4-fd2f2118cccf:1",
+            "document_id": "51a5b9ff-512e-54c0-bc65-f6aac708eed0",
+            "version_id": "175b3a3a-2a76-54c9-b5b4-fd2f2118cccf",
+            "heading_path": [
+              "Demo ML Paper Excerpt",
+              "Cited Paper Section"
+            ],
+            "quote": "Dataset: synthetic ML/NLP paper excerpts with labelled method, dataset, metric, and limitation fields.",
+            "score": 0.67897
+          },
+          {
+            "label": "C3",
+            "chunk_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb:1",
+            "document_id": "44d993bb-4e06-5277-9e84-669f1d0cd2b7",
+            "version_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb",
+            "heading_path": [
+              "RAG Systems Paper",
+              "Retrieval Pipeline"
+            ],
+            "quote": "Dataset: synthetic long-form research notes and paper excerpts.",
+            "score": 0.583046
+          }
+        ],
+        "extracted_fields": {
+          "method": "ablation study comparing lexical retrieval, vector retrieval, and hybrid retrieval.",
+          "dataset": "synthetic document QA cases generated from ML/NLP paper notes.",
+          "metric": "citation-valid answer rate and refusal accuracy.",
+          "limitation": "the evaluation set is intentionally small and should be expanded before production use."
+        },
+        "model": "deterministic-structured-v1",
+        "provider": "local",
+        "prompt_version": "source-cited-qa-v1"
+      }
+    },
+    {
+      "id": "rag-pipeline-003",
+      "task": "structured_extraction",
+      "passed": true,
+      "citation_valid": true,
+      "citation_errors": [],
+      "insufficient_evidence": false,
+      "expected_fields": [
+        "method",
+        "dataset",
+        "metric",
+        "limitation"
+      ],
+      "present_fields": [
+        "dataset",
+        "limitation",
+        "method",
+        "metric"
+      ],
+      "missing_fields": [],
+      "expected_chunk_phrases": [
+        "hybrid retrieval with lexical filtering"
+      ],
+      "retrieved_phrases": [
+        "hybrid retrieval with lexical filtering"
+      ],
+      "missing_phrases": [],
+      "retrieval_hit": true,
+      "retrieved_chunk_count": 4,
+      "answer": {
+        "query": "Extract the method, dataset, metric, and limitation from the retrieval pipeline section.",
+        "answer": "Metric: recall@3 for retrieval and citation-validity rate for answers. [C1] Method: ablation study comparing lexical retrieval, vector retrieval, and hybrid retrieval. [C2] Dataset: synthetic ML/NLP paper excerpts with labelled method, dataset, metric, and limitation fields. [C3]",
+        "insufficient_evidence": false,
+        "citations": [
+          {
+            "label": "C1",
+            "chunk_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb:1",
+            "document_id": "44d993bb-4e06-5277-9e84-669f1d0cd2b7",
+            "version_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb",
+            "heading_path": [
+              "RAG Systems Paper",
+              "Retrieval Pipeline"
+            ],
+            "quote": "Metric: recall@3 for retrieval and citation-validity rate for answers.",
+            "score": 0.68901
+          },
+          {
+            "label": "C2",
+            "chunk_id": "b749398d-d851-5064-973e-b720fbbab5e6:1",
+            "document_id": "eb9f7de5-3edb-5466-b409-41a9118fc5d7",
+            "version_id": "b749398d-d851-5064-973e-b720fbbab5e6",
+            "heading_path": [
+              "Demo Ablation Paper Excerpt",
+              "Cited Paper Section"
+            ],
+            "quote": "Method: ablation study comparing lexical retrieval, vector retrieval, and hybrid retrieval.",
+            "score": 0.671818
+          },
+          {
+            "label": "C3",
+            "chunk_id": "175b3a3a-2a76-54c9-b5b4-fd2f2118cccf:1",
+            "document_id": "51a5b9ff-512e-54c0-bc65-f6aac708eed0",
+            "version_id": "175b3a3a-2a76-54c9-b5b4-fd2f2118cccf",
+            "heading_path": [
+              "Demo ML Paper Excerpt",
+              "Cited Paper Section"
+            ],
+            "quote": "Dataset: synthetic ML/NLP paper excerpts with labelled method, dataset, metric, and limitation fields.",
+            "score": 0.66176
+          }
+        ],
+        "extracted_fields": {
+          "method": "hybrid retrieval with lexical filtering, vector search, and evidence thresholding.",
+          "dataset": "synthetic long-form research notes and paper excerpts.",
+          "metric": "recall@3 for retrieval and citation-validity rate for answers.",
+          "limitation": "retrieval quality depends on chunk boundaries and embedding quality."
+        },
+        "model": "deterministic-structured-v1",
+        "provider": "local",
+        "prompt_version": "source-cited-qa-v1"
+      }
+    },
+    {
+      "id": "eval-harness-004",
+      "task": "structured_extraction",
+      "passed": true,
+      "citation_valid": true,
+      "citation_errors": [],
+      "insufficient_evidence": false,
+      "expected_fields": [
+        "method",
+        "dataset",
+        "metric",
+        "limitation"
+      ],
+      "present_fields": [
+        "dataset",
+        "limitation",
+        "method",
+        "metric"
+      ],
+      "missing_fields": [],
+      "expected_chunk_phrases": [
+        "golden-case evaluation"
+      ],
+      "retrieved_phrases": [
+        "golden-case evaluation"
+      ],
+      "missing_phrases": [],
+      "retrieval_hit": true,
+      "retrieved_chunk_count": 4,
+      "answer": {
+        "query": "Extract the method, dataset, metric, and limitation from the benchmark design section.",
+        "answer": "Limitation: the benchmark is deterministic and should later be expanded with harder adversarial cases. [C1] Dataset: synthetic ML/NLP paper excerpts with labelled method, dataset, metric, and limitation fields. [C2] Metric: citation-valid answer rate and refusal accuracy. [C3]",
+        "insufficient_evidence": false,
+        "citations": [
+          {
+            "label": "C1",
+            "chunk_id": "0b4dddb9-7d70-59c6-883e-6ef45bfe29db:1",
+            "document_id": "9646256f-6bf1-51cd-a435-51d57c4d5977",
+            "version_id": "0b4dddb9-7d70-59c6-883e-6ef45bfe29db",
+            "heading_path": [
+              "Evaluation Harness Paper",
+              "Benchmark Design"
+            ],
+            "quote": "Limitation: the benchmark is deterministic and should later be expanded with harder adversarial cases.",
+            "score": 0.651447
+          },
+          {
+            "label": "C2",
+            "chunk_id": "175b3a3a-2a76-54c9-b5b4-fd2f2118cccf:1",
+            "document_id": "51a5b9ff-512e-54c0-bc65-f6aac708eed0",
+            "version_id": "175b3a3a-2a76-54c9-b5b4-fd2f2118cccf",
+            "heading_path": [
+              "Demo ML Paper Excerpt",
+              "Cited Paper Section"
+            ],
+            "quote": "Dataset: synthetic ML/NLP paper excerpts with labelled method, dataset, metric, and limitation fields.",
+            "score": 0.580613
+          },
+          {
+            "label": "C3",
+            "chunk_id": "b749398d-d851-5064-973e-b720fbbab5e6:1",
+            "document_id": "eb9f7de5-3edb-5466-b409-41a9118fc5d7",
+            "version_id": "b749398d-d851-5064-973e-b720fbbab5e6",
+            "heading_path": [
+              "Demo Ablation Paper Excerpt",
+              "Cited Paper Section"
+            ],
+            "quote": "Metric: citation-valid answer rate and refusal accuracy.",
+            "score": 0.568168
+          }
+        ],
+        "extracted_fields": {
+          "method": "golden-case evaluation for structured extraction, supported QA, refusal, and citation validation.",
+          "dataset": "manually written synthetic cases covering research-document workflows.",
+          "metric": "pass rate by task, retrieval hit rate, field coverage, citation validity, and refusal accuracy.",
+          "limitation": "the benchmark is deterministic and should later be expanded with harder adversarial cases."
+        },
+        "model": "deterministic-structured-v1",
+        "provider": "local",
+        "prompt_version": "source-cited-qa-v1"
+      }
+    },
+    {
+      "id": "supported-qa-005",
+      "task": "supported_qa",
+      "passed": true,
+      "citation_valid": true,
+      "citation_errors": [],
+      "insufficient_evidence": false,
+      "expected_fields": [],
+      "present_fields": [],
+      "missing_fields": [],
+      "expected_chunk_phrases": [
+        "citation-validity rate"
+      ],
+      "retrieved_phrases": [
+        "citation-validity rate"
+      ],
+      "missing_phrases": [],
+      "retrieval_hit": true,
+      "retrieved_chunk_count": 4,
+      "answer": {
+        "query": "What metric is used for citation-valid answers?",
+        "answer": "Metric: recall@3 for retrieval and citation-validity rate for answers. [C1] Metric: pass rate by task, retrieval hit rate, field coverage, citation validity, and refusal accuracy. [C2] Metric: citation-valid answer rate and refusal accuracy. [C3]",
+        "insufficient_evidence": false,
+        "citations": [
+          {
+            "label": "C1",
+            "chunk_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb:1",
+            "document_id": "44d993bb-4e06-5277-9e84-669f1d0cd2b7",
+            "version_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb",
+            "heading_path": [
+              "RAG Systems Paper",
+              "Retrieval Pipeline"
+            ],
+            "quote": "Metric: recall@3 for retrieval and citation-validity rate for answers.",
+            "score": 0.497015
+          },
+          {
+            "label": "C2",
+            "chunk_id": "0b4dddb9-7d70-59c6-883e-6ef45bfe29db:1",
+            "document_id": "9646256f-6bf1-51cd-a435-51d57c4d5977",
+            "version_id": "0b4dddb9-7d70-59c6-883e-6ef45bfe29db",
+            "heading_path": [
+              "Evaluation Harness Paper",
+              "Benchmark Design"
+            ],
+            "quote": "Metric: pass rate by task, retrieval hit rate, field coverage, citation validity, and refusal accuracy.",
+            "score": 0.464659
+          },
+          {
+            "label": "C3",
+            "chunk_id": "b749398d-d851-5064-973e-b720fbbab5e6:1",
+            "document_id": "eb9f7de5-3edb-5466-b409-41a9118fc5d7",
+            "version_id": "b749398d-d851-5064-973e-b720fbbab5e6",
+            "heading_path": [
+              "Demo Ablation Paper Excerpt",
+              "Cited Paper Section"
+            ],
+            "quote": "Metric: citation-valid answer rate and refusal accuracy.",
+            "score": 0.397244
+          }
+        ],
+        "extracted_fields": {
+          "metric": "recall@3 for retrieval and citation-validity rate for answers."
+        },
+        "model": "deterministic-structured-v1",
+        "provider": "local",
+        "prompt_version": "source-cited-qa-v1"
+      }
+    },
+    {
+      "id": "supported-qa-006",
+      "task": "supported_qa",
+      "passed": true,
+      "citation_valid": true,
+      "citation_errors": [],
+      "insufficient_evidence": false,
+      "expected_fields": [],
+      "present_fields": [],
+      "missing_fields": [],
+      "expected_chunk_phrases": [
+        "lexical evidence helps prevent unsupported answers"
+      ],
+      "retrieved_phrases": [
+        "lexical evidence helps prevent unsupported answers"
+      ],
+      "missing_phrases": [],
+      "retrieval_hit": true,
+      "retrieved_chunk_count": 4,
+      "answer": {
+        "query": "Why is hybrid retrieval preferred in the corrected note?",
+        "answer": "Corrected note: hybrid retrieval is preferred because lexical evidence helps prevent unsupported answers. [C1] Method: ablation study comparing lexical retrieval, vector retrieval, and hybrid retrieval. [C2] Method: hybrid retrieval with lexical filtering, vector search, and evidence thresholding. [C3]",
+        "insufficient_evidence": false,
+        "citations": [
+          {
+            "label": "C1",
+            "chunk_id": "0b4dddb9-7d70-59c6-883e-6ef45bfe29db:2",
+            "document_id": "9646256f-6bf1-51cd-a435-51d57c4d5977",
+            "version_id": "0b4dddb9-7d70-59c6-883e-6ef45bfe29db",
+            "heading_path": [
+              "Evaluation Harness Paper",
+              "Conflicting Evidence"
+            ],
+            "quote": "Corrected note: hybrid retrieval is preferred because lexical evidence helps prevent unsupported answers.",
+            "score": 0.647133
+          },
+          {
+            "label": "C2",
+            "chunk_id": "b749398d-d851-5064-973e-b720fbbab5e6:1",
+            "document_id": "eb9f7de5-3edb-5466-b409-41a9118fc5d7",
+            "version_id": "b749398d-d851-5064-973e-b720fbbab5e6",
+            "heading_path": [
+              "Demo Ablation Paper Excerpt",
+              "Cited Paper Section"
+            ],
+            "quote": "Method: ablation study comparing lexical retrieval, vector retrieval, and hybrid retrieval.",
+            "score": 0.306071
+          },
+          {
+            "label": "C3",
+            "chunk_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb:1",
+            "document_id": "44d993bb-4e06-5277-9e84-669f1d0cd2b7",
+            "version_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb",
+            "heading_path": [
+              "RAG Systems Paper",
+              "Retrieval Pipeline"
+            ],
+            "quote": "Method: hybrid retrieval with lexical filtering, vector search, and evidence thresholding.",
+            "score": 0.252424
+          }
+        ],
+        "extracted_fields": {},
+        "model": "deterministic-structured-v1",
+        "provider": "local",
+        "prompt_version": "source-cited-qa-v1"
+      }
+    },
+    {
+      "id": "supported-qa-007",
+      "task": "supported_qa",
+      "passed": true,
+      "citation_valid": true,
+      "citation_errors": [],
+      "insufficient_evidence": false,
+      "expected_fields": [],
+      "present_fields": [],
+      "missing_fields": [],
+      "expected_chunk_phrases": [
+        "over-rank chunks that share generic words"
+      ],
+      "retrieved_phrases": [
+        "over-rank chunks that share generic words"
+      ],
+      "missing_phrases": [],
+      "retrieval_hit": true,
+      "retrieved_chunk_count": 4,
+      "answer": {
+        "query": "What does the failure analysis say about near misses?",
+        "answer": "## Failure Analysis [C1]",
+        "insufficient_evidence": false,
+        "citations": [
+          {
+            "label": "C1",
+            "chunk_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb:2",
+            "document_id": "44d993bb-4e06-5277-9e84-669f1d0cd2b7",
+            "version_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb",
+            "heading_path": [
+              "RAG Systems Paper",
+              "Failure Analysis"
+            ],
+            "quote": "## Failure Analysis",
+            "score": 0.615337
+          }
+        ],
+        "extracted_fields": {},
+        "model": "deterministic-structured-v1",
+        "provider": "local",
+        "prompt_version": "source-cited-qa-v1"
+      }
+    },
+    {
+      "id": "supported-qa-008",
+      "task": "supported_qa",
+      "passed": true,
+      "citation_valid": true,
+      "citation_errors": [],
+      "insufficient_evidence": false,
+      "expected_fields": [],
+      "present_fields": [],
+      "missing_fields": [],
+      "expected_chunk_phrases": [
+        "should refuse"
+      ],
+      "retrieved_phrases": [
+        "should refuse"
+      ],
+      "missing_phrases": [],
+      "retrieval_hit": true,
+      "retrieved_chunk_count": 4,
+      "answer": {
+        "query": "What should answer generation do when evidence does not mention the requested obligation?",
+        "answer": "Unsupported query policy: answer generation should refuse when retrieved evidence does not mention the requested obligation. [C1] Metric: citation-valid answer rate and refusal accuracy. [C2] Corrected note: hybrid retrieval is preferred because lexical evidence helps prevent unsupported answers. [C3]",
+        "insufficient_evidence": false,
+        "citations": [
+          {
+            "label": "C1",
+            "chunk_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb:2",
+            "document_id": "44d993bb-4e06-5277-9e84-669f1d0cd2b7",
+            "version_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb",
+            "heading_path": [
+              "RAG Systems Paper",
+              "Failure Analysis"
+            ],
+            "quote": "Unsupported query policy: answer generation should refuse when retrieved evidence does not mention the requested obligation.",
+            "score": 0.750315
+          },
+          {
+            "label": "C2",
+            "chunk_id": "b749398d-d851-5064-973e-b720fbbab5e6:1",
+            "document_id": "eb9f7de5-3edb-5466-b409-41a9118fc5d7",
+            "version_id": "b749398d-d851-5064-973e-b720fbbab5e6",
+            "heading_path": [
+              "Demo Ablation Paper Excerpt",
+              "Cited Paper Section"
+            ],
+            "quote": "Metric: citation-valid answer rate and refusal accuracy.",
+            "score": 0.237535
+          },
+          {
+            "label": "C3",
+            "chunk_id": "0b4dddb9-7d70-59c6-883e-6ef45bfe29db:2",
+            "document_id": "9646256f-6bf1-51cd-a435-51d57c4d5977",
+            "version_id": "0b4dddb9-7d70-59c6-883e-6ef45bfe29db",
+            "heading_path": [
+              "Evaluation Harness Paper",
+              "Conflicting Evidence"
+            ],
+            "quote": "Corrected note: hybrid retrieval is preferred because lexical evidence helps prevent unsupported answers.",
+            "score": 0.236458
+          }
+        ],
+        "extracted_fields": {},
+        "model": "deterministic-structured-v1",
+        "provider": "local",
+        "prompt_version": "source-cited-qa-v1"
+      }
+    },
+    {
+      "id": "near-miss-009",
+      "task": "near_miss_retrieval",
+      "passed": true,
+      "citation_valid": true,
+      "citation_errors": [],
+      "insufficient_evidence": false,
+      "expected_fields": [],
+      "present_fields": [],
+      "missing_fields": [],
+      "expected_chunk_phrases": [
+        "share generic words but miss the key concept"
+      ],
+      "retrieved_phrases": [
+        "share generic words but miss the key concept"
+      ],
+      "missing_phrases": [],
+      "retrieval_hit": true,
+      "retrieved_chunk_count": 4,
+      "answer": {
+        "query": "Which section discusses generic words causing retrieval mistakes?",
+        "answer": "Method: ablation study comparing lexical retrieval, vector retrieval, and hybrid retrieval. [C1] Metric: recall@3 for retrieval and citation-validity rate for answers. [C2] Near miss: lexical retrieval can over-rank chunks that share generic words but miss the key concept. [C3]",
+        "insufficient_evidence": false,
+        "citations": [
+          {
+            "label": "C1",
+            "chunk_id": "b749398d-d851-5064-973e-b720fbbab5e6:1",
+            "document_id": "eb9f7de5-3edb-5466-b409-41a9118fc5d7",
+            "version_id": "b749398d-d851-5064-973e-b720fbbab5e6",
+            "heading_path": [
+              "Demo Ablation Paper Excerpt",
+              "Cited Paper Section"
+            ],
+            "quote": "Method: ablation study comparing lexical retrieval, vector retrieval, and hybrid retrieval.",
+            "score": 0.324937
+          },
+          {
+            "label": "C2",
+            "chunk_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb:1",
+            "document_id": "44d993bb-4e06-5277-9e84-669f1d0cd2b7",
+            "version_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb",
+            "heading_path": [
+              "RAG Systems Paper",
+              "Retrieval Pipeline"
+            ],
+            "quote": "Metric: recall@3 for retrieval and citation-validity rate for answers.",
+            "score": 0.285268
+          },
+          {
+            "label": "C3",
+            "chunk_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb:2",
+            "document_id": "44d993bb-4e06-5277-9e84-669f1d0cd2b7",
+            "version_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb",
+            "heading_path": [
+              "RAG Systems Paper",
+              "Failure Analysis"
+            ],
+            "quote": "Near miss: lexical retrieval can over-rank chunks that share generic words but miss the key concept.",
+            "score": 0.254357
+          }
+        ],
+        "extracted_fields": {},
+        "model": "deterministic-structured-v1",
+        "provider": "local",
+        "prompt_version": "source-cited-qa-v1"
+      }
+    },
+    {
+      "id": "conflict-010",
+      "task": "conflicting_evidence",
+      "passed": true,
+      "citation_valid": true,
+      "citation_errors": [],
+      "insufficient_evidence": false,
+      "expected_fields": [],
+      "present_fields": [],
+      "missing_fields": [],
+      "expected_chunk_phrases": [
+        "hybrid retrieval is preferred"
+      ],
+      "retrieved_phrases": [
+        "hybrid retrieval is preferred"
+      ],
+      "missing_phrases": [],
+      "retrieval_hit": true,
+      "retrieved_chunk_count": 4,
+      "answer": {
+        "query": "What is the corrected position on vector-only retrieval?",
+        "answer": "Earlier note: vector-only retrieval is sufficient for all questions. [C1] Limitation: retrieval quality depends on chunk boundaries and embedding quality. [C2] Method: ablation study comparing lexical retrieval, vector retrieval, and hybrid retrieval. [C3]",
+        "insufficient_evidence": false,
+        "citations": [
+          {
+            "label": "C1",
+            "chunk_id": "0b4dddb9-7d70-59c6-883e-6ef45bfe29db:2",
+            "document_id": "9646256f-6bf1-51cd-a435-51d57c4d5977",
+            "version_id": "0b4dddb9-7d70-59c6-883e-6ef45bfe29db",
+            "heading_path": [
+              "Evaluation Harness Paper",
+              "Conflicting Evidence"
+            ],
+            "quote": "Earlier note: vector-only retrieval is sufficient for all questions.",
+            "score": 0.600927
+          },
+          {
+            "label": "C2",
+            "chunk_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb:1",
+            "document_id": "44d993bb-4e06-5277-9e84-669f1d0cd2b7",
+            "version_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb",
+            "heading_path": [
+              "RAG Systems Paper",
+              "Retrieval Pipeline"
+            ],
+            "quote": "Limitation: retrieval quality depends on chunk boundaries and embedding quality.",
+            "score": 0.345225
+          },
+          {
+            "label": "C3",
+            "chunk_id": "b749398d-d851-5064-973e-b720fbbab5e6:1",
+            "document_id": "eb9f7de5-3edb-5466-b409-41a9118fc5d7",
+            "version_id": "b749398d-d851-5064-973e-b720fbbab5e6",
+            "heading_path": [
+              "Demo Ablation Paper Excerpt",
+              "Cited Paper Section"
+            ],
+            "quote": "Method: ablation study comparing lexical retrieval, vector retrieval, and hybrid retrieval.",
+            "score": 0.298586
+          }
+        ],
+        "extracted_fields": {},
+        "model": "deterministic-structured-v1",
+        "provider": "local",
+        "prompt_version": "source-cited-qa-v1"
+      }
+    },
+    {
+      "id": "refusal-011",
+      "task": "refusal",
+      "passed": true,
+      "citation_valid": true,
+      "citation_errors": [],
+      "insufficient_evidence": true,
+      "expected_fields": [],
+      "present_fields": [],
+      "missing_fields": [],
+      "expected_chunk_phrases": [],
+      "retrieved_phrases": [],
+      "missing_phrases": [],
+      "retrieval_hit": false,
+      "retrieved_chunk_count": 4,
+      "answer": {
+        "query": "What does the document say about insurance obligations?",
+        "answer": "Insufficient evidence in the retrieved document chunks to answer this question reliably.",
+        "insufficient_evidence": true,
+        "citations": [],
+        "extracted_fields": {},
+        "model": "deterministic-structured-v1",
+        "provider": "local",
+        "prompt_version": "source-cited-qa-v1"
+      }
+    },
+    {
+      "id": "refusal-012",
+      "task": "refusal",
+      "passed": false,
+      "citation_valid": true,
+      "citation_errors": [],
+      "insufficient_evidence": false,
+      "expected_fields": [],
+      "present_fields": [],
+      "missing_fields": [],
+      "expected_chunk_phrases": [],
+      "retrieved_phrases": [],
+      "missing_phrases": [],
+      "retrieval_hit": false,
+      "retrieved_chunk_count": 4,
+      "answer": {
+        "query": "What does the corpus say about landlord deposit penalties?",
+        "answer": "Limitation: the demo corpus is small and does not represent production-scale literature review. [C1]",
+        "insufficient_evidence": false,
+        "citations": [
+          {
+            "label": "C1",
+            "chunk_id": "175b3a3a-2a76-54c9-b5b4-fd2f2118cccf:1",
+            "document_id": "51a5b9ff-512e-54c0-bc65-f6aac708eed0",
+            "version_id": "175b3a3a-2a76-54c9-b5b4-fd2f2118cccf",
+            "heading_path": [
+              "Demo ML Paper Excerpt",
+              "Cited Paper Section"
+            ],
+            "quote": "Limitation: the demo corpus is small and does not represent production-scale literature review.",
+            "score": 0.221005
+          }
+        ],
+        "extracted_fields": {},
+        "model": "deterministic-structured-v1",
+        "provider": "local",
+        "prompt_version": "source-cited-qa-v1"
+      }
+    }
+  ]
+}

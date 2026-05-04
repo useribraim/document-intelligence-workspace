@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+.env
+.venv/
+.pytest_cache/
+.ruff_cache/
+postgres_data/
+*.db
+data/demo/raw/*.normalised.md
+*.egg-info/
