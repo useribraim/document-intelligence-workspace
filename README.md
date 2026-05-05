@@ -13,7 +13,7 @@ The project is built to prove a controlled document AI loop, not a generic chat-
 7. Route AI outputs through human review decisions.
 8. Evaluate retrieval quality, citation validity, refusal behaviour, and structured extraction.
 
-## v1.2.0 Scope
+## v1.7.0 Scope
 
 Implemented:
 
@@ -59,6 +59,17 @@ Implemented:
 - Agent-style review workspace with answer thread, evidence inspector, AI-run metadata, and review actions.
 - Evidence-first workspace flow with retrieval preview before answer generation.
 - Task mode selector, run history tab, and richer evidence-based review notes.
+- Review-to-evaluation loop for saving reviewed outputs as JSONL regression cases.
+- Evaluation-case API and workspace Eval tab for review-derived cases.
+- Corpus browser in the workspace for documents, versions, chunks, and chunk provenance.
+- Markdown paper-card compiler for turning reviewed document versions into durable study artifacts.
+- Paper-card draft/save API and workspace Paper Card tab.
+- Paper Workspace view that keeps the selected paper, chunks, evidence state, generated answer, review state, and study artifact actions in one flow.
+- Direct workspace actions for extracting claims, generating from evidence, drafting a paper card, saving to the wiki, and creating review-derived eval cases.
+- Heading-aware paper-card field extraction for unlabeled source sections.
+- Visible workflow status updates for evidence extraction, answer generation, card drafting, saving, review, and eval-case creation.
+- Workspace draft action avoids creating duplicate pending review suggestions for repeated paper-card drafts.
+- Saved paper-card confirmations include path and timestamp.
 - Demo ML/NLP extraction sources.
 - Unit tests for normalisation, ingestion, chunking, CLI behaviour, persistence, embeddings, and retrieval.
 - Starter golden evaluation cases.
@@ -66,7 +77,7 @@ Implemented:
 
 Next build slice:
 
-- Document/chunk browsing, evaluation inspection, and richer answer editing.
+- Evaluation execution from saved review cases, richer answer editing, and concept-note generation.
 
 ## Design Goals
 

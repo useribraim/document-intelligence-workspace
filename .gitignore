@@ -7,4 +7,6 @@ __pycache__/
 postgres_data/
 *.db
 data/demo/raw/*.normalised.md
+data/demo/evals/review_cases.jsonl
+data/demo/wiki/paper_cards/*.md
 *.egg-info/
