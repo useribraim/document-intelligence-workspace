@@ -45,6 +45,16 @@ class ApiTests(unittest.TestCase):
                 self.assertEqual(embeddings.status_code, 200)
                 self.assertEqual(embeddings.json()["embeddings_total"], chunk_count)
 
+                preview = client.post(
+                    "/retrieval-preview",
+                    json={
+                        "query": "Extract the method, dataset, metric, and limitation.",
+                        "top_k": 1,
+                    },
+                )
+                self.assertEqual(preview.status_code, 200)
+                self.assertEqual(len(preview.json()["retrieved_chunks"]), 1)
+
                 answer = client.post(
                     "/ask",
                     json={
@@ -89,6 +99,7 @@ class ApiTests(unittest.TestCase):
                 self.assertEqual(workspace.status_code, 200)
                 self.assertIn("Evidence and review inspector", workspace.text)
                 self.assertIn("review/suggestions", workspace.text)
+                self.assertIn("retrieval-preview", workspace.text)
 
             engine = build_engine(database_url)
             try:

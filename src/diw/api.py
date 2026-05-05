@@ -53,6 +53,14 @@ class AskRequest(BaseModel):
     create_suggestion: bool = True
 
 
+class RetrievalPreviewRequest(BaseModel):
+    query: str
+    mode: str = Field(default="hybrid", pattern="^(lexical|vector|hybrid)$")
+    top_k: int = Field(default=5, gt=0)
+    dimensions: int = Field(default=64, gt=0)
+    ensure_embeddings: bool = True
+
+
 class ReviewDecisionRequest(BaseModel):
     decision: str = Field(pattern="^(accept|reject|edit)$")
     reviewer: str = "local-user"
@@ -153,7 +161,7 @@ def create_app(database_url: str | None = None) -> FastAPI:
 
     app = FastAPI(
         title="Document Intelligence Workspace",
-        version="1.1.0",
+        version="1.2.0",
         lifespan=lifespan,
     )
 
@@ -275,6 +283,27 @@ def create_app(database_url: str | None = None) -> FastAPI:
             "dimensions": provider.dimensions,
             "embeddings_created": created,
             "embeddings_total": count_embeddings(session),
+        }
+
+    @app.post("/retrieval-preview")
+    def retrieval_preview(request: RetrievalPreviewRequest, session: Session = Depends(get_session)):
+        embedding_provider = LocalHashingEmbeddingProvider(dimensions=request.dimensions)
+        if request.ensure_embeddings:
+            embed_missing_chunks(session, embedding_provider)
+            session.commit()
+
+        results = retrieve_chunks(
+            session,
+            request.query,
+            embedding_provider,
+            top_k=request.top_k,
+            mode=request.mode,
+        )
+        return {
+            "query": request.query,
+            "mode": request.mode,
+            "embedding_model": embedding_provider.model_name,
+            "retrieved_chunks": retrieval_results_as_dicts(results),
         }
 
     @app.post("/ask")
@@ -650,6 +679,10 @@ def _workspace_html() -> str:
         background: var(--accent-dark);
       }
 
+      button.secondary {
+        background: #e9eef2;
+      }
+
       button.danger {
         color: var(--danger);
       }
@@ -807,6 +840,34 @@ def _workspace_html() -> str:
         flex-wrap: wrap;
       }
 
+      .review-form {
+        display: grid;
+        gap: 8px;
+      }
+
+      .review-form textarea {
+        min-height: 72px;
+        resize: vertical;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 9px;
+      }
+
+      .history-item {
+        width: 100%;
+        display: block;
+        text-align: left;
+        margin-bottom: 8px;
+        overflow-wrap: anywhere;
+        white-space: normal;
+      }
+
+      .history-item small {
+        display: block;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+
       @media (max-width: 920px) {
         .layout {
           grid-template-columns: 1fr;
@@ -858,9 +919,16 @@ def _workspace_html() -> str:
             <div id="messages"></div>
           </div>
 
-          <form id="askForm" class="composer">
+          <form id="workflowForm" class="composer">
             <textarea id="queryInput" aria-label="Question or extraction instruction">Extract the method, dataset, metric, and limitation from the cited paper section.</textarea>
             <div class="controls">
+              <select id="taskModeSelect" aria-label="Task mode">
+                <option value="structured_extraction">extract fields</option>
+                <option value="question_answering">ask question</option>
+                <option value="comparison">compare documents</option>
+                <option value="contradiction_check">find contradictions</option>
+                <option value="study_note">study note</option>
+              </select>
               <div class="inline-controls">
                 <select id="modeSelect" aria-label="Retrieval mode">
                   <option value="hybrid">hybrid</option>
@@ -869,7 +937,8 @@ def _workspace_html() -> str:
                 </select>
                 <input id="topKInput" aria-label="Top K" type="number" min="1" max="12" value="3">
               </div>
-              <button id="askButton" class="primary" type="submit">Run</button>
+              <button id="previewButton" class="secondary" type="button">Preview evidence</button>
+              <button id="generateButton" class="primary" type="submit" disabled>Generate from evidence</button>
             </div>
           </form>
         </section>
@@ -879,11 +948,13 @@ def _workspace_html() -> str:
             <button type="button" class="tab active" data-tab="evidence">Evidence</button>
             <button type="button" class="tab" data-tab="run">Run</button>
             <button type="button" class="tab" data-tab="review">Review</button>
+            <button type="button" class="tab" data-tab="runs">Runs</button>
           </nav>
           <div class="inspector-scroll">
             <section id="evidencePanel" class="tab-panel"></section>
             <section id="runPanel" class="tab-panel" hidden></section>
             <section id="reviewPanel" class="tab-panel" hidden></section>
+            <section id="runsPanel" class="tab-panel" hidden></section>
           </div>
         </aside>
       </main>
@@ -892,6 +963,8 @@ def _workspace_html() -> str:
     <script>
       const state = {
         answer: null,
+        preview: null,
+        runs: [],
         suggestions: [],
         activeTab: "evidence"
       };
@@ -900,9 +973,12 @@ def _workspace_html() -> str:
       const evidencePanel = document.getElementById("evidencePanel");
       const runPanel = document.getElementById("runPanel");
       const reviewPanel = document.getElementById("reviewPanel");
-      const askForm = document.getElementById("askForm");
-      const askButton = document.getElementById("askButton");
+      const runsPanel = document.getElementById("runsPanel");
+      const workflowForm = document.getElementById("workflowForm");
+      const previewButton = document.getElementById("previewButton");
+      const generateButton = document.getElementById("generateButton");
       const queryInput = document.getElementById("queryInput");
+      const taskModeSelect = document.getElementById("taskModeSelect");
       const modeSelect = document.getElementById("modeSelect");
       const topKInput = document.getElementById("topKInput");
       const healthStatus = document.getElementById("healthStatus");
@@ -939,7 +1015,26 @@ def _workspace_html() -> str:
       }
 
       function renderThread() {
-        if (!state.answer) {
+        if (!state.answer && !state.preview) {
+          return;
+        }
+        if (!state.answer && state.preview) {
+          messages.innerHTML = `
+            <article class="message user">
+              <div class="message-header">
+                <span>User</span>
+                <span>${escapeHtml(state.preview.mode)} retrieval preview</span>
+              </div>
+              <p class="answer-text">${escapeHtml(state.preview.query)}</p>
+            </article>
+            <article class="message system">
+              <div class="message-header">
+                <span>Evidence selected</span>
+                <span>${escapeHtml((state.preview.retrieved_chunks || []).length)} chunks</span>
+              </div>
+              <p class="answer-text">Review the retrieved chunks in the evidence panel, then generate only if the evidence is relevant enough.</p>
+            </article>
+          `;
           return;
         }
         const answer = state.answer.answer || {};
@@ -973,25 +1068,37 @@ def _workspace_html() -> str:
       }
 
       function renderEvidence() {
-        if (!state.answer) {
+        const evidenceSource = state.answer || state.preview;
+        if (!evidenceSource) {
           evidencePanel.innerHTML = `
             <div class="panel">
               <h2>Evidence</h2>
-              <p class="empty">Run a question to inspect retrieved chunks, scores, and citation validation.</p>
+              <p class="empty">Preview evidence before generating an answer.</p>
             </div>
           `;
           return;
         }
 
-        const validation = state.answer.citation_validation || {};
-        const chunks = state.answer.retrieved_chunks || [];
-        const validationClass = validation.valid ? "ok" : "danger";
+        const validation = state.answer?.citation_validation;
+        const chunks = evidenceSource.retrieved_chunks || [];
+        const validationClass = validation?.valid ? "ok" : "danger";
         evidencePanel.innerHTML = `
           <div class="panel">
-            <h2>Citation validation</h2>
-            ${statusPill(validation.valid ? "valid" : "invalid", validationClass)}
-            <pre>${escapeHtml(JSON.stringify(validation, null, 2))}</pre>
+            <h2>Evidence workflow</h2>
+            <div class="meta-grid">
+              <span>Task</span><span>${escapeHtml(taskModeSelect.value)}</span>
+              <span>Query</span><span>${escapeHtml(evidenceSource.query)}</span>
+              <span>Mode</span><span>${escapeHtml(evidenceSource.mode)}</span>
+              <span>Chunks</span><span>${escapeHtml(chunks.length)}</span>
+            </div>
           </div>
+          ${validation ? `
+            <div class="panel">
+              <h2>Citation validation</h2>
+              ${statusPill(validation.valid ? "valid" : "invalid", validationClass)}
+              <pre>${escapeHtml(JSON.stringify(validation, null, 2))}</pre>
+            </div>
+          ` : ""}
           <div class="panel">
             <h2>Retrieved chunks</h2>
             ${chunks.length ? chunks.map(renderChunk).join("") : `<p class="empty">No chunks retrieved.</p>`}
@@ -1020,7 +1127,7 @@ version_id: ${escapeHtml(chunk.version_id)}</pre>
           runPanel.innerHTML = `
             <div class="panel">
               <h2>AI run</h2>
-              <p class="empty">No AI run selected.</p>
+              <p class="empty">Preview evidence first, then generate to create an AI run.</p>
             </div>
           `;
           return;
@@ -1042,6 +1149,29 @@ version_id: ${escapeHtml(chunk.version_id)}</pre>
           <div class="panel">
             <h2>Raw output</h2>
             <pre>${escapeHtml(JSON.stringify(state.answer.answer, null, 2))}</pre>
+          </div>
+        `;
+      }
+
+      function renderRuns() {
+        if (!state.runs.length) {
+          runsPanel.innerHTML = `
+            <div class="panel">
+              <h2>Run history</h2>
+              <p class="empty">No previous runs loaded.</p>
+            </div>
+          `;
+          return;
+        }
+        runsPanel.innerHTML = `
+          <div class="panel">
+            <h2>Run history</h2>
+            ${state.runs.map((run) => `
+              <button type="button" class="history-item" data-run-id="${escapeHtml(run.id)}">
+                ${escapeHtml(run.query || run.run_type)}
+                <small>${escapeHtml(run.run_type)} | ${escapeHtml(run.retrieval_mode || "")} | citations ${escapeHtml(String(run.citation_valid))}</small>
+              </button>
+            `).join("")}
           </div>
         `;
       }
@@ -1078,6 +1208,24 @@ version_id: ${escapeHtml(chunk.version_id)}</pre>
               <span>AI run</span><code>${escapeHtml(current.ai_run_id)}</code>
               <span>Type</span><span>${escapeHtml(current.suggestion_type)}</span>
             </div>
+            <div class="review-form">
+              <select id="citationQualitySelect" aria-label="Citation quality">
+                <option value="citations_supported">citations supported</option>
+                <option value="citation_issue">citation issue</option>
+                <option value="not_checked">not checked</option>
+              </select>
+              <select id="completenessSelect" aria-label="Completeness">
+                <option value="complete">complete</option>
+                <option value="incomplete">incomplete</option>
+                <option value="too_broad">too broad</option>
+              </select>
+              <select id="fieldCorrectnessSelect" aria-label="Field correctness">
+                <option value="fields_correct">fields correct</option>
+                <option value="field_issue">field issue</option>
+                <option value="not_applicable">not applicable</option>
+              </select>
+              <textarea id="reviewNoteInput" aria-label="Review note" placeholder="Evidence-based review note"></textarea>
+            </div>
             <div class="review-actions">
               <button type="button" class="primary" data-review="accept">Accept</button>
               <button type="button" data-review="edit">Mark edited</button>
@@ -1091,6 +1239,7 @@ version_id: ${escapeHtml(chunk.version_id)}</pre>
         renderEvidence();
         renderRun();
         renderReview();
+        renderRuns();
       }
 
       async function requestJson(url, options = {}) {
@@ -1115,10 +1264,51 @@ version_id: ${escapeHtml(chunk.version_id)}</pre>
         state.suggestions = payload.suggestions || [];
       }
 
+      async function refreshRuns() {
+        const payload = await requestJson("/ai-runs?limit=10");
+        state.runs = payload.ai_runs || [];
+      }
+
+      async function previewEvidence() {
+        previewButton.disabled = true;
+        previewButton.textContent = "Previewing...";
+        try {
+          const query = queryInput.value.trim();
+          if (!query) {
+            throw new Error("Question is required.");
+          }
+          state.answer = null;
+          state.preview = await requestJson("/retrieval-preview", {
+            method: "POST",
+            body: JSON.stringify({
+              query,
+              mode: modeSelect.value,
+              top_k: Number(topKInput.value || 3),
+              ensure_embeddings: true
+            })
+          });
+          generateButton.disabled = false;
+          renderThread();
+          renderPanels();
+          switchTab("evidence");
+          await refreshHealth();
+        } catch (error) {
+          messages.innerHTML += `
+            <article class="message system">
+              <div class="message-header"><span>Error</span><span>preview failed</span></div>
+              <p class="answer-text">${escapeHtml(error.message)}</p>
+            </article>
+          `;
+        } finally {
+          previewButton.disabled = false;
+          previewButton.textContent = "Preview evidence";
+        }
+      }
+
       async function runAsk(event) {
         event.preventDefault();
-        askButton.disabled = true;
-        askButton.textContent = "Running...";
+        generateButton.disabled = true;
+        generateButton.textContent = "Generating...";
         try {
           const query = queryInput.value.trim();
           if (!query) {
@@ -1134,7 +1324,9 @@ version_id: ${escapeHtml(chunk.version_id)}</pre>
               create_suggestion: true
             })
           });
+          state.preview = null;
           await refreshSuggestions();
+          await refreshRuns();
           renderThread();
           renderPanels();
           switchTab("evidence");
@@ -1147,19 +1339,28 @@ version_id: ${escapeHtml(chunk.version_id)}</pre>
             </article>
           `;
         } finally {
-          askButton.disabled = false;
-          askButton.textContent = "Run";
+          generateButton.disabled = false;
+          generateButton.textContent = "Generate from evidence";
         }
       }
 
       async function submitReview(decision) {
         if (!state.answer?.suggestion_id) return;
+        const citationQuality = document.getElementById("citationQualitySelect")?.value || "not_checked";
+        const completeness = document.getElementById("completenessSelect")?.value || "not_checked";
+        const fieldCorrectness = document.getElementById("fieldCorrectnessSelect")?.value || "not_checked";
+        const reviewNote = document.getElementById("reviewNoteInput")?.value || "";
         await requestJson(`/review/suggestions/${state.answer.suggestion_id}/decision`, {
           method: "POST",
           body: JSON.stringify({
             decision,
             reviewer: "local-user",
-            note: decision === "accept" ? "Accepted from workspace." : `Marked ${decision} from workspace.`
+            note: [
+              `citation_quality=${citationQuality}`,
+              `completeness=${completeness}`,
+              `field_correctness=${fieldCorrectness}`,
+              reviewNote.trim()
+            ].filter(Boolean).join("; ")
           })
         });
         await refreshSuggestions();
@@ -1177,7 +1378,8 @@ version_id: ${escapeHtml(chunk.version_id)}</pre>
         });
       }
 
-      askForm.addEventListener("submit", runAsk);
+      workflowForm.addEventListener("submit", runAsk);
+      previewButton.addEventListener("click", previewEvidence);
       document.getElementById("refreshButton").addEventListener("click", async () => {
         await refreshHealth();
         await refreshSuggestions();
@@ -1196,9 +1398,22 @@ version_id: ${escapeHtml(chunk.version_id)}</pre>
           button.disabled = false;
         }
       });
+      runsPanel.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-run-id]");
+        if (!button) return;
+        const run = state.runs.find((item) => item.id === button.dataset.runId);
+        if (!run) return;
+        state.answer = run.output;
+        state.answer.ai_run_id = run.id;
+        state.preview = null;
+        renderThread();
+        renderPanels();
+        switchTab("evidence");
+      });
 
       refreshHealth()
         .then(refreshSuggestions)
+        .then(refreshRuns)
         .then(renderPanels)
         .catch((error) => {
           healthStatus.textContent = "Database unavailable";

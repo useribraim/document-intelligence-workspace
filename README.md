@@ -13,7 +13,7 @@ The project is built to prove a controlled document AI loop, not a generic chat-
 7. Route AI outputs through human review decisions.
 8. Evaluate retrieval quality, citation validity, refusal behaviour, and structured extraction.
 
-## v1.1.0 Scope
+## v1.2.0 Scope
 
 Implemented:
 
@@ -57,6 +57,8 @@ Implemented:
 - FastAPI backend exposing ingestion, embedding, question answering, AI-run inspection, and human review.
 - Minimal browser dashboard for documents, pending review suggestions, and recent AI runs.
 - Agent-style review workspace with answer thread, evidence inspector, AI-run metadata, and review actions.
+- Evidence-first workspace flow with retrieval preview before answer generation.
+- Task mode selector, run history tab, and richer evidence-based review notes.
 - Demo ML/NLP extraction sources.
 - Unit tests for normalisation, ingestion, chunking, CLI behaviour, persistence, embeddings, and retrieval.
 - Starter golden evaluation cases.
@@ -64,7 +66,7 @@ Implemented:
 
 Next build slice:
 
-- Review workspace improvements for document/chunk browsing, evaluation inspection, and richer answer editing.
+- Document/chunk browsing, evaluation inspection, and richer answer editing.
 
 ## Design Goals
 
