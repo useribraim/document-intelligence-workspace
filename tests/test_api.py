@@ -85,6 +85,11 @@ class ApiTests(unittest.TestCase):
                 self.assertEqual(dashboard.status_code, 200)
                 self.assertIn("Document Intelligence Workspace", dashboard.text)
 
+                workspace = client.get("/workspace")
+                self.assertEqual(workspace.status_code, 200)
+                self.assertIn("Evidence and review inspector", workspace.text)
+                self.assertIn("review/suggestions", workspace.text)
+
             engine = build_engine(database_url)
             try:
                 Base.metadata.drop_all(engine)

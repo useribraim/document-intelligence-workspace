@@ -153,7 +153,7 @@ def create_app(database_url: str | None = None) -> FastAPI:
 
     app = FastAPI(
         title="Document Intelligence Workspace",
-        version="1.0.0",
+        version="1.1.0",
         lifespan=lifespan,
     )
 
@@ -212,6 +212,10 @@ def create_app(database_url: str | None = None) -> FastAPI:
         </html>
         """
         return HTMLResponse(body)
+
+    @app.get("/workspace", response_class=HTMLResponse)
+    def workspace():
+        return HTMLResponse(_workspace_html())
 
     @app.get("/health")
     def health(session: Session = Depends(get_session)):
@@ -418,6 +422,798 @@ def _html_runs_table(runs: list[AIRun]) -> str:
             "</tr>"
         )
     return "<table><tr><th>ID</th><th>Type</th><th>Query</th><th>Citations valid</th></tr>" + "".join(rows) + "</table>"
+
+
+def _workspace_html() -> str:
+    return """
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Document Intelligence Workspace</title>
+    <style>
+      :root {
+        --bg: #f6f7f9;
+        --panel: #ffffff;
+        --panel-subtle: #f1f3f5;
+        --text: #17191c;
+        --muted: #636b74;
+        --border: #d8dde3;
+        --accent: #216869;
+        --accent-dark: #174d4f;
+        --danger: #9f2f2f;
+        --warning: #8a5a00;
+        --ok: #216e39;
+        --code: #20242a;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        line-height: 1.45;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+      }
+
+      .app-shell {
+        min-height: 100vh;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+      }
+
+      .topbar {
+        height: 58px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 0 20px;
+        background: var(--panel);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .brand {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+      }
+
+      .brand strong {
+        font-size: 15px;
+        line-height: 1.1;
+      }
+
+      .brand span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .top-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .layout {
+        min-height: 0;
+        display: grid;
+        grid-template-columns: minmax(420px, 1fr) minmax(360px, 42vw);
+      }
+
+      .thread {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid var(--border);
+        background: #fbfcfd;
+      }
+
+      .thread-scroll {
+        min-height: 0;
+        flex: 1;
+        overflow: auto;
+        padding: 20px;
+      }
+
+      .message {
+        max-width: 920px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 14px;
+        margin-bottom: 14px;
+      }
+
+      .message.user {
+        border-left: 4px solid var(--accent);
+      }
+
+      .message.assistant {
+        border-left: 4px solid #5d6775;
+      }
+
+      .message.system {
+        background: var(--panel-subtle);
+      }
+
+      .message-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 8px;
+        color: var(--muted);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .answer-text {
+        margin: 0 0 12px;
+        white-space: pre-wrap;
+      }
+
+      .field-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .field {
+        padding: 10px;
+        background: var(--panel-subtle);
+        border-radius: 6px;
+        border: 1px solid var(--border);
+      }
+
+      .field label {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+        margin-bottom: 4px;
+      }
+
+      .field div {
+        overflow-wrap: anywhere;
+      }
+
+      .composer {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+        padding: 14px;
+        background: var(--panel);
+        border-top: 1px solid var(--border);
+      }
+
+      .composer textarea {
+        min-height: 72px;
+        max-height: 180px;
+        resize: vertical;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px 12px;
+        color: var(--text);
+      }
+
+      .controls {
+        display: grid;
+        gap: 8px;
+        min-width: 170px;
+      }
+
+      .inline-controls {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      select,
+      input {
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 8px 9px;
+        background: white;
+      }
+
+      button {
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 8px 11px;
+        background: white;
+        color: var(--text);
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      button.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+      }
+
+      button.primary:hover {
+        background: var(--accent-dark);
+      }
+
+      button.danger {
+        color: var(--danger);
+      }
+
+      button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      .inspector {
+        min-width: 0;
+        display: grid;
+        grid-template-rows: auto 1fr;
+        background: var(--panel);
+      }
+
+      .tabs {
+        display: flex;
+        gap: 2px;
+        padding: 10px 12px 0;
+        border-bottom: 1px solid var(--border);
+        background: var(--panel);
+      }
+
+      .tab {
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+        border-bottom-color: transparent;
+      }
+
+      .tab.active {
+        background: var(--panel-subtle);
+        border-color: var(--border);
+        border-bottom-color: var(--panel-subtle);
+      }
+
+      .inspector-scroll {
+        min-height: 0;
+        overflow: auto;
+        padding: 16px;
+        background: var(--panel-subtle);
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 14px;
+        margin-bottom: 12px;
+      }
+
+      .panel h2,
+      .panel h3 {
+        margin: 0 0 10px;
+        font-size: 15px;
+      }
+
+      .meta-grid {
+        display: grid;
+        grid-template-columns: 120px minmax(0, 1fr);
+        gap: 7px 10px;
+        font-size: 13px;
+      }
+
+      .meta-grid span:nth-child(odd) {
+        color: var(--muted);
+      }
+
+      code,
+      pre {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
+      code {
+        overflow-wrap: anywhere;
+      }
+
+      pre {
+        margin: 10px 0 0;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        color: var(--code);
+        background: #f8fafc;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 10px;
+        font-size: 12px;
+      }
+
+      .chunk {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: white;
+        padding: 12px;
+        margin-bottom: 10px;
+      }
+
+      .chunk-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+        color: var(--muted);
+        font-size: 12px;
+        margin-bottom: 8px;
+      }
+
+      .chunk p {
+        margin: 0;
+        white-space: pre-wrap;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 2px 8px;
+        font-size: 12px;
+        color: var(--muted);
+        background: white;
+      }
+
+      .pill.ok {
+        color: var(--ok);
+        border-color: #b8d7c0;
+        background: #f0faf2;
+      }
+
+      .pill.warn {
+        color: var(--warning);
+        border-color: #dec58f;
+        background: #fff8e8;
+      }
+
+      .pill.danger {
+        color: var(--danger);
+        border-color: #e4b6b6;
+        background: #fff2f2;
+      }
+
+      .empty {
+        color: var(--muted);
+        margin: 0;
+      }
+
+      .review-card {
+        display: grid;
+        gap: 10px;
+      }
+
+      .review-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      @media (max-width: 920px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+
+        .thread {
+          border-right: 0;
+        }
+
+        .inspector {
+          min-height: 520px;
+          border-top: 1px solid var(--border);
+        }
+
+        .composer {
+          grid-template-columns: 1fr;
+        }
+
+        .controls {
+          min-width: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <strong>Document Intelligence Workspace</strong>
+          <span>Source-cited QA with validation and review</span>
+        </div>
+        <div class="top-actions">
+          <a href="/"><button type="button">Dashboard</button></a>
+          <a href="/docs"><button type="button">API</button></a>
+          <button id="refreshButton" type="button">Refresh</button>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="thread" aria-label="Answer thread">
+          <div id="threadScroll" class="thread-scroll">
+            <article class="message system">
+              <div class="message-header">
+                <span>Workspace</span>
+                <span id="healthStatus">Checking database...</span>
+              </div>
+              <p class="answer-text">Ask a question or run a structured extraction against the loaded document corpus. The answer, evidence, validation result, AI-run metadata, and review status will stay visible in one workspace.</p>
+            </article>
+            <div id="messages"></div>
+          </div>
+
+          <form id="askForm" class="composer">
+            <textarea id="queryInput" aria-label="Question or extraction instruction">Extract the method, dataset, metric, and limitation from the cited paper section.</textarea>
+            <div class="controls">
+              <div class="inline-controls">
+                <select id="modeSelect" aria-label="Retrieval mode">
+                  <option value="hybrid">hybrid</option>
+                  <option value="vector">vector</option>
+                  <option value="lexical">lexical</option>
+                </select>
+                <input id="topKInput" aria-label="Top K" type="number" min="1" max="12" value="3">
+              </div>
+              <button id="askButton" class="primary" type="submit">Run</button>
+            </div>
+          </form>
+        </section>
+
+        <aside class="inspector" aria-label="Evidence and review inspector">
+          <nav class="tabs" aria-label="Inspector tabs">
+            <button type="button" class="tab active" data-tab="evidence">Evidence</button>
+            <button type="button" class="tab" data-tab="run">Run</button>
+            <button type="button" class="tab" data-tab="review">Review</button>
+          </nav>
+          <div class="inspector-scroll">
+            <section id="evidencePanel" class="tab-panel"></section>
+            <section id="runPanel" class="tab-panel" hidden></section>
+            <section id="reviewPanel" class="tab-panel" hidden></section>
+          </div>
+        </aside>
+      </main>
+    </div>
+
+    <script>
+      const state = {
+        answer: null,
+        suggestions: [],
+        activeTab: "evidence"
+      };
+
+      const messages = document.getElementById("messages");
+      const evidencePanel = document.getElementById("evidencePanel");
+      const runPanel = document.getElementById("runPanel");
+      const reviewPanel = document.getElementById("reviewPanel");
+      const askForm = document.getElementById("askForm");
+      const askButton = document.getElementById("askButton");
+      const queryInput = document.getElementById("queryInput");
+      const modeSelect = document.getElementById("modeSelect");
+      const topKInput = document.getElementById("topKInput");
+      const healthStatus = document.getElementById("healthStatus");
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function statusPill(label, status) {
+        return `<span class="pill ${status}">${escapeHtml(label)}</span>`;
+      }
+
+      function renderAnswerBody(value) {
+        const lines = String(value || "").split("\\n");
+        return lines.map((line) => {
+          if (line.startsWith("## ")) {
+            return escapeHtml(line.slice(3));
+          }
+          if (line.startsWith("# ")) {
+            return escapeHtml(line.slice(2));
+          }
+          return escapeHtml(line);
+        }).join("<br>");
+      }
+
+      function shortId(value) {
+        if (!value) return "";
+        return String(value).slice(0, 8);
+      }
+
+      function renderThread() {
+        if (!state.answer) {
+          return;
+        }
+        const answer = state.answer.answer || {};
+        const validation = state.answer.citation_validation || {};
+        const fields = answer.extracted_fields || {};
+        const fieldHtml = Object.entries(fields).map(([key, value]) => `
+          <div class="field">
+            <label>${escapeHtml(key)}</label>
+            <div>${escapeHtml(value)}</div>
+          </div>
+        `).join("");
+
+        messages.innerHTML = `
+          <article class="message user">
+            <div class="message-header">
+              <span>User</span>
+              <span>${escapeHtml(state.answer.mode)} retrieval</span>
+            </div>
+            <p class="answer-text">${escapeHtml(state.answer.query)}</p>
+          </article>
+          <article class="message assistant">
+            <div class="message-header">
+              <span>Assistant</span>
+              <span>${validation.valid ? "citations valid" : "citation issue"}</span>
+            </div>
+            <p class="answer-text">${renderAnswerBody(answer.answer || "")}</p>
+            ${fieldHtml ? `<div class="field-grid">${fieldHtml}</div>` : ""}
+          </article>
+        `;
+        document.getElementById("threadScroll").scrollTop = document.getElementById("threadScroll").scrollHeight;
+      }
+
+      function renderEvidence() {
+        if (!state.answer) {
+          evidencePanel.innerHTML = `
+            <div class="panel">
+              <h2>Evidence</h2>
+              <p class="empty">Run a question to inspect retrieved chunks, scores, and citation validation.</p>
+            </div>
+          `;
+          return;
+        }
+
+        const validation = state.answer.citation_validation || {};
+        const chunks = state.answer.retrieved_chunks || [];
+        const validationClass = validation.valid ? "ok" : "danger";
+        evidencePanel.innerHTML = `
+          <div class="panel">
+            <h2>Citation validation</h2>
+            ${statusPill(validation.valid ? "valid" : "invalid", validationClass)}
+            <pre>${escapeHtml(JSON.stringify(validation, null, 2))}</pre>
+          </div>
+          <div class="panel">
+            <h2>Retrieved chunks</h2>
+            ${chunks.length ? chunks.map(renderChunk).join("") : `<p class="empty">No chunks retrieved.</p>`}
+          </div>
+        `;
+      }
+
+      function renderChunk(chunk) {
+        const heading = (chunk.heading_path || []).join(" / ") || "Untitled section";
+        return `
+          <article class="chunk">
+            <div class="chunk-header">
+              <span>${escapeHtml(heading)}</span>
+              <span>score ${escapeHtml(chunk.score)} | lex ${escapeHtml(chunk.lexical_score)} | vec ${escapeHtml(chunk.vector_score)}</span>
+            </div>
+            <p>${escapeHtml(chunk.text)}</p>
+            <pre>chunk_id: ${escapeHtml(chunk.chunk_id)}
+document_id: ${escapeHtml(chunk.document_id)}
+version_id: ${escapeHtml(chunk.version_id)}</pre>
+          </article>
+        `;
+      }
+
+      function renderRun() {
+        if (!state.answer) {
+          runPanel.innerHTML = `
+            <div class="panel">
+              <h2>AI run</h2>
+              <p class="empty">No AI run selected.</p>
+            </div>
+          `;
+          return;
+        }
+
+        runPanel.innerHTML = `
+          <div class="panel">
+            <h2>Run metadata</h2>
+            <div class="meta-grid">
+              <span>Run ID</span><code>${escapeHtml(state.answer.ai_run_id)}</code>
+              <span>Suggestion</span><code>${escapeHtml(state.answer.suggestion_id)}</code>
+              <span>Provider</span><span>${escapeHtml(state.answer.llm_provider)}</span>
+              <span>Model</span><span>${escapeHtml(state.answer.llm_model)}</span>
+              <span>Embedding</span><span>${escapeHtml(state.answer.embedding_model)}</span>
+              <span>Mode</span><span>${escapeHtml(state.answer.mode)}</span>
+              <span>Evidence</span><span>${escapeHtml((state.answer.retrieved_chunks || []).length)} chunks</span>
+            </div>
+          </div>
+          <div class="panel">
+            <h2>Raw output</h2>
+            <pre>${escapeHtml(JSON.stringify(state.answer.answer, null, 2))}</pre>
+          </div>
+        `;
+      }
+
+      function renderReview() {
+        const currentSuggestionId = state.answer?.suggestion_id;
+        const current = state.suggestions.find((item) => item.id === currentSuggestionId);
+        if (!state.answer) {
+          reviewPanel.innerHTML = `
+            <div class="panel">
+              <h2>Review</h2>
+              <p class="empty">Run a question to create a pending review suggestion.</p>
+            </div>
+          `;
+          return;
+        }
+
+        if (!current) {
+          reviewPanel.innerHTML = `
+            <div class="panel">
+              <h2>Review</h2>
+              <p class="empty">Suggestion ${escapeHtml(shortId(currentSuggestionId))} is no longer pending.</p>
+            </div>
+          `;
+          return;
+        }
+
+        reviewPanel.innerHTML = `
+          <div class="panel review-card">
+            <h2>Pending suggestion</h2>
+            <div class="meta-grid">
+              <span>Status</span><span>${statusPill(current.status, current.status === "pending" ? "warn" : "ok")}</span>
+              <span>ID</span><code>${escapeHtml(current.id)}</code>
+              <span>AI run</span><code>${escapeHtml(current.ai_run_id)}</code>
+              <span>Type</span><span>${escapeHtml(current.suggestion_type)}</span>
+            </div>
+            <div class="review-actions">
+              <button type="button" class="primary" data-review="accept">Accept</button>
+              <button type="button" data-review="edit">Mark edited</button>
+              <button type="button" class="danger" data-review="reject">Reject</button>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderPanels() {
+        renderEvidence();
+        renderRun();
+        renderReview();
+      }
+
+      async function requestJson(url, options = {}) {
+        const response = await fetch(url, {
+          headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+          ...options
+        });
+        if (!response.ok) {
+          const detail = await response.text();
+          throw new Error(`${response.status} ${detail}`);
+        }
+        return response.json();
+      }
+
+      async function refreshHealth() {
+        const health = await requestJson("/health");
+        healthStatus.textContent = `${health.documents} docs | ${health.chunks} chunks | ${health.pending_suggestions} pending`;
+      }
+
+      async function refreshSuggestions() {
+        const payload = await requestJson("/review/suggestions?status=pending");
+        state.suggestions = payload.suggestions || [];
+      }
+
+      async function runAsk(event) {
+        event.preventDefault();
+        askButton.disabled = true;
+        askButton.textContent = "Running...";
+        try {
+          const query = queryInput.value.trim();
+          if (!query) {
+            throw new Error("Question is required.");
+          }
+          state.answer = await requestJson("/ask", {
+            method: "POST",
+            body: JSON.stringify({
+              query,
+              mode: modeSelect.value,
+              top_k: Number(topKInput.value || 3),
+              ensure_embeddings: true,
+              create_suggestion: true
+            })
+          });
+          await refreshSuggestions();
+          renderThread();
+          renderPanels();
+          switchTab("evidence");
+          await refreshHealth();
+        } catch (error) {
+          messages.innerHTML += `
+            <article class="message system">
+              <div class="message-header"><span>Error</span><span>request failed</span></div>
+              <p class="answer-text">${escapeHtml(error.message)}</p>
+            </article>
+          `;
+        } finally {
+          askButton.disabled = false;
+          askButton.textContent = "Run";
+        }
+      }
+
+      async function submitReview(decision) {
+        if (!state.answer?.suggestion_id) return;
+        await requestJson(`/review/suggestions/${state.answer.suggestion_id}/decision`, {
+          method: "POST",
+          body: JSON.stringify({
+            decision,
+            reviewer: "local-user",
+            note: decision === "accept" ? "Accepted from workspace." : `Marked ${decision} from workspace.`
+          })
+        });
+        await refreshSuggestions();
+        renderPanels();
+        await refreshHealth();
+      }
+
+      function switchTab(tabName) {
+        state.activeTab = tabName;
+        document.querySelectorAll(".tab").forEach((button) => {
+          button.classList.toggle("active", button.dataset.tab === tabName);
+        });
+        document.querySelectorAll(".tab-panel").forEach((panel) => {
+          panel.hidden = panel.id !== `${tabName}Panel`;
+        });
+      }
+
+      askForm.addEventListener("submit", runAsk);
+      document.getElementById("refreshButton").addEventListener("click", async () => {
+        await refreshHealth();
+        await refreshSuggestions();
+        renderPanels();
+      });
+      document.querySelectorAll(".tab").forEach((button) => {
+        button.addEventListener("click", () => switchTab(button.dataset.tab));
+      });
+      reviewPanel.addEventListener("click", async (event) => {
+        const button = event.target.closest("[data-review]");
+        if (!button) return;
+        button.disabled = true;
+        try {
+          await submitReview(button.dataset.review);
+        } finally {
+          button.disabled = false;
+        }
+      });
+
+      refreshHealth()
+        .then(refreshSuggestions)
+        .then(renderPanels)
+        .catch((error) => {
+          healthStatus.textContent = "Database unavailable";
+          messages.innerHTML = `
+            <article class="message system">
+              <div class="message-header"><span>Error</span><span>startup check failed</span></div>
+              <p class="answer-text">${escapeHtml(error.message)}</p>
+            </article>
+          `;
+          renderPanels();
+        });
+    </script>
+  </body>
+</html>
+"""
 
 
 app = create_app()

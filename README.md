@@ -13,7 +13,7 @@ The project is built to prove a controlled document AI loop, not a generic chat-
 7. Route AI outputs through human review decisions.
 8. Evaluate retrieval quality, citation validity, refusal behaviour, and structured extraction.
 
-## v1.0.0 Scope
+## v1.1.0 Scope
 
 Implemented:
 
@@ -56,6 +56,7 @@ Implemented:
 - CLI commands for listing suggestions and recording review decisions.
 - FastAPI backend exposing ingestion, embedding, question answering, AI-run inspection, and human review.
 - Minimal browser dashboard for documents, pending review suggestions, and recent AI runs.
+- Agent-style review workspace with answer thread, evidence inspector, AI-run metadata, and review actions.
 - Demo ML/NLP extraction sources.
 - Unit tests for normalisation, ingestion, chunking, CLI behaviour, persistence, embeddings, and retrieval.
 - Starter golden evaluation cases.
@@ -63,7 +64,7 @@ Implemented:
 
 Next build slice:
 
-- Next.js review workspace with document/chunk inspection, answer review, and evaluation dashboard.
+- Review workspace improvements for document/chunk browsing, evaluation inspection, and richer answer editing.
 
 ## Design Goals
 
@@ -74,7 +75,7 @@ The workspace is designed for long-form technical documents where answers need t
 ```text
 document-intelligence-workspace/
   src/diw/core/        # Domain logic that should remain framework-light
-  src/diw/api.py       # FastAPI app and minimal dashboard
+  src/diw/api.py       # FastAPI app, dashboard, and review workspace
   tests/               # Unit tests for deterministic core logic
   docs/                # Architecture, evaluation, and deployment notes
   data/demo/           # Public/synthetic demo sources and eval cases
@@ -119,7 +120,7 @@ POSTGRES_TEST_DATABASE_URL="$DATABASE_URL" \
 
 In PostgreSQL, `embed` stores vectors in both `chunk_embeddings` and the pgvector-backed `chunk_embedding_vectors` table. `vector` and `hybrid` retrieval modes use pgvector similarity search when running against PostgreSQL.
 
-## v1.0.0 Demo
+## v1.1.0 Demo
 
 Start the local API and browser dashboard:
 
@@ -131,6 +132,7 @@ Open:
 
 ```text
 http://127.0.0.1:8000/
+http://127.0.0.1:8000/workspace
 http://127.0.0.1:8000/docs
 ```
 
