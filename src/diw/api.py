@@ -254,7 +254,7 @@ def create_app(
 
     app = FastAPI(
         title="Document Intelligence Workspace",
-        version="1.7.0",
+        version="1.8.0",
         lifespan=lifespan,
     )
 
@@ -864,6 +864,57 @@ def _workspace_html() -> str:
         overflow: auto;
       }
 
+      .study-card {
+        display: grid;
+        gap: 10px;
+      }
+
+      .study-section {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: #fbfcfd;
+        padding: 10px;
+      }
+
+      .study-section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 6px;
+      }
+
+      .study-section h4 {
+        margin: 0;
+        font-size: 13px;
+      }
+
+      .study-section textarea {
+        width: 100%;
+        min-height: 74px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 8px;
+        resize: vertical;
+        background: white;
+      }
+
+      .study-section.needs-attention {
+        border-color: #dec58f;
+        background: #fffaf0;
+      }
+
+      .provenance-details {
+        border-top: 1px solid var(--border);
+        margin-top: 10px;
+        padding-top: 10px;
+      }
+
+      .provenance-details summary {
+        cursor: pointer;
+        color: var(--muted);
+      }
+
       .message-header {
         display: flex;
         align-items: center;
@@ -1311,7 +1362,6 @@ def _workspace_html() -> str:
             <button type="button" class="tab" data-tab="runs">Runs</button>
             <button type="button" class="tab" data-tab="eval">Eval</button>
             <button type="button" class="tab" data-tab="corpus">Corpus</button>
-            <button type="button" class="tab" data-tab="paperCard">Card</button>
             <button type="button" class="tab" data-tab="run">Run</button>
           </nav>
           <div class="inspector-scroll">
@@ -1338,6 +1388,7 @@ def _workspace_html() -> str:
         selectedVersionId: null,
         selectedChunkId: null,
         paperCard: null,
+        editedCardFields: {},
         paperCards: [],
         paperCardsDir: "",
         reviewDecision: null,
@@ -1425,6 +1476,91 @@ def _workspace_html() -> str:
         ].join("|");
       }
 
+      const studyFieldLabels = {
+        core_idea: "Core idea",
+        problem: "Problem",
+        method: "Method",
+        dataset: "Dataset / corpus",
+        metric: "Metrics",
+        result: "Results",
+        limitation: "Limitations"
+      };
+
+      function fieldNeedsAttention(value) {
+        return !value || value === "Not identified in source." || value === "Needs review.";
+      }
+
+      function cardFieldValue(key) {
+        return state.editedCardFields[key] ?? state.paperCard?.extracted_fields?.[key] ?? "";
+      }
+
+      function renderStudyCardEditor() {
+        const fields = Object.keys(studyFieldLabels).map((key) => {
+          const value = cardFieldValue(key);
+          const needsAttention = fieldNeedsAttention(value);
+          return `
+            <section class="study-section ${needsAttention ? "needs-attention" : ""}">
+              <div class="study-section-header">
+                <h4>${escapeHtml(studyFieldLabels[key])}</h4>
+                ${needsAttention ? statusPill("needs attention", "warn") : statusPill("source-backed", "ok")}
+              </div>
+              <textarea data-card-field="${escapeHtml(key)}" aria-label="${escapeHtml(studyFieldLabels[key])}">${escapeHtml(needsAttention ? "" : value)}</textarea>
+            </section>
+          `;
+        }).join("");
+        return `
+          <div class="study-card">
+            ${fields}
+            <details class="provenance-details">
+              <summary>Provenance</summary>
+              <pre>${escapeHtml((state.paperCard.source_chunk_ids || []).join("\\n"))}</pre>
+            </details>
+          </div>
+        `;
+      }
+
+      function buildEditedPaperCardMarkdown() {
+        if (!state.paperCard) return "";
+        const evidence = (state.paperCard.source_chunk_ids || [])
+          .map((chunkId, index) => `- [C${index + 1}] \\`${chunkId}\\``)
+          .join("\\n");
+        return [
+          `# ${state.paperCard.title}`,
+          "",
+          "## Core Idea",
+          "",
+          cardFieldValue("core_idea") || "Not identified in source.",
+          "",
+          "## Problem",
+          "",
+          cardFieldValue("problem") || "Not identified in source.",
+          "",
+          "## Method",
+          "",
+          cardFieldValue("method") || "Not identified in source.",
+          "",
+          "## Dataset",
+          "",
+          cardFieldValue("dataset") || "Not identified in source.",
+          "",
+          "## Metrics",
+          "",
+          cardFieldValue("metric") || "Not identified in source.",
+          "",
+          "## Results",
+          "",
+          cardFieldValue("result") || "Not identified in source.",
+          "",
+          "## Limitations",
+          "",
+          cardFieldValue("limitation") || "Not identified in source.",
+          "",
+          "## Source Evidence",
+          "",
+          evidence
+        ].join("\\n");
+      }
+
       function renderPaperWorkspace() {
         const documentRecord = selectedDocument();
         const version = selectedVersion();
@@ -1446,10 +1582,10 @@ def _workspace_html() -> str:
               <p>${escapeHtml(state.workflowStatus)}</p>
             </div>
             <div class="paper-workspace-actions">
-              <button type="button" data-workspace-action="preview">Extract claims</button>
-              <button type="button" class="primary" data-workspace-action="generate" ${latestEvidence ? "" : "disabled"}>Generate study answer</button>
-              <button type="button" data-workspace-action="draft-card" ${state.selectedVersionId ? "" : "disabled"}>Draft paper card</button>
-              <button type="button" data-workspace-action="save-card" ${state.paperCard ? "" : "disabled"}>Save to wiki</button>
+              <button type="button" data-workspace-action="preview">Find evidence</button>
+              <button type="button" class="primary" data-workspace-action="generate" ${latestEvidence ? "" : "disabled"}>Generate study card</button>
+              <button type="button" data-workspace-action="draft-card" ${state.selectedVersionId ? "" : "disabled"}>Review card</button>
+              <button type="button" data-workspace-action="save-card" ${state.paperCard ? "" : "disabled"}>Save note</button>
               <button type="button" data-workspace-action="create-eval" ${state.answer && state.reviewDecision ? "" : "disabled"}>Create eval case</button>
             </div>
           </div>
@@ -1458,7 +1594,6 @@ def _workspace_html() -> str:
               <h3>Source and evidence</h3>
               <div class="paper-summary">
                 <span>Document</span><span>${escapeHtml(documentRecord?.source_name || "none")}</span>
-                <span>Version</span><code>${escapeHtml(version?.id || "none")}</code>
                 <span>Selected</span><span>${escapeHtml(chunk ? ((chunk.heading_path || []).join(" / ") || `chunk ${chunk.chunk_index}`) : "none")}</span>
                 <span>Evidence</span><span>${escapeHtml(latestEvidence ? `${(latestEvidence.retrieved_chunks || []).length} retrieved chunks` : "not previewed")}</span>
                 <span>Review</span><span>${escapeHtml(reviewState)}</span>
@@ -1467,7 +1602,7 @@ def _workspace_html() -> str:
                 ${state.chunks.length ? state.chunks.slice(0, 6).map((item) => `
                   <button type="button" class="paper-chunk ${item.id === state.selectedChunkId ? "active" : ""}" data-workspace-chunk-id="${escapeHtml(item.id)}">
                     ${escapeHtml((item.heading_path || []).join(" / ") || `Chunk ${item.chunk_index}`)}
-                    <small>lines ${escapeHtml(item.start_line)}-${escapeHtml(item.end_line)} | ${escapeHtml(shortId(item.content_hash))}</small>
+                    <small>lines ${escapeHtml(item.start_line)}-${escapeHtml(item.end_line)}</small>
                   </button>
                 `).join("") : `<p class="empty">No chunks loaded for the selected version.</p>`}
               </div>
@@ -1486,7 +1621,7 @@ def _workspace_html() -> str:
                 ` : ""}
               </div>
               ${state.paperCard ? `
-                <pre class="paper-artifact-preview">${escapeHtml(state.paperCard.markdown)}</pre>
+                ${renderStudyCardEditor()}
               ` : state.answer ? `
                 <div class="field">
                   <label>Generated answer</label>
@@ -1893,7 +2028,7 @@ version_id: ${escapeHtml(chunk.version_id)}</pre>
 
       async function draftPaperCard() {
         if (!state.selectedVersionId) return;
-        state.workflowStatus = "Drafting paper card...";
+        state.workflowStatus = "Preparing study card...";
         renderPanels();
         state.paperCard = await requestJson("/paper-cards/draft", {
           method: "POST",
@@ -1902,7 +2037,8 @@ version_id: ${escapeHtml(chunk.version_id)}</pre>
             create_suggestion: false
           })
         });
-        state.workflowStatus = "Paper card drafted";
+        state.editedCardFields = { ...(state.paperCard.extracted_fields || {}) };
+        state.workflowStatus = "Study card ready for review";
         await refreshSuggestions();
         await refreshRuns();
         renderPanels();
@@ -1910,13 +2046,13 @@ version_id: ${escapeHtml(chunk.version_id)}</pre>
 
       async function savePaperCard() {
         if (!state.paperCard) return;
-        state.workflowStatus = "Saving paper card...";
+        state.workflowStatus = "Saving study note...";
         renderPanels();
         const savedArtifact = await requestJson("/paper-cards/save", {
           method: "POST",
           body: JSON.stringify({
             title: state.paperCard.title,
-            markdown: state.paperCard.markdown,
+            markdown: buildEditedPaperCardMarkdown(),
             suggestion_id: state.paperCard.suggestion_id
           })
         });
@@ -1935,7 +2071,7 @@ version_id: ${escapeHtml(chunk.version_id)}</pre>
             throw new Error("Question is required.");
           }
           state.answer = null;
-          state.workflowStatus = "Extracting evidence...";
+          state.workflowStatus = "Finding source evidence...";
           state.preview = await requestJson("/retrieval-preview", {
             method: "POST",
             body: JSON.stringify({
@@ -1945,7 +2081,7 @@ version_id: ${escapeHtml(chunk.version_id)}</pre>
               ensure_embeddings: true
             })
           });
-          state.workflowStatus = `Evidence extracted: ${(state.preview.retrieved_chunks || []).length} chunks`;
+          state.workflowStatus = `Evidence found: ${(state.preview.retrieved_chunks || []).length} chunks`;
           generateButton.disabled = false;
           renderThread();
           renderPanels();
@@ -1975,11 +2111,11 @@ version_id: ${escapeHtml(chunk.version_id)}</pre>
           }
           const requestKey = currentRequestKey();
           if (state.answer && state.lastAnswerKey === requestKey) {
-            state.workflowStatus = "Answer already generated for this request";
+            state.workflowStatus = "Study card already generated for this request";
             renderPanels();
             return;
           }
-          state.workflowStatus = "Generating study answer...";
+          state.workflowStatus = "Generating study card...";
           state.answer = await requestJson("/ask", {
             method: "POST",
             body: JSON.stringify({
@@ -1990,7 +2126,7 @@ version_id: ${escapeHtml(chunk.version_id)}</pre>
               create_suggestion: true
             })
           });
-          state.workflowStatus = "Study answer generated";
+          state.workflowStatus = "Study card generated";
           state.lastAnswerKey = requestKey;
           state.preview = null;
           state.reviewDecision = null;
@@ -2106,6 +2242,11 @@ version_id: ${escapeHtml(chunk.version_id)}</pre>
         } finally {
           button.disabled = false;
         }
+      });
+      paperWorkspace.addEventListener("input", (event) => {
+        const field = event.target.closest("[data-card-field]");
+        if (!field) return;
+        state.editedCardFields[field.dataset.cardField] = field.value;
       });
       document.getElementById("refreshButton").addEventListener("click", async () => {
         await refreshHealth();

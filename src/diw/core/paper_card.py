@@ -37,7 +37,7 @@ def build_paper_card(
         "core_idea": _first_sentence(chunks) or "Not identified in source.",
         "problem": _extract_field("problem", chunks, ["problem", "challenge", "motivation"]),
         "method": _extract_field("method", chunks, ["method", "approach", "pipeline", "system"]),
-        "dataset": _extract_field("dataset", chunks, ["dataset", "corpus", "data", "source"]),
+        "dataset": _extract_field("dataset", chunks, ["dataset", "corpus", "data"]),
         "metric": _extract_field("metric", chunks, ["metric", "evaluation", "benchmark", "score"]),
         "result": _extract_field("result", chunks, ["result", "finding", "outcome", "performance"]),
         "limitation": _extract_field("limitation", chunks, ["limitation", "constraint", "risk", "failure"]),

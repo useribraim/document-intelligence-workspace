@@ -13,7 +13,7 @@ The project is built to prove a controlled document AI loop, not a generic chat-
 7. Route AI outputs through human review decisions.
 8. Evaluate retrieval quality, citation validity, refusal behaviour, and structured extraction.
 
-## v1.7.0 Scope
+## v1.8.0 Scope
 
 Implemented:
 
@@ -63,13 +63,16 @@ Implemented:
 - Evaluation-case API and workspace Eval tab for review-derived cases.
 - Corpus browser in the workspace for documents, versions, chunks, and chunk provenance.
 - Markdown paper-card compiler for turning reviewed document versions into durable study artifacts.
-- Paper-card draft/save API and workspace Paper Card tab.
+- Paper-card draft/save API.
 - Paper Workspace view that keeps the selected paper, chunks, evidence state, generated answer, review state, and study artifact actions in one flow.
-- Direct workspace actions for extracting claims, generating from evidence, drafting a paper card, saving to the wiki, and creating review-derived eval cases.
+- Direct workspace actions for finding evidence, generating a study card, reviewing the card, saving the note, and creating review-derived eval cases.
 - Heading-aware paper-card field extraction for unlabeled source sections.
 - Visible workflow status updates for evidence extraction, answer generation, card drafting, saving, review, and eval-case creation.
 - Workspace draft action avoids creating duplicate pending review suggestions for repeated paper-card drafts.
 - Saved paper-card confirmations include path and timestamp.
+- Rendered study-card editor with editable Core Idea, Problem, Method, Dataset, Metrics, Results, and Limitations fields.
+- Missing or weak fields are marked as needing attention instead of being presented as finished output.
+- Technical provenance is hidden behind a disclosure in the main workflow instead of dominating the study card.
 - Demo ML/NLP extraction sources.
 - Unit tests for normalisation, ingestion, chunking, CLI behaviour, persistence, embeddings, and retrieval.
 - Starter golden evaluation cases.
