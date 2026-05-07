@@ -13,7 +13,7 @@ The project is built to prove a controlled document AI loop, not a generic chat-
 7. Route AI outputs through human review decisions.
 8. Evaluate retrieval quality, citation validity, refusal behaviour, and structured extraction.
 
-## v1.8.0 Scope
+## v1.8.1 Scope
 
 Implemented:
 
@@ -73,6 +73,10 @@ Implemented:
 - Rendered study-card editor with editable Core Idea, Problem, Method, Dataset, Metrics, Results, and Limitations fields.
 - Missing or weak fields are marked as needing attention instead of being presented as finished output.
 - Technical provenance is hidden behind a disclosure in the main workflow instead of dominating the study card.
+- Card review lifecycle with Build card, Accept card, and Save note actions.
+- Save note is gated until required fields are present and the card is accepted.
+- Source text is collapsed by default behind a Show source text disclosure.
+- Study-card status badges show lifecycle state, required missing count, and needs-attention count.
 - Demo ML/NLP extraction sources.
 - Unit tests for normalisation, ingestion, chunking, CLI behaviour, persistence, embeddings, and retrieval.
 - Starter golden evaluation cases.
