@@ -254,7 +254,7 @@ def create_app(
 
     app = FastAPI(
         title="Document Intelligence Workspace",
-        version="1.8.1",
+        version="1.8.2",
         lifespan=lifespan,
     )
 
@@ -804,11 +804,9 @@ def _workspace_html() -> str:
       }
 
       .paper-workspace-actions {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: flex-start;
-        justify-content: flex-end;
+        display: grid;
         gap: 8px;
+        min-width: 360px;
       }
 
       .status-row {
@@ -818,10 +816,43 @@ def _workspace_html() -> str:
         margin-top: 8px;
       }
 
+      .step-row {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 6px;
+      }
+
+      .step-button {
+        min-width: 0;
+        white-space: normal;
+        text-align: center;
+      }
+
+      .step-button.primary-step {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+      }
+
+      .step-button.completed-step {
+        border-color: #b8d7c0;
+        background: #f0faf2;
+      }
+
+      .step-helper {
+        color: var(--muted);
+        font-size: 13px;
+        text-align: right;
+      }
+
       .paper-workspace-grid {
         display: grid;
         grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.15fr);
         gap: 0;
+      }
+
+      .paper-workspace-grid.has-card {
+        grid-template-columns: minmax(300px, 0.78fr) minmax(420px, 1.35fr);
       }
 
       .paper-workspace-column {
@@ -848,6 +879,16 @@ def _workspace_html() -> str:
 
       .paper-summary span:nth-child(odd) {
         color: var(--muted);
+      }
+
+      .details-panel {
+        margin-bottom: 12px;
+      }
+
+      .details-panel summary {
+        cursor: pointer;
+        color: var(--muted);
+        font-size: 13px;
       }
 
       .paper-chunk-list {
@@ -1293,8 +1334,16 @@ def _workspace_html() -> str:
         }
 
         .paper-workspace-actions {
-          justify-content: flex-start;
+          min-width: 0;
           margin-top: 12px;
+        }
+
+        .step-row {
+          grid-template-columns: 1fr;
+        }
+
+        .step-helper {
+          text-align: left;
         }
 
         .paper-workspace-column + .paper-workspace-column {
@@ -1540,6 +1589,84 @@ def _workspace_html() -> str:
         return "Not started";
       }
 
+      function currentStep() {
+        if (state.savedArtifact) return "saved";
+        if (state.cardAccepted) return "save";
+        if (state.paperCard) return "accept";
+        if (state.answer) return "build";
+        if (state.preview) return "generate";
+        return "evidence";
+      }
+
+      function primaryActionForStep() {
+        return {
+          evidence: "preview",
+          generate: "generate",
+          build: "draft-card",
+          accept: "accept-card",
+          save: "save-card",
+          saved: ""
+        }[currentStep()];
+      }
+
+      function stepHelperText() {
+        return {
+          evidence: "Find source sections before generating a card.",
+          generate: "Generate a draft from the selected evidence.",
+          build: "Review extracted fields and fill missing required sections.",
+          accept: "Accept the card when the required fields are complete.",
+          save: "Accept the card before saving the note.",
+          saved: "Note saved."
+        }[currentStep()];
+      }
+
+      function stepIsComplete(action) {
+        if (action === "preview") return Boolean(state.preview || state.answer || state.paperCard);
+        if (action === "generate") return Boolean(state.answer || state.paperCard);
+        if (action === "draft-card") return Boolean(state.paperCard);
+        if (action === "accept-card") return Boolean(state.cardAccepted || state.savedArtifact);
+        if (action === "save-card") return Boolean(state.savedArtifact);
+        return false;
+      }
+
+      function renderStepRow(canAcceptCard, canSaveNote, latestEvidence) {
+        const primaryAction = primaryActionForStep();
+        const steps = [
+          ["preview", "1 Find evidence", true],
+          ["generate", "2 Generate draft", Boolean(latestEvidence)],
+          ["draft-card", "3 Build card", Boolean(state.selectedVersionId)],
+          ["accept-card", "4 Accept", canAcceptCard && !state.cardAccepted],
+          ["save-card", "5 Save", canSaveNote]
+        ];
+        const buttons = steps.map(([action, label, enabled]) => {
+          const isPrimary = action === primaryAction;
+          const isComplete = stepIsComplete(action);
+          return `
+            <button type="button"
+              class="step-button ${isPrimary ? "primary-step" : ""} ${isComplete ? "completed-step" : ""}"
+              data-workspace-action="${escapeHtml(action)}"
+              ${enabled ? "" : "disabled"}>
+              ${escapeHtml(label)}
+            </button>
+          `;
+        }).join("");
+        return `
+          <div class="step-row">${buttons}</div>
+          <div class="step-helper">${escapeHtml(stepHelperText())}</div>
+        `;
+      }
+
+      function renderCompactStatus(latestEvidence, attentionCount, missingRequired) {
+        return `
+          <div class="status-row">
+            ${statusPill(`${latestEvidence ? (latestEvidence.retrieved_chunks || []).length : 0} evidence sections`, latestEvidence ? "ok" : "")}
+            ${statusPill(cardLifecycleStatus(), state.cardAccepted || state.savedArtifact ? "ok" : state.paperCard ? "warn" : "")}
+            ${state.paperCard ? statusPill(`Needs attention: ${attentionCount}`, attentionCount ? "warn" : "ok") : ""}
+            ${state.paperCard ? statusPill(`Required missing: ${missingRequired}`, missingRequired ? "danger" : "ok") : ""}
+          </div>
+        `;
+      }
+
       function renderStudyCardEditor() {
         const fields = Object.keys(studyFieldLabels).map((key) => {
           const value = cardFieldValue(key);
@@ -1631,22 +1758,13 @@ def _workspace_html() -> str:
               <h2>${escapeHtml(documentRecord?.source_name || "No paper selected")}</h2>
               <p>${escapeHtml(version ? `${state.chunks.length} source sections | Study card: ${cardState}` : "Load a document before using the paper workspace.")}</p>
               <p>${escapeHtml(state.workflowStatus)}</p>
-              <div class="status-row">
-                ${statusPill(cardLifecycleStatus(), state.cardAccepted || state.savedArtifact ? "ok" : state.paperCard ? "warn" : "")}
-                ${state.paperCard ? statusPill(`Needs attention: ${attentionCount}`, attentionCount ? "warn" : "ok") : ""}
-                ${state.paperCard ? statusPill(`Required missing: ${missingRequired}`, missingRequired ? "danger" : "ok") : ""}
-              </div>
+              ${renderCompactStatus(latestEvidence, attentionCount, missingRequired)}
             </div>
             <div class="paper-workspace-actions">
-              <button type="button" data-workspace-action="preview">Find evidence</button>
-              <button type="button" class="primary" data-workspace-action="generate" ${latestEvidence ? "" : "disabled"}>Generate study card</button>
-              <button type="button" data-workspace-action="draft-card" ${state.selectedVersionId ? "" : "disabled"}>Build card</button>
-              <button type="button" data-workspace-action="accept-card" ${canAcceptCard && !state.cardAccepted ? "" : "disabled"}>Accept card</button>
-              <button type="button" class="primary" data-workspace-action="save-card" ${canSaveNote ? "" : "disabled"}>Save note</button>
-              <button type="button" data-workspace-action="create-eval" ${state.answer && state.reviewDecision ? "" : "disabled"}>Create eval case</button>
+              ${renderStepRow(canAcceptCard, canSaveNote, latestEvidence)}
             </div>
           </div>
-          <div class="paper-workspace-grid">
+          <div class="paper-workspace-grid ${state.paperCard ? "has-card" : ""}">
             <div class="paper-workspace-column">
               <h3>Source and evidence</h3>
               <div class="paper-summary">
@@ -1671,18 +1789,21 @@ def _workspace_html() -> str:
               ` : ""}
             </div>
             <div class="paper-workspace-column">
-              <h3>Study artifact</h3>
-              <div class="paper-summary">
-                <span>Answer</span><span>${escapeHtml(state.answer ? (extractedFieldCount ? `${extractedFieldCount} extracted fields` : "generated answer") : "not generated")}</span>
-                <span>Citations</span><span>${escapeHtml(state.answer?.citation_validation?.valid === true ? "valid" : state.answer ? "needs attention" : "not checked")}</span>
-                <span>Study card</span><span>${escapeHtml(cardLifecycleStatus())}</span>
-                ${state.paperCard ? `<span>Needs attention</span><span>${escapeHtml(attentionCount)}</span>` : ""}
-                <span>Saved cards</span><span>${escapeHtml(state.paperCards.length)}</span>
-                ${state.savedArtifact ? `
-                  <span>Saved path</span><code>${escapeHtml(state.savedArtifact.path)}</code>
-                  <span>Saved at</span><span>${escapeHtml(state.savedArtifact.saved_at)}</span>
-                ` : ""}
-              </div>
+              <h3>Study card</h3>
+              <details class="details-panel">
+                <summary>Details</summary>
+                <div class="paper-summary">
+                  <span>Answer</span><span>${escapeHtml(state.answer ? (extractedFieldCount ? `${extractedFieldCount} extracted fields` : "generated answer") : "not generated")}</span>
+                  <span>Citations</span><span>${escapeHtml(state.answer?.citation_validation?.valid === true ? "valid" : state.answer ? "needs attention" : "not checked")}</span>
+                  <span>Study card</span><span>${escapeHtml(cardLifecycleStatus())}</span>
+                  ${state.paperCard ? `<span>Needs attention</span><span>${escapeHtml(attentionCount)}</span>` : ""}
+                  <span>Saved cards</span><span>${escapeHtml(state.paperCards.length)}</span>
+                  ${state.savedArtifact ? `
+                    <span>Saved path</span><code>${escapeHtml(state.savedArtifact.path)}</code>
+                    <span>Saved at</span><span>${escapeHtml(state.savedArtifact.saved_at)}</span>
+                  ` : ""}
+                </div>
+              </details>
               ${state.paperCard ? `
                 ${renderStudyCardEditor()}
               ` : state.answer ? `
@@ -1701,7 +1822,10 @@ def _workspace_html() -> str:
                   </div>
                 ` : ""}
               ` : `
-                <p class="empty">Preview evidence, generate an answer, then draft a paper card from the selected version.</p>
+                <div class="field">
+                  <label>No study card yet</label>
+                  <div>Find evidence, generate a draft, then build the editable card.</div>
+                </div>
               `}
             </div>
           </div>
