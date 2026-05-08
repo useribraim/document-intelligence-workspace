@@ -1413,9 +1413,9 @@ def _workspace_html() -> str:
                 </select>
                 <input id="topKInput" aria-label="Top K" type="number" min="1" max="12" value="3">
               </div>
-              <div class="technical-actions">
-                <button id="previewButton" class="secondary" type="button">Preview evidence</button>
-                <button id="generateButton" class="primary" type="submit" disabled>Generate from evidence</button>
+              <div class="technical-actions" hidden aria-hidden="true">
+                <button id="previewButton" class="secondary" type="button" tabindex="-1">Preview evidence</button>
+                <button id="generateButton" class="primary" type="submit" tabindex="-1" disabled>Generate from evidence</button>
               </div>
             </div>
             </form>
@@ -1458,6 +1458,7 @@ def _workspace_html() -> str:
         selectedChunkId: null,
         paperCard: null,
         cardAccepted: false,
+        cardNeedsReview: false,
         editedCardFields: {},
         editedFieldKeys: [],
         paperCards: [],
@@ -1583,6 +1584,7 @@ def _workspace_html() -> str:
       function cardLifecycleStatus() {
         if (state.savedArtifact) return "Saved";
         if (state.cardAccepted) return "Accepted";
+        if (state.cardNeedsReview) return "Needs review";
         if (state.paperCard) return requiredMissingCount() ? "Needs review" : "Ready to accept";
         if (state.answer) return "Generated";
         if (state.preview) return "Evidence found";
@@ -1615,7 +1617,7 @@ def _workspace_html() -> str:
           generate: "Generate a draft from the selected evidence.",
           build: "Review extracted fields and fill missing required sections.",
           accept: "Accept the card when the required fields are complete.",
-          save: "Accept the card before saving the note.",
+          save: "Save the accepted card as a Markdown note.",
           saved: "Note saved."
         }[currentStep()];
       }
@@ -2227,6 +2229,7 @@ version_id: ${escapeHtml(chunk.version_id)}</pre>
         state.editedCardFields = { ...(state.paperCard.extracted_fields || {}) };
         state.editedFieldKeys = [];
         state.cardAccepted = false;
+        state.cardNeedsReview = false;
         state.savedArtifact = null;
         state.workflowStatus = "Study card ready for review";
         await refreshSuggestions();
@@ -2323,6 +2326,7 @@ version_id: ${escapeHtml(chunk.version_id)}</pre>
           state.preview = null;
           state.reviewDecision = null;
           state.cardAccepted = false;
+          state.cardNeedsReview = false;
           state.savedArtifact = null;
           await refreshSuggestions();
           await refreshRuns();
@@ -2429,6 +2433,7 @@ version_id: ${escapeHtml(chunk.version_id)}</pre>
           if (button.dataset.workspaceAction === "accept-card") {
             if (requiredMissingCount() === 0) {
               state.cardAccepted = true;
+              state.cardNeedsReview = false;
               state.workflowStatus = "Card accepted";
               renderPanels();
             }
@@ -2452,6 +2457,7 @@ version_id: ${escapeHtml(chunk.version_id)}</pre>
         }
         if (state.cardAccepted) {
           state.cardAccepted = false;
+          state.cardNeedsReview = true;
           state.workflowStatus = "Card changed; review required";
           renderPanels();
         }
