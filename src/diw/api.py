@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 from uuid import uuid4
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session, sessionmaker
@@ -98,6 +98,8 @@ class PaperCardSaveRequest(BaseModel):
 
 EVAL_CASES_PATH = Path("data/demo/evals/review_cases.jsonl")
 PAPER_CARDS_DIR = Path("data/demo/wiki/paper_cards")
+UPLOADED_DOCUMENTS_DIR = Path("data/demo/raw/uploads")
+SUPPORTED_IMPORT_SUFFIXES = {".md", ".txt"}
 
 
 def _isoformat(value) -> str | None:
@@ -236,10 +238,40 @@ def _list_paper_cards(directory: Path = PAPER_CARDS_DIR) -> list[dict]:
     return cards
 
 
+def _safe_upload_name(filename: str) -> str:
+    source_name = Path(filename or "document.md").name
+    safe_name = "".join(char if char.isalnum() or char in {"-", "_", "."} else "-" for char in source_name)
+    safe_name = safe_name.strip(".-")
+    return safe_name or "document.md"
+
+
+def _write_uploaded_document(
+    filename: str,
+    content: bytes,
+    directory: Path = UPLOADED_DOCUMENTS_DIR,
+) -> Path:
+    safe_name = _safe_upload_name(filename)
+    suffix = Path(safe_name).suffix.lower()
+    if suffix not in SUPPORTED_IMPORT_SUFFIXES:
+        raise HTTPException(status_code=400, detail="only .md and .txt uploads are supported")
+    if not content.strip():
+        raise HTTPException(status_code=400, detail="uploaded document is empty")
+    directory.mkdir(parents=True, exist_ok=True)
+    destination = directory / safe_name
+    if destination.exists():
+        stem = destination.stem
+        suffix = destination.suffix
+        timestamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
+        destination = directory / f"{stem}-{timestamp}{suffix}"
+    destination.write_bytes(content)
+    return destination
+
+
 def create_app(
     database_url: str | None = None,
     evaluation_cases_path: Path = EVAL_CASES_PATH,
     paper_cards_dir: Path = PAPER_CARDS_DIR,
+    uploaded_documents_dir: Path = UPLOADED_DOCUMENTS_DIR,
 ) -> FastAPI:
     engine = build_engine(database_url)
     SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
@@ -346,6 +378,32 @@ def create_app(
             "version_id": document.version_id,
             "chunk_count": len(document.chunks),
             "content_hash": document.content_hash,
+        }
+
+    @app.post("/documents/import")
+    async def import_document(
+        request: Request,
+        filename: str = Query(...),
+        target_chars: int = Query(1200, gt=0),
+        overlap_chars: int = Query(160, ge=0),
+        session: Session = Depends(get_session),
+    ):
+        content = await request.body()
+        path = _write_uploaded_document(filename, content, directory=uploaded_documents_dir)
+        document = ingest_file(
+            path,
+            target_chars=target_chars,
+            overlap_chars=overlap_chars,
+        )
+        save_ingested_document(session, document)
+        session.commit()
+        return {
+            "document_id": document.document_id,
+            "version_id": document.version_id,
+            "chunk_count": len(document.chunks),
+            "content_hash": document.content_hash,
+            "source_name": document.source_name,
+            "source_path": str(path),
         }
 
     @app.get("/documents")
@@ -1051,6 +1109,29 @@ def _workspace_html() -> str:
         flex-wrap: wrap;
       }
 
+      .import-controls {
+        display: grid;
+        gap: 6px;
+      }
+
+      .import-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .import-row input[type="file"] {
+        max-width: 260px;
+        padding: 6px;
+      }
+
+      .import-status {
+        min-height: 18px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
       .technical-actions {
         display: none;
       }
@@ -1412,6 +1493,13 @@ def _workspace_html() -> str:
                   <option value="lexical">lexical</option>
                 </select>
                 <input id="topKInput" aria-label="Top K" type="number" min="1" max="12" value="3">
+              </div>
+              <div class="import-controls">
+                <div class="import-row">
+                  <input id="documentImportInput" aria-label="Import Markdown or text document" type="file" accept=".md,.txt,text/markdown,text/plain">
+                  <button id="documentImportButton" class="secondary" type="button">Import document</button>
+                </div>
+                <div id="documentImportStatus" class="import-status">Import .md or .txt to start from a new source.</div>
               </div>
               <div class="technical-actions" hidden aria-hidden="true">
                 <button id="previewButton" class="secondary" type="button" tabindex="-1">Preview evidence</button>
@@ -2149,8 +2237,9 @@ version_id: ${escapeHtml(chunk.version_id)}</pre>
       }
 
       async function requestJson(url, options = {}) {
+        const isRawBody = options.body instanceof FormData || options.body instanceof Blob;
         const response = await fetch(url, {
-          headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+          headers: { ...(isRawBody ? {} : { "Content-Type": "application/json" }), ...(options.headers || {}) },
           ...options
         });
         if (!response.ok) {
@@ -2187,6 +2276,60 @@ version_id: ${escapeHtml(chunk.version_id)}</pre>
         if (!state.selectedDocumentId && state.documents.length) {
           state.selectedDocumentId = state.documents[0].id;
           await loadDocumentVersions(state.selectedDocumentId);
+        }
+      }
+
+      function resetWorkspaceAnalysisState() {
+        state.answer = null;
+        state.preview = null;
+        state.paperCard = null;
+        state.cardAccepted = false;
+        state.cardNeedsReview = false;
+        state.editedCardFields = {};
+        state.editedFieldKeys = [];
+        state.savedArtifact = null;
+        state.reviewDecision = null;
+        state.lastAnswerKey = "";
+      }
+
+      async function importDocument() {
+        const file = documentImportInput.files?.[0];
+        if (!file) {
+          documentImportStatus.textContent = "Choose a .md or .txt file first.";
+          return;
+        }
+        const extension = file.name.toLowerCase().split(".").pop();
+        if (!["md", "txt"].includes(extension)) {
+          documentImportStatus.textContent = "Only .md and .txt files are supported.";
+          return;
+        }
+        documentImportButton.disabled = true;
+        documentImportStatus.textContent = "Importing document...";
+        try {
+          const params = new URLSearchParams({
+            filename: file.name,
+            target_chars: "1200",
+            overlap_chars: "160"
+          });
+          const imported = await requestJson(`/documents/import?${params.toString()}`, {
+            method: "POST",
+            body: file
+          });
+          resetWorkspaceAnalysisState();
+          state.selectedDocumentId = imported.document_id;
+          await refreshCorpus();
+          await loadDocumentVersions(imported.document_id);
+          state.selectedVersionId = imported.version_id;
+          await loadVersionChunks(imported.version_id);
+          state.workflowStatus = `Imported ${imported.source_name}`;
+          documentImportStatus.textContent = `${imported.source_name}: ${imported.chunk_count} chunks imported.`;
+          documentImportInput.value = "";
+          await refreshHealth();
+          renderPanels();
+        } catch (error) {
+          documentImportStatus.textContent = error.message;
+        } finally {
+          documentImportButton.disabled = false;
         }
       }
 
@@ -2410,6 +2553,7 @@ version_id: ${escapeHtml(chunk.version_id)}</pre>
 
       workflowForm.addEventListener("submit", runAsk);
       previewButton.addEventListener("click", previewEvidence);
+      documentImportButton.addEventListener("click", importDocument);
       paperWorkspace.addEventListener("click", async (event) => {
         const chunkButton = event.target.closest("[data-workspace-chunk-id]");
         if (chunkButton) {

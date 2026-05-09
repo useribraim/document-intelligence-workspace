@@ -181,6 +181,39 @@ class ApiTests(unittest.TestCase):
             finally:
                 engine.dispose()
 
+    def test_workspace_imports_uploaded_markdown_document(self):
+        with TemporaryDirectory() as tmp:
+            db = Path(tmp) / "diw.db"
+            uploads_dir = Path(tmp) / "uploads"
+            database_url = f"sqlite+pysqlite:///{db}"
+            with TestClient(create_app(database_url, uploaded_documents_dir=uploads_dir)) as client:
+                imported = client.post(
+                    "/documents/import",
+                    params={"filename": "uploaded-paper.md"},
+                    content=b"# Uploaded Paper\n\n## Method\n\nThe method uses chunk retrieval.\n",
+                    headers={"Content-Type": "text/markdown"},
+                )
+                self.assertEqual(imported.status_code, 200)
+                payload = imported.json()
+                self.assertEqual(payload["source_name"], "uploaded-paper.md")
+                self.assertGreaterEqual(payload["chunk_count"], 1)
+                self.assertTrue((uploads_dir / "uploaded-paper.md").exists())
+
+                documents = client.get("/documents").json()["documents"]
+                self.assertEqual(len(documents), 1)
+                self.assertEqual(documents[0]["source_name"], "uploaded-paper.md")
+
+                workspace = client.get("/workspace")
+                self.assertIn("Import document", workspace.text)
+                self.assertIn("Import .md or .txt", workspace.text)
+                self.assertIn("documents/import", workspace.text)
+
+            engine = build_engine(database_url)
+            try:
+                Base.metadata.drop_all(engine)
+            finally:
+                engine.dispose()
+
 
 if __name__ == "__main__":
     unittest.main()

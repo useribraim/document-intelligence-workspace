@@ -82,6 +82,8 @@ Implemented:
 - Dense answer/citation/save metadata is collapsed under Details in the study-card column.
 - Empty study-card state explains the next workflow steps.
 - The study-card column gets more space once a card exists.
+- Workspace import flow for uploading `.md` and `.txt` sources directly from the browser.
+- Imported documents are saved under `data/demo/raw/uploads`, ingested, persisted, and selected automatically.
 - Demo ML/NLP extraction sources.
 - Unit tests for normalisation, ingestion, chunking, CLI behaviour, persistence, embeddings, and retrieval.
 - Starter golden evaluation cases.
