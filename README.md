@@ -106,6 +106,11 @@ The workspace is designed for long-form technical documents where answers need t
 
 The project is evolving into a Research Knowledge & Action Assistant. The [flagship project guide](docs/flagship-project-guide.md) is the plain-language source of truth for its architecture, milestones, evaluation strategy, and interview demonstration. It distinguishes the implemented evidence-first baseline from the planned agent, identity, MCP, and Google Cloud work.
 
+Evaluation details are documented in [evaluation.md](docs/evaluation.md), and the current
+container/deployment boundary is recorded in [cloud-run-deployment.md](docs/cloud-run-deployment.md).
+The local bounded agent is implemented and tested; ADK, MCP, OAuth/OIDC, Cloud SQL deployment,
+and Vertex AI provider integration remain future work.
+
 ## Repository Layout
 
 ```text
