@@ -12,11 +12,19 @@ from diw.core.ingestion import IngestedDocument
 from diw.db.models import (
     AIRun,
     AISuggestion,
+    AgentRun,
+    AgentRunStep,
+    ApprovalRequest,
     Chunk,
     ChunkEmbedding,
     DocumentVersion,
+    ResearchRecord,
     ReviewDecision,
     SourceDocument,
+    StudyTask,
+    Tenant,
+    TenantDocumentAccess,
+    WorkspaceUser,
 )
 
 
@@ -100,6 +108,336 @@ def count_ai_suggestions(session: Session) -> int:
 
 def count_review_decisions(session: Session) -> int:
     return len(session.scalars(select(ReviewDecision.id)).all())
+
+
+def create_tenant(session: Session, *, slug: str, name: str) -> Tenant:
+    existing = session.scalar(select(Tenant).where(Tenant.slug == slug))
+    if existing is not None:
+        return existing
+
+    tenant = Tenant(
+        id=str(uuid4()),
+        slug=slug,
+        name=name,
+        created_at=datetime.now(timezone.utc),
+    )
+    session.add(tenant)
+    return tenant
+
+
+def create_workspace_user(
+    session: Session,
+    *,
+    tenant_id: str,
+    subject: str,
+    email: str,
+    display_name: str,
+    role: str,
+) -> WorkspaceUser:
+    if session.get(Tenant, tenant_id) is None:
+        raise ValueError(f"unknown tenant_id: {tenant_id}")
+
+    statement = select(WorkspaceUser).where(
+        WorkspaceUser.tenant_id == tenant_id,
+        WorkspaceUser.subject == subject,
+    )
+    existing = session.scalar(statement)
+    if existing is not None:
+        return existing
+
+    user = WorkspaceUser(
+        id=str(uuid4()),
+        tenant_id=tenant_id,
+        subject=subject,
+        email=email,
+        display_name=display_name,
+        role=role,
+        created_at=datetime.now(timezone.utc),
+    )
+    session.add(user)
+    return user
+
+
+def save_research_record(
+    session: Session,
+    *,
+    tenant_id: str,
+    record_type: str,
+    title: str,
+    payload: dict,
+    created_by_user_id: str | None = None,
+) -> ResearchRecord:
+    if session.get(Tenant, tenant_id) is None:
+        raise ValueError(f"unknown tenant_id: {tenant_id}")
+    if created_by_user_id is not None:
+        user = session.get(WorkspaceUser, created_by_user_id)
+        if user is None or user.tenant_id != tenant_id:
+            raise ValueError("research record user must belong to the same tenant")
+
+    now = datetime.now(timezone.utc)
+    record = ResearchRecord(
+        id=str(uuid4()),
+        tenant_id=tenant_id,
+        record_type=record_type,
+        title=title,
+        payload=payload,
+        created_by_user_id=created_by_user_id,
+        created_at=now,
+        updated_at=now,
+    )
+    session.add(record)
+    return record
+
+
+def get_research_record_for_tenant(
+    session: Session,
+    *,
+    tenant_id: str,
+    record_id: str,
+) -> ResearchRecord | None:
+    statement = select(ResearchRecord).where(
+        ResearchRecord.id == record_id,
+        ResearchRecord.tenant_id == tenant_id,
+    )
+    return session.scalar(statement)
+
+
+def grant_tenant_document_access(
+    session: Session,
+    *,
+    tenant_id: str,
+    document_id: str,
+) -> TenantDocumentAccess:
+    if session.get(Tenant, tenant_id) is None:
+        raise ValueError(f"unknown tenant_id: {tenant_id}")
+    if session.get(SourceDocument, document_id) is None:
+        raise ValueError(f"unknown document_id: {document_id}")
+
+    statement = select(TenantDocumentAccess).where(
+        TenantDocumentAccess.tenant_id == tenant_id,
+        TenantDocumentAccess.document_id == document_id,
+    )
+    existing = session.scalar(statement)
+    if existing is not None:
+        return existing
+
+    access = TenantDocumentAccess(
+        id=str(uuid4()),
+        tenant_id=tenant_id,
+        document_id=document_id,
+        granted_at=datetime.now(timezone.utc),
+    )
+    session.add(access)
+    return access
+
+
+def list_tenant_document_ids(session: Session, *, tenant_id: str) -> list[str]:
+    statement = select(TenantDocumentAccess.document_id).where(
+        TenantDocumentAccess.tenant_id == tenant_id
+    )
+    return list(session.scalars(statement).all())
+
+
+def create_agent_run(
+    session: Session,
+    *,
+    tenant_id: str,
+    actor_user_id: str,
+    query: str,
+    tool_policy_version: str,
+    max_steps: int,
+    trace_id: str,
+) -> AgentRun:
+    user = session.get(WorkspaceUser, actor_user_id)
+    if user is None or user.tenant_id != tenant_id:
+        raise ValueError("agent run actor must belong to the same tenant")
+    if max_steps <= 0:
+        raise ValueError("max_steps must be positive")
+
+    run = AgentRun(
+        id=str(uuid4()),
+        tenant_id=tenant_id,
+        actor_user_id=actor_user_id,
+        query=query,
+        status="running",
+        tool_policy_version=tool_policy_version,
+        max_steps=max_steps,
+        trace_id=trace_id,
+        output=None,
+        metrics={},
+        created_at=datetime.now(timezone.utc),
+        completed_at=None,
+    )
+    session.add(run)
+    return run
+
+
+def save_agent_run_step(
+    session: Session,
+    *,
+    agent_run_id: str,
+    sequence: int,
+    tool_name: str,
+    tool_args: dict,
+    observation: dict,
+    status: str,
+    latency_ms: int | None = None,
+    error_code: str | None = None,
+    metrics: dict | None = None,
+) -> AgentRunStep:
+    run = session.get(AgentRun, agent_run_id)
+    if run is None:
+        raise ValueError(f"unknown agent_run_id: {agent_run_id}")
+    if sequence < 1 or sequence > run.max_steps:
+        raise ValueError("agent step sequence is outside the run step budget")
+
+    step = AgentRunStep(
+        id=str(uuid4()),
+        agent_run_id=agent_run_id,
+        sequence=sequence,
+        tool_name=tool_name,
+        tool_args=tool_args,
+        observation=observation,
+        status=status,
+        error_code=error_code,
+        latency_ms=latency_ms,
+        metrics=metrics or {},
+        created_at=datetime.now(timezone.utc),
+    )
+    session.add(step)
+    return step
+
+
+def complete_agent_run(
+    session: Session,
+    *,
+    agent_run_id: str,
+    status: str,
+    output: dict,
+    metrics: dict | None = None,
+) -> AgentRun:
+    run = session.get(AgentRun, agent_run_id)
+    if run is None:
+        raise ValueError(f"unknown agent_run_id: {agent_run_id}")
+    if run.status != "running":
+        raise ValueError(f"agent run is already {run.status}")
+    if status not in {"completed", "approval_pending", "refused", "failed"}:
+        raise ValueError(f"unsupported agent run status: {status}")
+
+    run.status = status
+    run.output = output
+    run.metrics = metrics or {}
+    run.completed_at = datetime.now(timezone.utc)
+    return run
+
+
+def create_approval_request(
+    session: Session,
+    *,
+    tenant_id: str,
+    requested_by_user_id: str,
+    action_type: str,
+    action_payload: dict,
+    idempotency_key: str,
+    agent_run_id: str | None = None,
+) -> ApprovalRequest:
+    user = session.get(WorkspaceUser, requested_by_user_id)
+    if user is None or user.tenant_id != tenant_id:
+        raise ValueError("approval requester must belong to the same tenant")
+    if action_type != "create_study_task":
+        raise ValueError(f"unsupported approval action: {action_type}")
+    if agent_run_id is not None:
+        run = session.get(AgentRun, agent_run_id)
+        if run is None or run.tenant_id != tenant_id:
+            raise ValueError("approval run must belong to the same tenant")
+
+    statement = select(ApprovalRequest).where(
+        ApprovalRequest.tenant_id == tenant_id,
+        ApprovalRequest.idempotency_key == idempotency_key,
+    )
+    existing = session.scalar(statement)
+    if existing is not None:
+        return existing
+
+    request = ApprovalRequest(
+        id=str(uuid4()),
+        tenant_id=tenant_id,
+        requested_by_user_id=requested_by_user_id,
+        agent_run_id=agent_run_id,
+        action_type=action_type,
+        action_payload=action_payload,
+        idempotency_key=idempotency_key,
+        status="pending",
+        approved_by_user_id=None,
+        decision_note=None,
+        created_at=datetime.now(timezone.utc),
+        decided_at=None,
+    )
+    session.add(request)
+    return request
+
+
+def decide_approval_request(
+    session: Session,
+    *,
+    tenant_id: str,
+    approval_request_id: str,
+    approver_user_id: str,
+    decision: str,
+    note: str | None = None,
+) -> ApprovalRequest:
+    request = session.get(ApprovalRequest, approval_request_id)
+    if request is None or request.tenant_id != tenant_id:
+        raise ValueError("unknown approval request for tenant")
+    approver = session.get(WorkspaceUser, approver_user_id)
+    if approver is None or approver.tenant_id != tenant_id or approver.role != "manager":
+        raise ValueError("approval requires a manager from the same tenant")
+    if request.status != "pending":
+        raise ValueError(f"approval request is already {request.status}")
+    if decision not in {"approve", "reject"}:
+        raise ValueError(f"unsupported approval decision: {decision}")
+
+    request.status = "approved" if decision == "approve" else "rejected"
+    request.approved_by_user_id = approver_user_id
+    request.decision_note = note
+    request.decided_at = datetime.now(timezone.utc)
+    return request
+
+
+def create_study_task_from_approval(
+    session: Session,
+    *,
+    tenant_id: str,
+    approval_request_id: str,
+) -> StudyTask:
+    request = session.get(ApprovalRequest, approval_request_id)
+    if request is None or request.tenant_id != tenant_id:
+        raise ValueError("unknown approval request for tenant")
+    if request.status != "approved" or request.action_type != "create_study_task":
+        raise ValueError("study task requires an approved create_study_task request")
+
+    existing = session.scalar(
+        select(StudyTask).where(StudyTask.approval_request_id == approval_request_id)
+    )
+    if existing is not None:
+        return existing
+
+    title = request.action_payload.get("title")
+    details = request.action_payload.get("details", "")
+    if not isinstance(title, str) or not title.strip() or not isinstance(details, str):
+        raise ValueError("study task approval payload requires title and string details")
+
+    task = StudyTask(
+        id=str(uuid4()),
+        tenant_id=tenant_id,
+        approval_request_id=approval_request_id,
+        title=title.strip(),
+        details=details,
+        status="open",
+        created_at=datetime.now(timezone.utc),
+    )
+    session.add(task)
+    return task
 
 
 def list_source_documents(session: Session) -> list[SourceDocument]:
