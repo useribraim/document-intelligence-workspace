@@ -6,7 +6,8 @@ The project should not rely on spot-checking or "looks good" demos. Evaluation i
 
 ## First Metrics
 
-- `retrieval_recall_at_5`: whether expected evidence appears in the top five retrieved chunks.
+- `retrieval_recall_at_k`: the proportion of expected evidence phrases found in the retrieved top-k chunks.
+- `retrieval_mrr`: the reciprocal rank of the first retrieved chunk containing expected evidence.
 - `citation_validity_rate`: whether citations point to chunks that support the generated claim.
 - `schema_validity_rate`: whether structured outputs pass validation.
 - `extraction_accuracy`: field-level match against golden answers.
@@ -27,6 +28,9 @@ Release target:
 - 50-100 total golden cases.
 - At least one saved evaluation report in `docs/eval-results.md`.
 - At least three diagnosed failures with fixes or tradeoff notes.
+
+The current runner reports both `retrieval_recall_at_k` and `retrieval_mrr` in its JSON and
+Markdown output. The existing 12-case report is a baseline, not the final release target.
 
 ## Evaluation Case Shape
 
