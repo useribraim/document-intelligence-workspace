@@ -269,6 +269,7 @@ def create_agent_run(
         completed_at=None,
     )
     session.add(run)
+    session.flush()
     return run
 
 
