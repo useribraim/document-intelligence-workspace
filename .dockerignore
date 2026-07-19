@@ -1,0 +1,12 @@
+.git
+.venv
+.pytest_cache
+.ruff_cache
+__pycache__
+*.py[cod]
+*.db
+postgres_data
+.env
+.DS_Store
+data/demo/raw/uploads
+data/demo/wiki/paper_cards
