@@ -10,15 +10,17 @@ from uuid import uuid4
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
+from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
 from diw.core.embeddings import LocalHashingEmbeddingProvider
+from diw.core.agent import run_bounded_agent
 from diw.core.ingestion import ingest_file
 from diw.core.llm import DeterministicStructuredProvider, OpenAIChatProvider, generate_structured_answer
 from diw.core.paper_card import PaperCardChunk, build_paper_card
 from diw.core.qa import validate_citations
 from diw.core.retrieval import retrieval_results_as_dicts, retrieve_chunks
-from diw.db.models import AIRun, AISuggestion, Chunk, DocumentVersion, SourceDocument
+from diw.db.models import AIRun, AISuggestion, AgentRun, AgentRunStep, Chunk, DocumentVersion, SourceDocument
 from diw.db.repository import (
     count_ai_suggestions,
     count_chunks,
@@ -61,6 +63,15 @@ class RetrievalPreviewRequest(BaseModel):
     query: str
     mode: str = Field(default="hybrid", pattern="^(lexical|vector|hybrid)$")
     top_k: int = Field(default=5, gt=0)
+    dimensions: int = Field(default=64, gt=0)
+    ensure_embeddings: bool = True
+
+
+class AgentRunRequest(BaseModel):
+    tenant_id: str = Field(min_length=1, max_length=36)
+    actor_user_id: str = Field(min_length=1, max_length=36)
+    query: str = Field(min_length=1, max_length=2_000)
+    max_steps: int = Field(default=5, ge=1, le=5)
     dimensions: int = Field(default=64, gt=0)
     ensure_embeddings: bool = True
 
@@ -455,6 +466,63 @@ def create_app(
             "mode": request.mode,
             "embedding_model": embedding_provider.model_name,
             "retrieved_chunks": retrieval_results_as_dicts(results),
+        }
+
+    @app.post("/agent-runs")
+    def agent_run(request: AgentRunRequest, session: Session = Depends(get_session)):
+        embedding_provider = LocalHashingEmbeddingProvider(dimensions=request.dimensions)
+        if request.ensure_embeddings:
+            embed_missing_chunks(session, embedding_provider)
+            session.flush()
+
+        payload = run_bounded_agent(
+            session,
+            tenant_id=request.tenant_id,
+            actor_user_id=request.actor_user_id,
+            query=request.query,
+            embedding_provider=embedding_provider,
+            max_steps=request.max_steps,
+        )
+        session.commit()
+        return payload
+
+    @app.get("/agent-runs/{agent_run_id}")
+    def agent_run_details(
+        agent_run_id: str,
+        tenant_id: str = Query(..., min_length=1, max_length=36),
+        session: Session = Depends(get_session),
+    ):
+        run = session.get(AgentRun, agent_run_id)
+        if run is None or run.tenant_id != tenant_id:
+            raise HTTPException(status_code=404, detail="agent run not found")
+        steps = session.scalars(
+            select(AgentRunStep)
+            .where(AgentRunStep.agent_run_id == run.id)
+            .order_by(AgentRunStep.sequence)
+        ).all()
+        return {
+            "agent_run_id": run.id,
+            "tenant_id": run.tenant_id,
+            "status": run.status,
+            "query": run.query,
+            "trace_id": run.trace_id,
+            "tool_policy_version": run.tool_policy_version,
+            "max_steps": run.max_steps,
+            "output": run.output,
+            "metrics": run.metrics,
+            "steps": [
+                {
+                    "id": step.id,
+                    "sequence": step.sequence,
+                    "tool_name": step.tool_name,
+                    "tool_args": step.tool_args,
+                    "observation": step.observation,
+                    "status": step.status,
+                    "error_code": step.error_code,
+                    "latency_ms": step.latency_ms,
+                }
+                for step in steps
+            ],
         }
 
     @app.post("/ask")
