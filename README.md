@@ -40,6 +40,11 @@ Implemented:
 - Prompt version metadata on generated answers.
 - Golden-case evaluation runner for structured extraction, citation validity, and refusal behaviour.
 - Persistent AI run records for answer generation and evaluation reports.
+- Local bounded agent core with typed tools, a five-step budget, duplicate-call protection,
+  tenant-scoped document retrieval, and durable per-step audit records.
+- Tenant, user, research-record, approval-request, and idempotent study-task persistence for
+  the forthcoming research action workflow.
+- Manager approval gate before a study task can be created.
 - Audit metadata for query, retrieval mode, embedding model, LLM provider/model, prompt version, retrieved chunks, citation validity, refusal status, output payload, and metrics.
 - PostgreSQL runtime path through Docker Compose and `DATABASE_URL`.
 - Optional PostgreSQL integration test for ingest, embedding, retrieval, structured answer generation, and citation validation.
@@ -96,6 +101,10 @@ Next build slice:
 ## Design Goals
 
 The workspace is designed for long-form technical documents where answers need to stay tied to source evidence. It stores document versions, chunk hashes, retrieval metadata, generated outputs, and review decisions so the system remains inspectable after the initial model call.
+
+## Flagship Evolution
+
+The project is evolving into a Research Knowledge & Action Assistant. The [flagship project guide](docs/flagship-project-guide.md) is the plain-language source of truth for its architecture, milestones, evaluation strategy, and interview demonstration. It distinguishes the implemented evidence-first baseline from the planned agent, identity, MCP, and Google Cloud work.
 
 ## Repository Layout
 
