@@ -5,18 +5,35 @@ from contextlib import contextmanager
 import gc
 
 from diw.core.ingestion import ingest_file
-from diw.db.models import AIRun, AISuggestion, Base, Chunk, DocumentVersion, SourceDocument
+from diw.db.models import (
+    AIRun,
+    AISuggestion,
+    AgentRunStep,
+    Base,
+    Chunk,
+    DocumentVersion,
+    SourceDocument,
+)
 from diw.db.repository import (
+    create_agent_run,
+    create_approval_request,
+    create_study_task_from_approval,
+    create_tenant,
+    create_workspace_user,
     count_ai_runs,
     count_ai_suggestions,
     count_chunks,
     count_documents,
     count_review_decisions,
     count_versions,
+    decide_approval_request,
+    get_research_record_for_tenant,
     record_review_decision,
+    save_agent_run_step,
     save_ai_run,
     save_ai_suggestion,
     save_ingested_document,
+    save_research_record,
 )
 from diw.db.session import build_engine
 from sqlalchemy import select
@@ -159,6 +176,113 @@ class RepositoryTests(unittest.TestCase):
             self.assertEqual(review.decision, "accept")
             self.assertEqual(review.reviewer, "reviewer@example.com")
 
+    def test_tenant_scoped_research_records_and_approved_study_tasks(self):
+        with self._session() as session:
+            alpha = create_tenant(session, slug="alpha-research", name="Alpha Research")
+            beta = create_tenant(session, slug="beta-research", name="Beta Research")
+            researcher = create_workspace_user(
+                session,
+                tenant_id=alpha.id,
+                subject="researcher-1",
+                email="researcher@alpha.example",
+                display_name="Researcher",
+                role="researcher",
+            )
+            manager = create_workspace_user(
+                session,
+                tenant_id=alpha.id,
+                subject="manager-1",
+                email="manager@alpha.example",
+                display_name="Manager",
+                role="manager",
+            )
+            record = save_research_record(
+                session,
+                tenant_id=alpha.id,
+                record_type="paper",
+                title="Grounded Agent Evaluation",
+                payload={"reading_status": "in_progress"},
+                created_by_user_id=researcher.id,
+            )
+            run = create_agent_run(
+                session,
+                tenant_id=alpha.id,
+                actor_user_id=researcher.id,
+                query="Create a follow-up task.",
+                tool_policy_version="agent-policy-v1",
+                max_steps=5,
+                trace_id="trace-alpha-1",
+            )
+            step = save_agent_run_step(
+                session,
+                agent_run_id=run.id,
+                sequence=1,
+                tool_name="get_research_record",
+                tool_args={"record_id": record.id},
+                observation={"record_found": True},
+                status="completed",
+                latency_ms=12,
+            )
+            request = create_approval_request(
+                session,
+                tenant_id=alpha.id,
+                requested_by_user_id=researcher.id,
+                agent_run_id=run.id,
+                action_type="create_study_task",
+                action_payload={"title": "Review evaluation section", "details": "Read section 4."},
+                idempotency_key="create-task-alpha-1",
+            )
+            duplicate = create_approval_request(
+                session,
+                tenant_id=alpha.id,
+                requested_by_user_id=researcher.id,
+                action_type="create_study_task",
+                action_payload={"title": "Ignored duplicate", "details": ""},
+                idempotency_key="create-task-alpha-1",
+            )
+            session.commit()
+
+            self.assertIsNotNone(session.get(AgentRunStep, step.id))
+            self.assertEqual(request.id, duplicate.id)
+            self.assertEqual(
+                get_research_record_for_tenant(session, tenant_id=alpha.id, record_id=record.id).id,
+                record.id,
+            )
+            self.assertIsNone(
+                get_research_record_for_tenant(session, tenant_id=beta.id, record_id=record.id)
+            )
+
+            decide_approval_request(
+                session,
+                tenant_id=alpha.id,
+                approval_request_id=request.id,
+                approver_user_id=manager.id,
+                decision="approve",
+                note="Useful follow-up.",
+            )
+            task = create_study_task_from_approval(
+                session,
+                tenant_id=alpha.id,
+                approval_request_id=request.id,
+            )
+            duplicate_task = create_study_task_from_approval(
+                session,
+                tenant_id=alpha.id,
+                approval_request_id=request.id,
+            )
+            session.commit()
+
+            self.assertEqual(task.id, duplicate_task.id)
+            self.assertEqual(task.title, "Review evaluation section")
+            with self.assertRaisesRegex(ValueError, "unknown approval request for tenant"):
+                create_study_task_from_approval(
+                    session,
+                    tenant_id=beta.id,
+                    approval_request_id=request.id,
+                )
+
 
 if __name__ == "__main__":
     unittest.main()
+    decide_approval_request,
+    get_research_record_for_tenant,
