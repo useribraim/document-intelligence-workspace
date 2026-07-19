@@ -6,7 +6,13 @@ from diw.core.embeddings import LocalHashingEmbeddingProvider
 from diw.core.ingestion import ingest_file
 from diw.core.retrieval import retrieve_chunks
 from diw.db.models import Base
-from diw.db.repository import count_embeddings, embed_missing_chunks, save_ingested_document
+from diw.db.repository import (
+    count_embeddings,
+    create_tenant,
+    embed_missing_chunks,
+    grant_tenant_document_access,
+    save_ingested_document,
+)
 from diw.db.session import build_engine
 from sqlalchemy.orm import Session
 
@@ -65,6 +71,44 @@ class RetrievalTests(unittest.TestCase):
                 self.assertEqual(len(results), 1)
                 self.assertIn("Method", results[0].heading_path)
                 self.assertIn("hybrid retrieval", results[0].text.lower())
+        finally:
+            engine.dispose()
+
+    def test_document_scope_prevents_cross_tenant_retrieval(self):
+        engine = build_engine("sqlite+pysqlite:///:memory:")
+        provider = LocalHashingEmbeddingProvider(dimensions=32)
+        Base.metadata.create_all(engine)
+        try:
+            with TemporaryDirectory() as tmp, Session(engine) as session:
+                alpha_path = Path(tmp) / "alpha.md"
+                beta_path = Path(tmp) / "beta.md"
+                alpha_path.write_text("# Alpha\n\nPrivate alpha retrieval evidence.\n", encoding="utf-8")
+                beta_path.write_text("# Beta\n\nPrivate beta retrieval evidence.\n", encoding="utf-8")
+                alpha_document = ingest_file(alpha_path, target_chars=220, overlap_chars=0)
+                beta_document = ingest_file(beta_path, target_chars=220, overlap_chars=0)
+                save_ingested_document(session, alpha_document)
+                save_ingested_document(session, beta_document)
+                embed_missing_chunks(session, provider)
+                alpha_tenant = create_tenant(session, slug="alpha", name="Alpha")
+                beta_tenant = create_tenant(session, slug="beta", name="Beta")
+                grant_tenant_document_access(
+                    session, tenant_id=alpha_tenant.id, document_id=alpha_document.document_id
+                )
+                grant_tenant_document_access(
+                    session, tenant_id=beta_tenant.id, document_id=beta_document.document_id
+                )
+                session.commit()
+
+                results = retrieve_chunks(
+                    session,
+                    "private evidence",
+                    provider,
+                    top_k=5,
+                    document_ids={alpha_document.document_id},
+                )
+
+                self.assertEqual({result.document_id for result in results}, {alpha_document.document_id})
+                self.assertTrue(all("alpha" in result.text.lower() for result in results))
         finally:
             engine.dispose()
 
