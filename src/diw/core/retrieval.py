@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import re
 
-from sqlalchemy import select, text
+from sqlalchemy import bindparam, select, text
 from sqlalchemy.orm import Session
 
 from diw.core.embeddings import EmbeddingProvider, cosine_similarity
@@ -68,11 +68,14 @@ def retrieve_chunks(
     *,
     top_k: int = 5,
     mode: str = "hybrid",
+    document_ids: set[str] | None = None,
 ) -> list[RetrievalResult]:
     if top_k <= 0:
         raise ValueError("top_k must be positive")
     if mode not in {"lexical", "vector", "hybrid"}:
         raise ValueError("mode must be one of: lexical, vector, hybrid")
+    if document_ids is not None and not document_ids:
+        return []
 
     if (
         mode in {"vector", "hybrid"}
@@ -85,17 +88,21 @@ def retrieve_chunks(
             provider,
             top_k=top_k,
             mode=mode,
+            document_ids=document_ids,
         )
 
     query_vector = provider.embed(query)
-    rows = session.execute(
+    statement = (
         select(Chunk, ChunkEmbedding, DocumentVersion)
         .join(ChunkEmbedding, ChunkEmbedding.chunk_id == Chunk.id)
         .join(DocumentVersion, DocumentVersion.id == Chunk.version_id)
         .where(ChunkEmbedding.embedding_model == provider.model_name)
         .where(ChunkEmbedding.dimensions == provider.dimensions)
         .where(ChunkEmbedding.content_hash == Chunk.content_hash)
-    ).all()
+    )
+    if document_ids is not None:
+        statement = statement.where(DocumentVersion.document_id.in_(document_ids))
+    rows = session.execute(statement).all()
 
     results: list[RetrievalResult] = []
     for chunk, embedding, version in rows:
@@ -132,12 +139,15 @@ def _retrieve_chunks_postgres_pgvector(
     *,
     top_k: int,
     mode: str,
+    document_ids: set[str] | None,
 ) -> list[RetrievalResult]:
     query_vector = provider.embed(query)
     candidate_limit = top_k if mode == "vector" else max(top_k * 8, 20)
-    rows = session.execute(
-        text(
-            """
+    document_filter = ""
+    if document_ids is not None:
+        document_filter = "AND dv.document_id IN :document_ids"
+    statement = text(
+        f"""
             SELECT
                 c.id AS chunk_id,
                 dv.document_id AS document_id,
@@ -152,16 +162,24 @@ def _retrieve_chunks_postgres_pgvector(
             WHERE cev.embedding_model = :embedding_model
               AND cev.dimensions = :dimensions
               AND cev.content_hash = c.content_hash
+              {document_filter}
             ORDER BY cev.vector <=> CAST(:query_vector AS vector)
             LIMIT :candidate_limit
             """
-        ),
-        {
-            "query_vector": _vector_literal(query_vector),
-            "embedding_model": provider.model_name,
-            "dimensions": provider.dimensions,
-            "candidate_limit": candidate_limit,
-        },
+    )
+    if document_ids is not None:
+        statement = statement.bindparams(bindparam("document_ids", expanding=True))
+    params = {
+        "query_vector": _vector_literal(query_vector),
+        "embedding_model": provider.model_name,
+        "dimensions": provider.dimensions,
+        "candidate_limit": candidate_limit,
+    }
+    if document_ids is not None:
+        params["document_ids"] = sorted(document_ids)
+    rows = session.execute(
+        statement,
+        params,
     ).mappings()
 
     results: list[RetrievalResult] = []
