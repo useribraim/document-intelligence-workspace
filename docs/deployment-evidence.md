@@ -73,6 +73,19 @@ Gemini generation, exact-quote citation validation, and unsupported-query refusa
 errors. It uses bundled synthetic documents and ephemeral SQLite; the public demo
 remains deterministic and read-only.
 
+## 2026-07-27 public-release calibration revision
+
+- Revision: `document-intelligence-workspace-00007-5b6`
+- Traffic: 100% assigned to this revision
+- Public `GET /`, `/demo`, `/evidence`, `/signin`, and `/health`: HTTP 200
+- Protected `GET /workspace` without identity: HTTP 403
+- Revision scaling: minimum zero, maximum one instance
+- Public landing page: 140 balanced calibration questions with human labels explicitly pending
+- Calibration artifact: 112 aligned claim-citation pairs in each blinded annotator packet
+
+The post-deployment smoke check confirmed the cleaned public copy, removed career-oriented wording,
+kept protected routes fail-closed, and exposed no human agreement or accuracy claim.
+
 ## Cost controls
 
 - Scale to zero
