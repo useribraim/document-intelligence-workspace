@@ -10,7 +10,7 @@ against a live external system.
 | Google OAuth/OIDC | Live-validated | The deployed verifier accepted a Google ID token for the configured audience and resolved tenant membership server-side. | Redacted validation record in [`deployment-evidence.md`](deployment-evidence.md) |
 | Vertex AI | Live-validated | A Cloud Run Job used `gemini-embedding-001` and `gemini-2.5-flash`, recorded token/model provenance and retrieved chunks, validated an exact citation, and refused an unsupported query. | [`vertex-cloud-run-smoke.json`](../results/evidence/vertex-cloud-run-smoke.json) and [validation notes](integrations/vertex-ai-validation.md) |
 | MCP | Client-validated | An external MCP client discovered both read-only stdio tools, invoked evidence and record lookup, and confirmed that cross-tenant access and tenant-argument injection fail safely. | [`mcp-stdio-validation.json`](../results/evidence/mcp-stdio-validation.json) and [validation notes](integrations/mcp-stdio-validation.md) |
-| Human calibration | Incomplete | The rubric and two blank 72-record annotation templates exist. No human accuracy, agreement, or Cohen's kappa is published. | [Calibration runbook](human-calibration-runbook.md) |
+| Human calibration | Instrument ready; labels incomplete | A reproducible 140-question instrument has 28 cases in each of five strata and two blank, aligned packets with 112 claim-citation pairs each. No human accuracy, agreement, or Cohen's kappa is published. | [Calibration manifest](../data/audit/calibration/v2_manifest.json) and [runbook](human-calibration-runbook.md) |
 
 ## Interpretation boundaries
 

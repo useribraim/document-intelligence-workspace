@@ -43,13 +43,20 @@ Both redacted records are under [`results/evidence/`](../results/evidence/).
 
 ## Human calibration
 
-Human support labels are pending. Automated support diagnostics and model-assisted review are not
-used as substitutes. The completion gate is defined in
+The V2 controlled instrument contains 140 questions: 28 each for supported, partially supported,
+unsupported, misleading-context, and refusal cases. Each blinded packet has 140 answer-level
+records and 112 aligned claim-citation pairs. Deterministic generation checks the counts, hashes,
+case balance, packet alignment, label blankness, and absence of author strata from the reviewer
+files.
+
+Human support labels remain pending. The author-designed strata and automated diagnostics are not
+used as substitutes. The independence and completion gates are defined in
 [`human-calibration-runbook.md`](human-calibration-runbook.md).
 
 ## Anti-gaming rules
 
 - Questions and gold chunk IDs are frozen before comparison.
+- Controlled calibration strata are removed from the annotator packets.
 - Failing cases remain visible.
 - A combined intervention is not attributed to one component without a control.
 - Exact citations are validated against the chunks used for generation.

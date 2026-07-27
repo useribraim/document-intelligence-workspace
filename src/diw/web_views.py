@@ -6,7 +6,6 @@ from pathlib import Path
 
 from diw.db.models import AIRun, AISuggestion, SourceDocument
 
-
 _TEMPLATE_DIR = Path(__file__).with_name("templates")
 
 
@@ -248,8 +247,8 @@ def _public_landing_html() -> str:
           </section>
           <section class="metrics" aria-label="Project facts">
             <div class="metric">
-              <strong>40</strong>
-              <span>frozen retrieval questions in the measured evaluation</span>
+              <strong>140</strong>
+              <span>balanced human-calibration questions; labels remain pending</span>
             </div>
             <div class="metric">
               <strong>0</strong>
@@ -279,8 +278,8 @@ def _public_landing_html() -> str:
           </section>
         </main>
         <footer>
-          Public demo data is synthetic. Human calibration is in progress and no
-          inter-annotator agreement claim is published yet.
+          Public demo data is synthetic. The 140-question calibration instrument is
+          ready; independent human labels and agreement remain pending.
         </footer>
       </body>
     </html>
@@ -499,9 +498,10 @@ def _public_evidence_html() -> str:
               <h2>Current evidence gates</h2>
               <p><strong>Verified:</strong> Cloud Run deployment, Google OIDC token
               verification, fail-closed production routes, exact-quote citation checks,
-              and automated retrieval evaluation.</p>
-              <p><strong>In progress:</strong> primary human labels, independent second
-              labels, adjudication, and agreement calculation.</p>
+              automated retrieval evaluation, and a reproducible 140-question calibration
+              instrument with 112 aligned claim-citation pairs per annotator.</p>
+              <p><strong>In progress:</strong> two independent human label sets,
+              adjudication, and agreement calculation.</p>
               <div class="truth">
                 No human-calibrated accuracy or inter-annotator agreement number is
                 published until those labels exist.

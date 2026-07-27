@@ -1,6 +1,6 @@
+import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import unittest
 
 from diw.core.embeddings import LocalHashingEmbeddingProvider
 from diw.core.llm import DeterministicStructuredProvider

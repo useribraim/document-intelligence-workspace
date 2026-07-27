@@ -1,56 +1,84 @@
 # Human Calibration Runbook
 
-Automated citation checks and model-assisted labels are diagnostics, not human ground truth. This
-runbook defines the remaining work before publishing agreement or human-accuracy numbers.
+Automated citation checks, author-designed case strata, and model-assisted review are not human
+ground truth. This runbook defines the work required before publishing agreement or calibrated
+support numbers.
 
-## Inputs
+## Instrument
 
-| Pass | Template | Records |
-|---|---|---:|
-| Primary | `data/audit/annotations/v1_primary_annotation_template.jsonl` | 72 |
-| Independent | `data/audit/annotations/v1_independent_annotation_template.jsonl` | 72 |
+| Item | Count |
+|---|---:|
+| Questions | 140 |
+| Supported cases | 28 |
+| Partial-support cases | 28 |
+| Unsupported cases | 28 |
+| Misleading-context cases | 28 |
+| Refusal cases | 28 |
+| Answer-level records per annotator | 140 |
+| Claim-citation pairs per annotator | 112 |
+| Total records per annotator | 252 |
 
-Both templates are intentionally blank. The independent annotator must not see the primary labels,
-automated support labels, comparison results, or any desired agreement value.
+The deterministic source is
+[`v2_case_seeds.jsonl`](../data/audit/calibration/v2_case_seeds.jsonl). The generated manifest
+records file hashes and counts. Short canonicalized excerpts are used instead of redistributing
+paper text.
 
-## Run the annotation sessions
+Rebuild or verify the instrument with:
+
+```bash
+make calibration-build
+make calibration-check
+```
+
+The verifier fails if the suite leaves the 120–160-question range, any of the five strata is
+imbalanced, either packet has fewer than 100 pairs, records are not aligned, author strata leak
+into the packets, or a human label is prefilled.
+
+## Independent annotation
+
+Run the sessions separately:
 
 ```bash
 make annotate-primary
 make annotate-independent
 ```
 
-Outputs are written under `data/audit/annotations/local/`, which is ignored by Git. Each annotator
-must complete the answer-level records and the 32 aligned claim-citation records using
-[`annotation-rubric.md`](annotation-rubric.md).
+Each annotator must see only their generated template and the
+[`v2.0 rubric`](annotation-rubric.md). Outputs are written under the ignored
+`data/audit/annotations/local/` directory.
 
-## Calculate agreement
+The second annotator must not see:
+
+- the case-seed file or question metadata;
+- the primary labels or rationales;
+- automated support diagnostics;
+- comparison reports or target agreement values.
+
+## Agreement and adjudication
+
+After both people complete all 252 records:
 
 ```bash
 make annotation-agreement
 ```
 
-The command fails closed unless both inputs are complete, annotator identifiers differ, and all 32
-claim-citation pairs align. The local report includes:
+The command fails closed unless at least 100 aligned claim-citation pairs are labeled and the
+annotator identifiers are distinct. Save the pre-adjudication report before discussion. It contains
+raw agreement, Cohen's kappa, a confusion matrix, input hashes, and every disagreement.
 
-- record counts and input hashes;
-- raw agreement;
-- Cohen's kappa;
-- confusion matrix;
-- every disagreement with both rationales.
+Adjudication is a separate dated record containing both original labels, both rationales, the final
+decision, and the reason. Never overwrite either source packet.
 
-Preserve the pre-adjudication report. Discuss disagreements in a separate dated adjudication
-record; never overwrite either annotator's original labels.
+## What completion will and will not prove
 
-## Completion gate
+Completing this instrument can support:
 
-Human calibration remains incomplete until all of the following are true:
+- agreement on 112 controlled claim-citation pairs;
+- label distributions and confusion patterns across the five balanced strata;
+- calibration of automated support diagnostics against adjudicated human labels.
 
-- both outputs contain 72 completed human records;
-- all 32 shared claim-citation pairs have labels from distinct people;
-- the pre-adjudication agreement report is saved;
-- disagreements retain both rationales;
-- adjudication is recorded separately;
-- public documentation reports the observed values exactly, including a low or negative kappa.
+It does not by itself measure end-to-end retrieval recall, live-model answer quality, or production
+performance. Those require separate system-run evaluations over the 140-question definition.
 
-Repair effectiveness is a separate experiment and is not implied by completing calibration.
+Until two people finish and adjudicate the packet, no human accuracy, agreement, or Cohen's kappa
+is published.

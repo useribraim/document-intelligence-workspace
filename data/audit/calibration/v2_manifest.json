@@ -1,0 +1,41 @@
+{
+  "version": "v2.0",
+  "instrument": "controlled_claim_citation_calibration",
+  "question_count": 140,
+  "case_counts": {
+    "misleading_context": 28,
+    "partial": 28,
+    "refusal": 28,
+    "supported": 28,
+    "unsupported": 28
+  },
+  "claim_citation_pairs_per_annotator": 112,
+  "pair_case_counts": {
+    "misleading_context": 28,
+    "partial": 28,
+    "supported": 28,
+    "unsupported": 28
+  },
+  "annotation_records_per_annotator": 252,
+  "independent_annotators_required": 2,
+  "intended_labels_are_human_pending": true,
+  "source_seed": {
+    "path": "data/audit/calibration/v2_case_seeds.jsonl",
+    "sha256": "9e2734c784013cf33754a90d0f83bf8aa81fd0eb47a6d176d4025e901aed146b",
+    "bytes": 29456
+  },
+  "files": {
+    "data/audit/questions/v2_140_calibration.jsonl": {
+      "sha256": "29978cb83878ea0000184e06e0ceb5533092867f662218e403e89723a03ffe8f",
+      "bytes": 62009
+    },
+    "data/audit/annotations/v2_primary_annotation_template.jsonl": {
+      "sha256": "c2c908530d95ef50ead774afc5cf0f02986e90f479ecea99b376c17818940575",
+      "bytes": 239412
+    },
+    "data/audit/annotations/v2_independent_annotation_template.jsonl": {
+      "sha256": "b61dd1d986aeacd16b67c1a6f9b8736db90611a68abec8da113d0fb7e909e300",
+      "bytes": 240420
+    }
+  }
+}

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from contextlib import asynccontextmanager
-from datetime import UTC, datetime
 import json
 import os
+from contextlib import asynccontextmanager
+from datetime import UTC, datetime
 from pathlib import Path
 from time import perf_counter
 from uuid import uuid4
@@ -45,10 +45,10 @@ from diw.core.retrieval import (
     tokenise_query,
 )
 from diw.db.models import (
-    AIRun,
-    AISuggestion,
     AgentRun,
     AgentRunStep,
+    AIRun,
+    AISuggestion,
     Chunk,
     DocumentVersion,
     SourceDocument,

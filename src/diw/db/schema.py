@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import Engine
-from sqlalchemy import text
+from sqlalchemy import Engine, text
 
 from diw.db.models import Base
 

@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 import argparse
-from datetime import UTC, datetime
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field, model_validator
-
 
 SUPPORT_LABELS = {
     "fully_supported",
@@ -286,7 +285,8 @@ function render() {
   const r = state.records[index];
   setText("progress", `${state.completed}/${state.total} completed · record ${index+1}`);
   setText("paths", `Output: ${state.output_path}`);
-  setText("recordMeta", `${r.review_type} · ${r.question_id} · ${r.annotation_status || "pending"}`);
+  const sourceMeta = r.evidence_source?.chunk_id ? ` · ${r.evidence_source.chunk_id}` : "";
+  setText("recordMeta", `${r.review_type} · ${r.question_id}${sourceMeta} · ${r.annotation_status || "pending"}`);
   setText("question", r.question || r.review_context?.query || "Question not stored in this row");
   setText("answer", r.review_context?.answer || r.automation_prefill?.answer || "");
   setText("claim", r.claim_text || "");

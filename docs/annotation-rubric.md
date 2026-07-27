@@ -1,44 +1,60 @@
-# Claim-to-Evidence Annotation Rubric v1.0
+# Claim-to-Evidence Annotation Rubric v2.0
 
-This rubric is frozen for the V1 annotation pass. The reviewer judges exact cited spans, not paper titles or general topic similarity. Automated suggestions are comparison aids only; they are not labels and must not be treated as ground truth.
+This rubric governs the V2 controlled calibration pass. Reviewers judge the candidate answer and
+the exact cited excerpt shown in the packet. They must not consult the case-seed file, author notes,
+another annotator's work, automated diagnostics, or a desired agreement value.
 
 ## Answer-level records
 
-- `answer_completeness`: `complete` if all material, evidence-supported parts of the request are addressed; `incomplete` if a material part or qualification is missing; `not_applicable` for a proper refusal.
-- `refusal_appropriate`: `true` when the frozen corpus cannot support the request or refusal is required; `false` when sufficient retrieved evidence existed and the system should have answered; otherwise `null`.
+- `answer_completeness`: `complete` when the candidate answer addresses every material,
+  evidence-supported part of the question; `incomplete` when a supported part or qualification is
+  missing; `not_applicable` for an appropriate refusal.
+- `refusal_appropriate`: `true` when the displayed evidence cannot answer the question; `false`
+  when it can; otherwise `null`.
 
 ## Claim-citation records
 
-- `source_exists`: the cited chunk/span is present in the saved retrieved evidence.
-- `citation_relevant`: `yes` only when the exact span addresses the claim's topic.
+- `source_exists`: whether the cited excerpt and recorded source identifier exist in the packet.
+- `citation_relevant`: `yes` only when the excerpt concerns the candidate claim's subject.
 - `support_label`:
-  - `fully_supported`: every material part of the claim is entailed by the exact span.
-  - `partially_supported`: the central idea is supported but a material qualifier, number, scope, causality, or other detail is missing.
-  - `unsupported`: the span is real and possibly related but does not establish the claim.
-  - `contradicted`: the span materially conflicts with the claim.
-  - `not_applicable`: no claim-citation judgement is applicable.
-- `support_rationale`: one concise sentence naming the supported, missing, or contradictory material part.
+  - `fully_supported`: the excerpt entails every material part of the claim;
+  - `partially_supported`: the central assertion is supported but a material qualifier, number,
+    scope, cause, or additional assertion is not;
+  - `unsupported`: the excerpt is real and may be topically related, but does not establish the
+    claim;
+  - `contradicted`: the excerpt materially conflicts with the claim;
+  - `not_applicable`: no claim-citation judgment is possible.
+- `support_rationale`: one concise sentence identifying the supported, missing, or contradictory
+  material.
 
-Example: a paper reports an improvement on one task, while the answer claims universal superiority. Label `unsupported`; rationale: “The span is task-specific and does not establish universal superiority.”
+Related subject matter is not entailment. A result on one dataset does not support “always,”
+“every,” “guarantees,” or a new implementation detail unless the excerpt states that scope.
 
 ## Failure mode
 
-For every non-fully-supported, non-`not_applicable` claim, assign exactly one `failure_mode`:
+For each label other than `fully_supported` or `not_applicable`, choose exactly one:
 
-- `overgeneralization`: evidence is narrower than the claim.
-- `unsupported_specificity`: the claim adds an absent number, version, entity, or detail.
-- `missing_qualification`: conditional evidence is stated categorically.
-- `citation_misattribution`: the citation supports another nearby claim, not this one.
-- `claim_bundling`: one sentence has multiple claims and the span supports only some.
-- `retrieval_miss`: relevant frozen-corpus evidence exists but was not retrieved.
-- `out_of_scope`: the frozen corpus cannot support the request.
+- `overgeneralization`: the evidence is narrower than the claim;
+- `unsupported_specificity`: the claim adds an absent number, version, entity, or detail;
+- `missing_qualification`: conditional evidence is stated categorically;
+- `citation_misattribution`: the excerpt supports a different nearby claim;
+- `claim_bundling`: one sentence combines claims and the excerpt supports only part;
+- `retrieval_miss`: relevant frozen-corpus evidence exists but the displayed citation misses it;
+- `out_of_scope`: the frozen evidence cannot answer the request.
 
-Do not choose a dominant failure mode before counting completed labels.
+## Independence protocol
 
-## Reliability and revision protocol
+The primary and independent annotators each receive only their V2 template. Both packets contain
+the same 140 answer records and 112 claim-citation pairs, but neither exposes the author-designed
+case stratum or a proposed label.
 
-Complete the primary packet without consulting `automation_prefill` where practical. After about one week, complete the blinded five-question reannotation without viewing original labels. A second annotator independently completes the separate five-question packet without project results or automated labels.
+Annotators must:
 
-Report aligned claim-citation-pair count, raw agreement, Cohen’s kappa, confusion matrix, and every disagreement with both rationales. Preserve original labels. If disagreements cluster at a boundary, create a dated rubric v1.1 with examples, record the reason, and re-label affected records; never silently overwrite V1.0 labels.
+1. work separately and use distinct identifiers;
+2. complete all records before seeing the other packet;
+3. preserve their original files and rationales;
+4. compute agreement before discussing disagreements;
+5. record adjudication separately rather than overwriting either label set.
 
-Human labels calibrate the deterministic verifier and model-assisted reviewer. The repair artifact requires its own review under this same rubric; its deterministic 100% rate is not a human-effectiveness result.
+Case strata balance the instrument; they are not human ground truth. Only completed independent
+labels and documented adjudication can support an agreement or calibrated-accuracy claim.

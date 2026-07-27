@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from sqlalchemy import select, text
@@ -10,10 +10,10 @@ from sqlalchemy.orm import Session
 from diw.core.embeddings import EmbeddingProvider, embed_documents
 from diw.core.ingestion import IngestedDocument
 from diw.db.models import (
-    AIRun,
-    AISuggestion,
     AgentRun,
     AgentRunStep,
+    AIRun,
+    AISuggestion,
     ApprovalRequest,
     Chunk,
     ChunkEmbedding,
@@ -119,7 +119,7 @@ def create_tenant(session: Session, *, slug: str, name: str) -> Tenant:
         id=str(uuid4()),
         slug=slug,
         name=name,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     session.add(tenant)
     return tenant
@@ -152,7 +152,7 @@ def create_workspace_user(
         email=email,
         display_name=display_name,
         role=role,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     session.add(user)
     return user
@@ -174,7 +174,7 @@ def save_research_record(
         if user is None or user.tenant_id != tenant_id:
             raise ValueError("research record user must belong to the same tenant")
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     record = ResearchRecord(
         id=str(uuid4()),
         tenant_id=tenant_id,
@@ -225,7 +225,7 @@ def grant_tenant_document_access(
         id=str(uuid4()),
         tenant_id=tenant_id,
         document_id=document_id,
-        granted_at=datetime.now(timezone.utc),
+        granted_at=datetime.now(UTC),
     )
     session.add(access)
     return access
@@ -265,7 +265,7 @@ def create_agent_run(
         trace_id=trace_id,
         output=None,
         metrics={},
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
         completed_at=None,
     )
     session.add(run)
@@ -303,7 +303,7 @@ def save_agent_run_step(
         error_code=error_code,
         latency_ms=latency_ms,
         metrics=metrics or {},
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     session.add(step)
     return step
@@ -328,7 +328,7 @@ def complete_agent_run(
     run.status = status
     run.output = output
     run.metrics = metrics or {}
-    run.completed_at = datetime.now(timezone.utc)
+    run.completed_at = datetime.now(UTC)
     return run
 
 
@@ -371,7 +371,7 @@ def create_approval_request(
         status="pending",
         approved_by_user_id=None,
         decision_note=None,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
         decided_at=None,
     )
     session.add(request)
@@ -401,7 +401,7 @@ def decide_approval_request(
     request.status = "approved" if decision == "approve" else "rejected"
     request.approved_by_user_id = approver_user_id
     request.decision_note = note
-    request.decided_at = datetime.now(timezone.utc)
+    request.decided_at = datetime.now(UTC)
     return request
 
 
@@ -435,7 +435,7 @@ def create_study_task_from_approval(
         title=title.strip(),
         details=details,
         status="open",
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     session.add(task)
     return task
@@ -485,7 +485,7 @@ def embed_missing_chunks(session: Session, provider: EmbeddingProvider) -> int:
 
     vectors = embed_documents(provider, [chunk.text for chunk in missing_chunks])
     for chunk, vector in zip(missing_chunks, vectors):
-        created_at = datetime.now(timezone.utc)
+        created_at = datetime.now(UTC)
         embedding = ChunkEmbedding(
             id=embedding_id(chunk.id, provider.model_name),
             chunk_id=chunk.id,
@@ -586,7 +586,7 @@ def save_ai_run(
         insufficient_evidence=insufficient_evidence,
         output=output,
         metrics=metrics or {},
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     session.add(run)
     return run
@@ -608,7 +608,7 @@ def save_ai_suggestion(
         status=status,
         title=title,
         payload=payload,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
         reviewed_at=None,
     )
     session.add(suggestion)
@@ -643,7 +643,7 @@ def record_review_decision(
     if suggestion is None:
         raise ValueError(f"unknown suggestion_id: {suggestion_id}")
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if edited_payload is not None:
         suggestion.payload = edited_payload
     suggestion.status = status_by_decision[decision]

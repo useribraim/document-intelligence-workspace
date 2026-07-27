@@ -1,5 +1,5 @@
-import unittest
 import sys
+import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -8,8 +8,8 @@ from diw.core.llm import (
     LLMRequest,
     OpenAIChatProvider,
     VertexAIGeminiProvider,
-    generate_structured_answer,
     estimate_openai_cost_usd,
+    generate_structured_answer,
 )
 from diw.core.qa import validate_citations
 from diw.core.retrieval import RetrievalResult
@@ -109,9 +109,8 @@ class LLMProviderTests(unittest.TestCase):
             "os.environ",
             {"VERTEX_CHAT_MODEL": "", "GOOGLE_CLOUD_PROJECT": ""},
             clear=False,
-        ):
-            with self.assertRaises(ValueError):
-                VertexAIGeminiProvider()
+        ), self.assertRaises(ValueError):
+            VertexAIGeminiProvider()
 
 
 if __name__ == "__main__":

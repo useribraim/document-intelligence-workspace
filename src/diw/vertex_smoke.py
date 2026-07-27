@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import argparse
-from datetime import UTC, datetime
 import json
 import os
+from datetime import UTC, datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from time import perf_counter
@@ -23,7 +23,6 @@ from diw.db.repository import (
 )
 from diw.db.schema import create_schema
 from diw.db.session import build_engine
-
 
 DEFAULT_SOURCES = (
     Path("data/demo/raw/rag-systems-paper.md"),
@@ -332,7 +331,7 @@ def main() -> int:
             generation_model=args.generation_model,
             dimensions=args.dimensions,
         )
-    except Exception as error:
+    except Exception as error:  # noqa: BLE001 - CLI must serialize provider failures.
         print(
             "DIW_VERTEX_SMOKE_ERROR="
             + json.dumps(

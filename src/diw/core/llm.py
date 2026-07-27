@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import importlib
 import json
 import os
 import re
+from dataclasses import dataclass
 from typing import Protocol
 
 from diw.core.qa import (
@@ -17,7 +17,6 @@ from diw.core.qa import (
     validate_citations,
 )
 from diw.core.retrieval import RetrievalResult
-
 
 PROMPT_VERSION = "source-cited-qa-v1"
 

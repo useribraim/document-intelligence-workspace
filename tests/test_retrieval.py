@@ -1,6 +1,8 @@
+import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import unittest
+
+from sqlalchemy.orm import Session
 
 from diw.core.embeddings import LocalHashingEmbeddingProvider
 from diw.core.ingestion import ingest_file
@@ -14,7 +16,6 @@ from diw.db.repository import (
     save_ingested_document,
 )
 from diw.db.session import build_engine
-from sqlalchemy.orm import Session
 
 
 class _ForeignEmbeddingProvider:
@@ -60,14 +61,16 @@ class RetrievalTests(unittest.TestCase):
         engine = build_engine("sqlite+pysqlite:///:memory:")
         Base.metadata.create_all(engine)
         try:
-            with Session(engine) as session:
-                with self.assertRaisesRegex(ValueError, "reranker"):
-                    retrieve_chunks(
-                        session,
-                        "query",
-                        LocalHashingEmbeddingProvider(),
-                        reranker="mystery",
-                    )
+            with (
+                Session(engine) as session,
+                self.assertRaisesRegex(ValueError, "reranker"),
+            ):
+                retrieve_chunks(
+                    session,
+                    "query",
+                    LocalHashingEmbeddingProvider(),
+                    reranker="mystery",
+                )
         finally:
             engine.dispose()
 

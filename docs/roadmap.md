@@ -110,7 +110,10 @@ putting Vertex behind the persistent interactive workflow are still pending.
 
 ### 4. Evaluation And Operations
 
-Build 40-60 labeled cases for retrieval, groundedness, answer quality, tool choice, refusal, action safety, and tenant isolation. Export redacted trace and cost records to BigQuery. Add load tests and failure experiments.
+The V2 controlled calibration instrument now has 140 balanced questions and 112 aligned
+claim-citation pairs per annotator. Complete both independent packets and adjudication, then run a
+separate end-to-end system evaluation over the same question definition. Export redacted trace and
+cost records to BigQuery, and add load tests and failure experiments.
 
 **Done when:** CI runs deterministic regression gates, the dashboard reports p50/p95 latency and cost, and each deliberately induced failure has a recorded fix and regression test.
 

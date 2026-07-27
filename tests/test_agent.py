@@ -1,6 +1,6 @@
+import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import unittest
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session

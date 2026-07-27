@@ -1,14 +1,15 @@
-from pathlib import Path
 import json
-from tempfile import TemporaryDirectory
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
+
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from diw.cli import main
 from diw.db.models import AIRun, AISuggestion, Base, ReviewDecision
 from diw.db.session import build_engine
-from sqlalchemy import select
-from sqlalchemy.orm import Session
 
 
 class CliTests(unittest.TestCase):

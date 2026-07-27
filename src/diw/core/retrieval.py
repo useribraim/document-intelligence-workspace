@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import re
+from dataclasses import dataclass
 
 from sqlalchemy import bindparam, select, text
 from sqlalchemy.orm import Session
 
 from diw.core.embeddings import EmbeddingProvider, cosine_similarity, embed_query
 from diw.db.models import Chunk, ChunkEmbedding, DocumentVersion
-
 
 QUERY_TOKEN_RE = re.compile(r"[A-Za-z0-9_]+")
 QUERY_STOPWORDS = {

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
 from typing import Literal, Protocol
 from uuid import uuid4
 
@@ -19,7 +19,6 @@ from diw.db.repository import (
     list_tenant_document_ids,
     save_agent_run_step,
 )
-
 
 AGENT_POLICY_VERSION = "research-agent-policy-v1"
 
@@ -41,7 +40,7 @@ class AgentDecision(BaseModel):
     tool_call: ToolCall | None = None
     final_response: FinalResponse | None = None
 
-    def model_post_init(self, __context) -> None:
+    def model_post_init(self, __context, /) -> None:
         if (self.tool_call is None) == (self.final_response is None):
             raise ValueError("agent decision requires exactly one of tool_call or final_response")
 

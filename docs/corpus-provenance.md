@@ -7,6 +7,10 @@ their canonical URLs, displayed licence URLs, expected local text paths, and SHA
 Full paper text is not included. “Available without a paywall” is not treated as permission to
 redistribute a paper under this project's MIT licence.
 
+The V2 calibration packet contains only short, canonicalized excerpts tied to recorded chunk
+identifiers. They let independent reviewers judge the displayed claim-citation relationship
+without receiving or redistributing complete papers.
+
 ## Recorded licences
 
 | Paper version | Licence displayed by arXiv |

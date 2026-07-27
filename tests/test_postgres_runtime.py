@@ -1,7 +1,9 @@
 import os
+import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import unittest
+
+from sqlalchemy.orm import Session
 
 from diw.core.embeddings import LocalHashingEmbeddingProvider
 from diw.core.ingestion import ingest_file
@@ -21,8 +23,6 @@ from diw.db.repository import (
 )
 from diw.db.schema import create_schema, drop_schema
 from diw.db.session import build_engine
-from sqlalchemy.orm import Session
-
 
 POSTGRES_TEST_DATABASE_URL = os.getenv("POSTGRES_TEST_DATABASE_URL")
 

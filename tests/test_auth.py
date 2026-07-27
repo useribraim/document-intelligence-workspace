@@ -1,6 +1,6 @@
-from types import SimpleNamespace
 import sys
 import unittest
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from diw.auth import GoogleOIDCAuthenticator, OIDCAuthenticator

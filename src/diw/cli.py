@@ -1,22 +1,24 @@
 from __future__ import annotations
 
 import argparse
-from collections import Counter
-from datetime import datetime, timezone
 import hashlib
 import json
-from pathlib import Path
 import random
 import sys
+from collections import Counter
+from datetime import UTC, datetime
+from pathlib import Path
 from time import perf_counter
 
 from dotenv import load_dotenv
-from diw.core.embeddings import build_embedding_provider
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
 from diw.core.claim_audit import (
     AUDIT_PROMPT_VERSION,
     ClaimCitationAssessment,
-    apply_evidence_repair,
     apply_claim_verification_gate,
+    apply_evidence_repair,
     assess_claims,
     cohen_kappa,
     config_hash,
@@ -24,6 +26,7 @@ from diw.core.claim_audit import (
     retrieval_gold_metrics,
     summarise_claim_audit,
 )
+from diw.core.embeddings import build_embedding_provider
 from diw.core.evaluation import (
     load_golden_cases,
     render_markdown_report,
@@ -39,8 +42,14 @@ from diw.core.llm import (
     generate_structured_answer,
 )
 from diw.core.normalisation import normalise_text_with_report
-from diw.core.qa import EvidenceCitation, SourceCitedAnswer, compose_source_cited_answer, validate_citations
+from diw.core.qa import (
+    EvidenceCitation,
+    SourceCitedAnswer,
+    compose_source_cited_answer,
+    validate_citations,
+)
 from diw.core.retrieval import RetrievalResult, retrieval_results_as_dicts, retrieve_chunks
+from diw.db.models import SourceDocument
 from diw.db.repository import (
     count_chunks,
     count_documents,
@@ -55,9 +64,6 @@ from diw.db.repository import (
 )
 from diw.db.schema import create_schema
 from diw.db.session import build_engine
-from sqlalchemy.orm import Session
-from sqlalchemy import select
-from diw.db.models import SourceDocument
 
 
 def _print_report(report) -> None:
@@ -500,7 +506,7 @@ def claim_audit_command(args: argparse.Namespace) -> int:
     }
     embedding_provider = _build_embedding_provider(args)
     llm_provider = _build_llm_provider(args)
-    run_id = args.run_id or f"{args.mode}-deterministic-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
+    run_id = args.run_id or f"{args.mode}-deterministic-{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}"
     config = {
         "retrieval_mode": args.mode,
         "reranker": args.reranker,
@@ -538,7 +544,7 @@ def claim_audit_command(args: argparse.Namespace) -> int:
             for question in questions:
                 if question["question_id"] in completed_question_ids:
                     continue
-                started = datetime.now(timezone.utc)
+                started = datetime.now(UTC)
                 requested_documents = question.get("source_documents", [])
                 missing_documents = [item for item in requested_documents if item not in manifest]
                 if missing_documents:
@@ -654,7 +660,7 @@ def claim_audit_command(args: argparse.Namespace) -> int:
                         "answer": answer.answer,
                         "answer_sha256": hashlib.sha256(answer.answer.encode("utf-8")).hexdigest(),
                         "insufficient_evidence": answer.insufficient_evidence,
-                        "latency_ms": int((datetime.now(timezone.utc) - started).total_seconds() * 1000),
+                        "latency_ms": int((datetime.now(UTC) - started).total_seconds() * 1000),
                         "input_tokens": answer.input_tokens,
                         "cached_input_tokens": answer.cached_input_tokens,
                         "output_tokens": answer.output_tokens,
@@ -680,7 +686,7 @@ def claim_audit_command(args: argparse.Namespace) -> int:
     summary = _summarise_claim_audit_records(records)
     payload = {
         "run_id": run_id,
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
         "config": config,
         "question_count": len(records),
         "summary": summary,
@@ -845,7 +851,7 @@ def evidence_repair_run_command(args: argparse.Namespace) -> int:
     summary["repair_incremental_cost_usd"] = 0.0
     payload = {
         "run_id": run_id,
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
         "parent_run_id": baseline["run_id"],
         "config": config,
         "question_count": len(records),
@@ -1301,7 +1307,7 @@ def evaluation_freeze_command(args: argparse.Namespace) -> int:
         )
     payload = {
         "freeze_version": args.freeze_version,
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
         "artifacts": artifacts,
         "rule": (
             "Do not overwrite frozen artifacts, labels, thresholds, prompts, or questions. "

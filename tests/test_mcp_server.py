@@ -1,8 +1,8 @@
-from pathlib import Path
 import sys
+import unittest
+from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
-import unittest
 from unittest.mock import patch
 
 from sqlalchemy.orm import Session

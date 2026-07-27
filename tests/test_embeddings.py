@@ -1,7 +1,7 @@
 import os
 import sys
-from types import SimpleNamespace
 import unittest
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from diw.core.embeddings import (
@@ -57,9 +57,8 @@ class BuildEmbeddingProviderTests(unittest.TestCase):
             OpenAIEmbeddingProvider(model_name="future-model", api_key="test-key")
 
     def test_openai_requires_api_key(self):
-        with patch.dict(os.environ, {"OPENAI_API_KEY": ""}):
-            with self.assertRaises(ValueError):
-                build_embedding_provider("openai")
+        with patch.dict(os.environ, {"OPENAI_API_KEY": ""}), self.assertRaises(ValueError):
+            build_embedding_provider("openai")
 
     def test_unknown_provider_raises(self):
         with self.assertRaises(ValueError):
@@ -148,9 +147,11 @@ class VertexAIEmbeddingProviderTests(unittest.TestCase):
         self.assertEqual(client_kwargs["http_options"], {"api_version": "v1"})
 
     def test_vertex_requires_project(self):
-        with patch.dict(os.environ, {"GOOGLE_CLOUD_PROJECT": ""}, clear=False):
-            with self.assertRaises(ValueError):
-                VertexAIEmbeddingProvider()
+        with (
+            patch.dict(os.environ, {"GOOGLE_CLOUD_PROJECT": ""}, clear=False),
+            self.assertRaises(ValueError),
+        ):
+            VertexAIEmbeddingProvider()
 
 
 if __name__ == "__main__":

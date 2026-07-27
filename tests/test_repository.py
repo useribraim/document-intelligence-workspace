@@ -1,31 +1,34 @@
-from pathlib import Path
-from tempfile import TemporaryDirectory
+import gc
 import unittest
 from contextlib import contextmanager
-import gc
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from diw.core.ingestion import ingest_file
 from diw.db.models import (
+    AgentRunStep,
     AIRun,
     AISuggestion,
-    AgentRunStep,
     Base,
     Chunk,
     DocumentVersion,
     SourceDocument,
 )
 from diw.db.repository import (
-    create_agent_run,
-    create_approval_request,
-    create_study_task_from_approval,
-    create_tenant,
-    create_workspace_user,
     count_ai_runs,
     count_ai_suggestions,
     count_chunks,
     count_documents,
     count_review_decisions,
     count_versions,
+    create_agent_run,
+    create_approval_request,
+    create_study_task_from_approval,
+    create_tenant,
+    create_workspace_user,
     decide_approval_request,
     get_research_record_for_tenant,
     record_review_decision,
@@ -36,8 +39,6 @@ from diw.db.repository import (
     save_research_record,
 )
 from diw.db.session import build_engine
-from sqlalchemy import select
-from sqlalchemy.orm import Session
 
 
 class RepositoryTests(unittest.TestCase):
@@ -284,5 +285,3 @@ class RepositoryTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-    decide_approval_request,
-    get_research_record_for_tenant,

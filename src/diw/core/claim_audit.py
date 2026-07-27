@@ -6,17 +6,16 @@ ground truth. Human annotation remains the authoritative evaluation path.
 """
 from __future__ import annotations
 
-from collections import Counter
 import hashlib
 import json
 import re
-from typing import Iterable
+from collections import Counter
+from collections.abc import Iterable
 
 from pydantic import BaseModel, Field
 
 from diw.core.qa import EvidenceCitation, SourceCitedAnswer
 from diw.core.retrieval import RetrievalResult, tokenise_query
-
 
 AUDIT_PROMPT_VERSION = "claim-evidence-audit-v1"
 _CITATION_MARKER = re.compile(r"\s*\[C\d+\]\s*")

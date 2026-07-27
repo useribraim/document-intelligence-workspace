@@ -55,7 +55,7 @@ validation, and audit interfaces.
 | Cloud runtime | A scale-to-zero Cloud Run service exposes the public demo while protected routes reject missing or unscoped identity. |
 | Vertex AI | A Cloud Run Job completed real `gemini-embedding-001` and `gemini-2.5-flash` calls with model, token, evidence, citation, refusal, and run provenance. |
 | MCP | An external Python MCP client discovered and invoked both read-only tools; cross-tenant record lookup and tenant-argument injection failed safely. |
-| Automated verification | 92 tests pass locally; one PostgreSQL integration test is conditional on a test database. |
+| Automated verification | 95 tests pass locally; one PostgreSQL integration test is conditional on a test database. |
 
 The compact artifacts behind these statements are in [`results/evidence/`](results/evidence/).
 Automated diagnostics are not presented as human judgments.
@@ -115,6 +115,7 @@ names only. Useful validation commands:
 
 ```bash
 make test
+make calibration-check
 make validate-mcp-stdio
 ./scripts/run_vertex_cloud_smoke.sh
 ```
@@ -124,9 +125,16 @@ The MCP validation is local and creates a temporary two-tenant database.
 
 ## Evaluation
 
-The checked-in evaluation definition contains 40 questions across direct extraction, synthesis,
-multi-claim, conflicting-evidence, misleading-context, insufficient-evidence, and refusal cases.
-Gold chunk identifiers are frozen before comparison runs.
+Evaluation has two deliberately separate layers:
+
+- the measured retrieval benchmark has 40 frozen questions with predeclared gold chunk IDs;
+- the V2 human-calibration instrument has 140 questions, with 28 each for supported,
+  partial-support, unsupported, misleading-context, and refusal cases.
+
+Each blinded calibration packet contains 140 answer records and 112 aligned claim-citation pairs.
+The deterministic builder verifies question uniqueness, case balance, source identifiers, packet
+alignment, short-excerpt limits, label blankness, and that author-designed strata do not leak into
+the reviewer files.
 
 Raw paper text is not redistributed in this repository. The corpus manifest records canonical
 versions, licence URLs, local paths, and SHA-256 hashes so a legally obtained local corpus can be
@@ -136,9 +144,9 @@ verified:
 python -m diw.cli corpus-verify
 ```
 
-Human calibration remains open. The repository includes the rubric and two clearly named blank
-annotation templates, but it publishes no agreement or human-accuracy number until two independent
-label sets and adjudication exist.
+Human labeling remains open. The repository publishes the reproducible instrument and two blank
+packets, but no agreement or human-accuracy number until two people independently complete all
+records and preserve a separate adjudication trail.
 
 ## Current limitations
 

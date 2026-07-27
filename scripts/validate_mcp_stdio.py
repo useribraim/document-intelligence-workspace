@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import json
+import sys
 from datetime import UTC, datetime
 from importlib.metadata import version
-import json
 from pathlib import Path
-import sys
 from tempfile import TemporaryDirectory
 from time import perf_counter
 
@@ -123,8 +123,10 @@ async def validate_mcp_stdio(*, out: Path) -> dict:
         )
         transcript: list[dict] = []
         started = perf_counter()
-        async with stdio_client(server_parameters) as (read_stream, write_stream):
-            async with ClientSession(read_stream, write_stream) as client:
+        async with (
+            stdio_client(server_parameters) as (read_stream, write_stream),
+            ClientSession(read_stream, write_stream) as client,
+        ):
                 initialize_started = perf_counter()
                 initialized = await client.initialize()
                 transcript.append(
@@ -315,7 +317,7 @@ def main() -> int:
     args = parser.parse_args()
     try:
         payload = asyncio.run(validate_mcp_stdio(out=args.out))
-    except Exception as error:
+    except Exception as error:  # noqa: BLE001 - CLI must serialize provider failures.
         print(
             json.dumps(
                 {"status": "failed", "type": type(error).__name__, "message": str(error)},

@@ -5,7 +5,6 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-
 DEFAULT_DATABASE_URL = "sqlite:///./diw_local.db"
 
 

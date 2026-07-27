@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
 import hashlib
 import json
+from dataclasses import asdict, dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
-from uuid import uuid5, NAMESPACE_URL
+from uuid import NAMESPACE_URL, uuid5
 
 from diw.core.chunking import chunk_markdown, chunks_as_records
 from diw.core.normalisation import NormalisationReport, normalise_text_with_report
@@ -86,7 +86,7 @@ def ingest_file(
         source_name=path.name,
         source_type=infer_source_type(path),
         content_hash=content_hash,
-        ingested_at=datetime.now(timezone.utc).isoformat(),
+        ingested_at=datetime.now(UTC).isoformat(),
         normalised_text=normalised.text,
         normalisation_report=normalised.report,
         chunks=chunks_as_records(chunks),

@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import hashlib
 import importlib
 import math
 import os
 import re
-from typing import Protocol
-
+from dataclasses import dataclass
+from typing import ClassVar, Protocol
 
 TOKEN_RE = re.compile(r"[A-Za-z0-9_]+")
 
@@ -80,7 +79,7 @@ class OpenAIEmbeddingProvider:
     in the same database.
     """
 
-    DEFAULT_DIMENSIONS = {
+    DEFAULT_DIMENSIONS: ClassVar[dict[str, int]] = {
         "text-embedding-3-small": 1536,
         "text-embedding-3-large": 3072,
     }

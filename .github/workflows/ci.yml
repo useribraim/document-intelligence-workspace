@@ -37,6 +37,7 @@ jobs:
       - name: Verify public evidence and corpus manifest
         run: |
           python scripts/verify_public_evidence.py
+          python scripts/build_calibration_v2.py --check
           python -m diw.cli corpus-verify --allow-missing
 
       - name: Build package

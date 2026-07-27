@@ -38,9 +38,9 @@ They may help prioritize inspection but cannot be used as ground truth or to rep
 
 ## Human boundary
 
-Two blank 72-record templates and the annotation UI are included. Agreement is calculated only
-after two distinct people complete the aligned 32 claim-citation pairs. See
-[`human-calibration-runbook.md`](human-calibration-runbook.md).
+The V2 calibration instrument includes two blank 252-record templates. Agreement is calculated
+only after two distinct people complete all records, including the 112 aligned claim-citation
+pairs. See [`human-calibration-runbook.md`](human-calibration-runbook.md).
 
 Until that gate passes:
 

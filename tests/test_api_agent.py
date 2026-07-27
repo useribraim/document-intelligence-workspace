@@ -1,6 +1,6 @@
+import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import unittest
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
@@ -102,52 +102,51 @@ class AgentApiTests(unittest.TestCase):
             with patch.dict(
                 "os.environ",
                 {"GOOGLE_OAUTH_CLIENT_ID": "client.apps.googleusercontent.com"},
-            ):
-                with TestClient(
-                    create_app(database_url, authenticator=FakeAuthenticator())
-                ) as authenticated_client:
-                    sign_in = authenticated_client.get("/signin")
-                    self.assertEqual(sign_in.status_code, 200)
-                    self.assertIn(
-                        "client.apps.googleusercontent.com",
-                        sign_in.text,
-                    )
+            ), TestClient(
+                create_app(database_url, authenticator=FakeAuthenticator())
+            ) as authenticated_client:
+                sign_in = authenticated_client.get("/signin")
+                self.assertEqual(sign_in.status_code, 200)
+                self.assertIn(
+                    "client.apps.googleusercontent.com",
+                    sign_in.text,
+                )
 
-                    whoami = authenticated_client.get(
-                        "/auth/whoami",
-                        headers={"Authorization": "Bearer valid-token"},
-                    )
-                    self.assertEqual(whoami.status_code, 200)
-                    self.assertEqual(whoami.json()["email"], "researcher@example.com")
+                whoami = authenticated_client.get(
+                    "/auth/whoami",
+                    headers={"Authorization": "Bearer valid-token"},
+                )
+                self.assertEqual(whoami.status_code, 200)
+                self.assertEqual(whoami.json()["email"], "researcher@example.com")
 
-                    missing_token = authenticated_client.post(
-                        "/agent-runs",
-                        json={
-                            "tenant_id": tenant_id,
-                            "actor_user_id": user_id,
-                            "query": "What method does the paper use?",
-                            "dimensions": 32,
-                        },
-                    )
-                    self.assertEqual(missing_token.status_code, 401)
+                missing_token = authenticated_client.post(
+                    "/agent-runs",
+                    json={
+                        "tenant_id": tenant_id,
+                        "actor_user_id": user_id,
+                        "query": "What method does the paper use?",
+                        "dimensions": 32,
+                    },
+                )
+                self.assertEqual(missing_token.status_code, 401)
 
-                    authenticated = authenticated_client.post(
-                        "/agent-runs",
-                        headers={"Authorization": "Bearer valid-token"},
-                        json={
-                            "tenant_id": tenant_id,
-                            "actor_user_id": user_id,
-                            "query": "What method does the paper use?",
-                            "dimensions": 32,
-                        },
-                    )
-                    self.assertEqual(authenticated.status_code, 200)
+                authenticated = authenticated_client.post(
+                    "/agent-runs",
+                    headers={"Authorization": "Bearer valid-token"},
+                    json={
+                        "tenant_id": tenant_id,
+                        "actor_user_id": user_id,
+                        "query": "What method does the paper use?",
+                        "dimensions": 32,
+                    },
+                )
+                self.assertEqual(authenticated.status_code, 200)
 
-                    unscoped_route = authenticated_client.get(
-                        "/documents",
-                        headers={"Authorization": "Bearer valid-token"},
-                    )
-                    self.assertEqual(unscoped_route.status_code, 403)
+                unscoped_route = authenticated_client.get(
+                    "/documents",
+                    headers={"Authorization": "Bearer valid-token"},
+                )
+                self.assertEqual(unscoped_route.status_code, 403)
 
 
 if __name__ == "__main__":
