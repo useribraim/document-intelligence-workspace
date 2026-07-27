@@ -39,6 +39,8 @@ esac
   --memory 512Mi \
   --min 0 \
   --max 1 \
+  --min-instances 0 \
+  --max-instances 1 \
   --set-env-vars "${runtime_env}"
 
 "${DIW_GCLOUD_BIN}" run services describe "${DIW_CLOUD_RUN_SERVICE}" \

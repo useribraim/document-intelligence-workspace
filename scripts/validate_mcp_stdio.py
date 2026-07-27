@@ -310,7 +310,7 @@ def main() -> int:
     parser.add_argument(
         "--out",
         type=Path,
-        default=Path("results/integrations/mcp/mcp-stdio-validation.json"),
+        default=Path("results/evidence/mcp-stdio-validation.json"),
     )
     args = parser.parse_args()
     try:

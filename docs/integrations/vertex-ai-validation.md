@@ -1,14 +1,14 @@
 # Vertex AI Validation
 
-## Released Boundary
+## Validated Boundary
 
 On 2026-07-27, Cloud Run Job execution `diw-vertex-smoke-z5m7b` completed a bounded
-retrieval-augmented generation workflow in project `gen-lang-client-0605013452`.
+retrieval-augmented generation workflow in the deployed Google Cloud project.
 
 - Vertex AI API: enabled.
 - Billing: enabled for the project.
 - Runtime identity:
-  `diw-cloud-run-runtime@gen-lang-client-0605013452.iam.gserviceaccount.com`.
+  `diw-cloud-run-runtime@<redacted-project-id>.iam.gserviceaccount.com`.
 - Runtime role: `roles/aiplatform.user`.
 - Runtime image: the same immutable image digest used by the deployed service.
 - Vertex location and API version: `global`, stable `v1`.
@@ -23,7 +23,7 @@ retrieval-augmented generation workflow in project `gen-lang-client-0605013452`.
   per-step latency, total latency, and an empty error list.
 
 The credential-free-at-rest evidence is
-[`vertex-cloud-run-smoke.json`](../../results/integrations/vertex/vertex-cloud-run-smoke.json).
+[`vertex-cloud-run-smoke.json`](../../results/evidence/vertex-cloud-run-smoke.json).
 It excludes tokens, request headers, credential paths, and embedding vectors.
 
 ## Reproduce
@@ -47,10 +47,10 @@ from Cloud Logging, and writes the redacted JSON artifact.
 ## Honest Limitation
 
 This is a real cloud provider check over bundled synthetic sources and an ephemeral SQLite
-database. It does not prove Cloud SQL persistence, asynchronous ingestion, production traffic, or
+database. It does not validate Cloud SQL persistence, asynchronous ingestion, production traffic, or
 that the public interactive demo uses Vertex.
 
-## Resume-Safe Claim
+## Validated Scope
 
 > Ran a Cloud Run RAG smoke workflow using Vertex AI `gemini-embedding-001` embeddings and
 > `gemini-2.5-flash` generation, with token/model provenance, retrieved chunks, exact-quote

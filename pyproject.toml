@@ -1,22 +1,33 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "document-intelligence-workspace"
-version = "1.8.2"
+version = "0.1.0"
 description = "Markdown-first document intelligence workspace with source-cited retrieval, structured outputs, evaluation, AI-run provenance, and human review."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 dependencies = [
   "fastapi>=0.110",
   "uvicorn[standard]>=0.27",
   "sqlalchemy>=2.0",
-  "alembic>=1.13",
   "psycopg[binary]>=3.1",
   "pydantic>=2.6",
   "python-dotenv>=1.0",
   "openai>=1.0",
-  "tiktoken>=0.7",
 ]
+
+[project.urls]
+Homepage = "https://github.com/useribraim/document-intelligence-workspace"
+Demo = "https://document-intelligence-workspace-312779789755.europe-west1.run.app/"
+Repository = "https://github.com/useribraim/document-intelligence-workspace"
 
 [project.optional-dependencies]
 dev = [
+  "build>=1.2",
   "pytest>=8.0",
   "ruff>=0.4",
 ]
@@ -35,6 +46,12 @@ diw = "diw.cli:main"
 diw-mcp = "diw.mcp_server:main"
 diw-annotate = "diw.annotation_app:main"
 diw-vertex-smoke = "diw.vertex_smoke:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+diw = ["templates/*.html"]
 
 [tool.ruff]
 line-length = 100

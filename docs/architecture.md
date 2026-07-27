@@ -1,78 +1,60 @@
 # Architecture
 
-## Product Thesis
-
-Long-form knowledge work should not disappear into chat history. The workspace turns raw sources into durable, source-cited, versioned, inspectable knowledge artifacts.
-
-The system is deliberately not an "AI tutor" or generic PDF chatbot. It treats LLMs as unreliable components inside a controlled document pipeline.
-
-## Core Loop
+## Core request path
 
 ```text
-source document
-  -> parse and clean text
-  -> store document version and content hash
-  -> heading-aware chunking
-  -> lexical index and embedding index
-  -> hybrid retrieval
-  -> structured/source-cited generation
-  -> schema validation
-  -> human review decision
-  -> AI-run provenance and audit event
-  -> evaluation report
+authenticated or public request
+  -> route policy and tenant resolution
+  -> lexical/vector candidate retrieval
+  -> weighted fusion or reciprocal-rank fusion
+  -> structured generation over retrieved chunks
+  -> citation materialization and exact-quote validation
+  -> refusal normalization
+  -> AI-run provenance and optional human review
 ```
 
-## Domain Objects
+The public demo stops after validated read-only output. The local agent path can create an approval
+request, but study-task creation requires manager approval and an idempotency key.
 
-- `source_documents`: imported sources such as papers, articles, repos, dataset notes, or technical documents.
-- `document_versions`: immutable source snapshots with hashes.
-- `chunks`: heading-aware passages with source offsets and version references.
-- `chunk_embeddings`: vector representations tied to chunk hash and embedding model.
-- `generated_pages`: Markdown outputs such as paper summaries, concept pages, comparison notes, and glossaries.
-- `ai_runs`: one model or evaluation operation with query, retrieval mode, prompt version, model metadata, retrieved chunk IDs, validation result, output payload, metrics, and timestamp.
-- `ai_suggestions`: model outputs awaiting review.
-- `review_decisions`: accept, reject, or edit actions.
-- `audit_events`: security- and provenance-relevant events.
-- `evaluation_cases`: golden cases for retrieval, extraction, citation, and refusal behaviour.
-- `evaluation_results`: metric outputs from repeatable evaluation runs.
+## Components
 
-## Retrieval Strategy
+| Component | Responsibility |
+|---|---|
+| `core/ingestion.py` | Normalize Markdown/text, create deterministic versions and heading-aware chunks. |
+| `core/embeddings.py` | Local, OpenAI, and Vertex embedding providers with model/dimension isolation. |
+| `core/retrieval.py` | Lexical/vector candidates, tenant document filters, weighted fusion, and RRF. |
+| `core/llm.py` | Deterministic, OpenAI, and Vertex structured-generation providers. |
+| `core/qa.py` | Citation materialization, exact-source alignment, pruning, and refusal normalization. |
+| `core/agent.py` | Typed tools, step budget, duplicate-call guard, approval request, and idempotent task flow. |
+| `db/` | SQLAlchemy models, tenant-scoped repositories, SQLite fallback, and PostgreSQL/pgvector path. |
+| `api.py` | HTTP schemas, route policy, orchestration, and public demo boundary. |
+| `mcp_server.py` | Two tenant-pinned read-only stdio tools. |
 
-The project should become real RAG before it is pitched heavily as RAG:
+## Identity and tenancy
 
-1. Lexical retrieval with PostgreSQL full-text search.
-2. Semantic retrieval with pgvector embeddings.
-3. Hybrid scoring across lexical and vector results.
-4. Optional reranking of the top candidates.
-5. Evidence thresholding before answer generation.
-6. Source-cited generation over retrieved chunks only.
+In Google-auth mode, bearer tokens are verified for issuer, audience, signature, expiry, and
+subject. Tenant membership is resolved from server-owned records. Model-facing tool schemas do not
+accept a tenant identifier.
 
-If retrieval evidence is weak or missing, the system should produce an insufficient-evidence response instead of improvising.
+Repository queries enforce tenant ownership or tenant-document grants. A missing or cross-tenant
+record is returned as absent rather than leaking existence.
 
-## Structured Output Strategy
+## Persistence
 
-LLM workflows must return schema-shaped outputs:
+SQLite is the credential-free local and public-demo fallback. PostgreSQL stores relational records
+and mirrors embedding vectors into pgvector for vector and hybrid retrieval. The public Cloud Run
+service does not claim durable Cloud SQL persistence.
 
-- paper summary and method/dataset/metric extraction
-- document comparison
-- structured document extraction
-- cited question answering
+## Audit record
 
-Raw model output and validated output are stored separately. Validation failures become review items and evaluation failures.
+An AI run can record:
 
-## Auditability
+- query and retrieval mode;
+- embedding provider, model, and dimensions;
+- generation provider/model and prompt version;
+- retrieved chunk identifiers;
+- citation-validity and refusal state;
+- token usage, latency, and estimated cost;
+- structured output and timestamp.
 
-Every AI-generated output must be traceable to:
-
-- source document version/hash
-- retrieved chunk IDs
-- prompt version
-- model name
-- model parameters
-- output schema version
-- validation result
-- latency and estimated cost
-- user review decision
-- timestamp
-
-This is the core high-stakes document AI differentiator.
+External validation artifacts are redacted before being checked into `results/evidence/`.

@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 
 from diw.api import create_app
 from diw.auth import AuthenticatedPrincipal
+from diw.web_views import _workspace_html
 
 
 class FakeAuthenticator:
@@ -20,6 +21,12 @@ class FakeAuthenticator:
 
 
 class PublicDemoTests(unittest.TestCase):
+    def test_workspace_template_is_packaged(self):
+        workspace = _workspace_html()
+
+        self.assertIn("<title>Document Intelligence Workspace</title>", workspace)
+        self.assertIn('id="paperWorkspace"', workspace)
+
     def _build_corpus(self, root: Path) -> Path:
         corpus = root / "corpus"
         corpus.mkdir()

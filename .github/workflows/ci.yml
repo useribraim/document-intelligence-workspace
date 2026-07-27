@@ -24,10 +24,20 @@ jobs:
         run: python -m pip install -e ".[dev,cloud,auth,mcp]"
 
       - name: Check formatting and lint
-        run: ruff check src tests
+        run: ruff check src tests scripts
+
+      - name: Check deployment scripts
+        run: |
+          bash -n scripts/deploy_cloud_run.sh
+          bash -n scripts/run_vertex_cloud_smoke.sh
 
       - name: Run tests
-        run: pytest
+        run: pytest -q
 
-      - name: Verify frozen audit corpus
-        run: python -m diw.cli corpus-verify
+      - name: Verify public evidence and corpus manifest
+        run: |
+          python scripts/verify_public_evidence.py
+          python -m diw.cli corpus-verify --allow-missing
+
+      - name: Build package
+        run: python -m build

@@ -12,6 +12,37 @@ from sqlalchemy.orm import Session
 
 
 class CliTests(unittest.TestCase):
+    def test_corpus_verify_distinguishes_manifest_only_from_strict_local_check(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            manifest = root / "manifest.jsonl"
+            missing_text = root / "paper.txt"
+            manifest.write_text(
+                json.dumps(
+                    {
+                        "document_id": "paper-1",
+                        "canonical_url": "https://example.com/paper",
+                        "license_url": "https://example.com/license",
+                        "redistributed": False,
+                        "version_identifier": "v1",
+                        "text_path": str(missing_text),
+                        "sha256": "0" * 64,
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            with patch("sys.stdout"):
+                self.assertEqual(
+                    main(["corpus-verify", "--manifest", str(manifest), "--allow-missing"]),
+                    0,
+                )
+                self.assertEqual(
+                    main(["corpus-verify", "--manifest", str(manifest)]),
+                    1,
+                )
+
     def test_annotation_decisions_summary_and_agreement_use_claim_pairs_only(self):
         with TemporaryDirectory() as tmp:
             root = Path(tmp)

@@ -11,7 +11,7 @@ DIW_VERTEX_JOB="${DIW_VERTEX_JOB:-diw-vertex-smoke}"
 DIW_VERTEX_CHAT_MODEL="${DIW_VERTEX_CHAT_MODEL:-gemini-2.5-flash}"
 DIW_VERTEX_EMBEDDING_MODEL="${DIW_VERTEX_EMBEDDING_MODEL:-gemini-embedding-001}"
 DIW_RUNTIME_SERVICE_ACCOUNT="${DIW_RUNTIME_SERVICE_ACCOUNT:-diw-cloud-run-runtime@${DIW_GCP_PROJECT}.iam.gserviceaccount.com}"
-DIW_VERTEX_EVIDENCE_OUT="${DIW_VERTEX_EVIDENCE_OUT:-results/integrations/vertex/vertex-cloud-run-smoke.json}"
+DIW_VERTEX_EVIDENCE_OUT="${DIW_VERTEX_EVIDENCE_OUT:-results/evidence/vertex-cloud-run-smoke.json}"
 DIW_VERTEX_EXECUTION_NAME="${DIW_VERTEX_EXECUTION_NAME:-}"
 
 if [[ -n "${DIW_VERTEX_EXECUTION_NAME}" ]]; then

@@ -1,49 +1,56 @@
-# Evaluation Plan
+# Evaluation Method
 
-## Why Evaluation Comes Early
+Evaluation is split into deterministic regression checks, frozen retrieval measurements, external
+integration smoke tests, and unfinished human calibration. Those categories are not interchangeable.
 
-The project should not rely on spot-checking or "looks good" demos. Evaluation is the proof that the document AI workflow is controlled rather than decorative.
+## Deterministic regression suite
 
-## First Metrics
+The test suite covers:
 
-- `retrieval_recall_at_k`: the proportion of expected evidence phrases found in the retrieved top-k chunks.
-- `retrieval_mrr`: the reciprocal rank of the first retrieved chunk containing expected evidence.
-- `citation_validity_rate`: whether citations point to chunks that support the generated claim.
-- `schema_validity_rate`: whether structured outputs pass validation.
-- `extraction_accuracy`: field-level match against golden answers.
-- `refusal_accuracy`: whether unsupported questions trigger insufficient-evidence behaviour.
-- `latency_ms`: runtime per workflow.
-- `estimated_cost`: model and embedding cost per workflow.
+- ingestion, normalization, chunking, and persistence;
+- lexical, vector, hybrid, and reciprocal-rank-fusion retrieval;
+- exact-quote citation validation and unsupported-evidence refusal;
+- schema-shaped generation and AI-run persistence;
+- tenant-scoped document and research-record access;
+- approval and idempotency boundaries;
+- OIDC claim verification;
+- MCP tool schemas and tenant pinning;
+- the bounded Vertex workflow with injected deterministic providers.
 
-## Starter Evaluation Sets
+The optional PostgreSQL integration test runs only when `POSTGRES_TEST_DATABASE_URL` is configured.
 
-Initial target:
+## Frozen retrieval comparison
 
-- 20 ML/NLP paper cases.
-- 20 professional document extraction cases.
-- 10 refusal/insufficient-evidence cases.
+The 40-question definition includes direct extraction, synthesis, multi-claim, conflicting
+evidence, misleadingly relevant evidence, insufficient evidence, and refusal-required cases.
+Twenty-three questions contain predeclared gold chunk identifiers and contribute to Recall@5 and
+MRR.
 
-Release target:
+The public comparison is
+[`retrieval-comparison.md`](../results/evidence/retrieval-comparison.md). The per-question trace
+contains identifiers and ranks but no full paper text.
 
-- 50-100 total golden cases.
-- At least one saved evaluation report in `docs/eval-results.md`.
-- At least three diagnosed failures with fixes or tradeoff notes.
+## External integrations
 
-The current runner reports both `retrieval_recall_at_k` and `retrieval_mrr` in its JSON and
-Markdown output. The existing 12-case report is a baseline, not the final release target.
+Vertex AI and MCP are validated separately from unit tests:
 
-## Evaluation Case Shape
+- the Vertex Cloud Run Job records provider/model identifiers, tokens, chunks, citations, refusal,
+  prompt/run IDs, latency, and errors;
+- the external MCP client records initialization, tool discovery, arguments, results, cross-tenant
+  denial, and tenant-argument injection behavior.
 
-Each case should include:
+Both redacted records are under [`results/evidence/`](../results/evidence/).
 
-- `id`
-- `corpus`
-- `task`
-- `question` or extraction instruction
-- `expected_answer` or `expected_fields`
-- `expected_chunk_ids` once sources are indexed
-- `expected_behavior`
+## Human calibration
 
-## Anti-Gaming Rule
+Human support labels are pending. Automated support diagnostics and model-assisted review are not
+used as substitutes. The completion gate is defined in
+[`human-calibration-runbook.md`](human-calibration-runbook.md).
 
-Do not tune the system only until demo examples pass. Keep failing examples in the report and explain what they reveal about retrieval, chunking, prompting, or validation.
+## Anti-gaming rules
+
+- Questions and gold chunk IDs are frozen before comparison.
+- Failing cases remain visible.
+- A combined intervention is not attributed to one component without a control.
+- Exact citations are validated against the chunks used for generation.
+- Agreement is reported before adjudication and without target-driven rounding.

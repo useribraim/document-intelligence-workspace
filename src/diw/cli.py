@@ -1211,19 +1211,72 @@ def annotation_summary_command(args: argparse.Namespace) -> int:
 
 
 def corpus_verify_command(args: argparse.Namespace) -> int:
-    """Fail if a frozen text artifact is absent or differs from its manifest hash."""
+    """Verify corpus provenance and, when available, exact local text hashes."""
     failures = []
+    missing = []
     records = [
         json.loads(line)
         for line in Path(args.manifest).read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
     for record in records:
+        required = {
+            "document_id",
+            "canonical_url",
+            "license_url",
+            "redistributed",
+            "version_identifier",
+            "text_path",
+            "sha256",
+        }
+        absent_fields = sorted(required - set(record))
+        if absent_fields:
+            failures.append(
+                {
+                    "document_id": record.get("document_id"),
+                    "error": "missing manifest fields",
+                    "fields": absent_fields,
+                }
+            )
+            continue
+        if record["redistributed"] is not False:
+            failures.append(
+                {
+                    "document_id": record["document_id"],
+                    "error": "audit paper text must not be marked as redistributed",
+                }
+            )
+            continue
         path = Path(record["text_path"])
-        actual = hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
+        if not path.is_file():
+            missing.append(record["document_id"])
+            if not args.allow_missing:
+                failures.append(
+                    {
+                        "document_id": record["document_id"],
+                        "error": "local corpus text is missing",
+                        "path": str(path),
+                    }
+                )
+            continue
+        actual = hashlib.sha256(path.read_bytes()).hexdigest()
         if actual != record["sha256"]:
-            failures.append({"document_id": record["document_id"], "expected": record["sha256"], "actual": actual})
-    payload = {"frozen_documents": len(records), "valid": not failures, "failures": failures}
+            failures.append(
+                {
+                    "document_id": record["document_id"],
+                    "error": "SHA-256 mismatch",
+                    "expected": record["sha256"],
+                    "actual": actual,
+                }
+            )
+    payload = {
+        "manifest_documents": len(records),
+        "local_documents": len(records) - len(missing),
+        "missing_documents": missing,
+        "allow_missing": args.allow_missing,
+        "valid": not failures,
+        "failures": failures,
+    }
     print(json.dumps(payload, indent=2))
     return 0 if not failures else 1
 
@@ -1657,7 +1710,7 @@ def build_parser() -> argparse.ArgumentParser:
     eval_report.set_defaults(func=eval_report_command)
 
     audit = subparsers.add_parser("claim-audit", help="Run a traceable claim-to-evidence audit over a frozen question JSONL.")
-    audit.add_argument("--questions", default="data/audit/questions/pilot_v0.jsonl")
+    audit.add_argument("--questions", default="data/audit/questions/v1_40_gold.jsonl")
     audit.add_argument("--manifest", default="data/audit/corpus_manifest.jsonl")
     audit.add_argument("--out", default="results/runs/claim-audit.json")
     audit.add_argument("--run-id")
@@ -1776,9 +1829,15 @@ def build_parser() -> argparse.ArgumentParser:
     annotation_summary.set_defaults(func=annotation_summary_command)
 
     corpus_verify = subparsers.add_parser(
-        "corpus-verify", help="Verify that frozen corpus text matches the manifest SHA-256 hashes."
+        "corpus-verify",
+        help="Verify audit-corpus provenance and local text SHA-256 hashes.",
     )
     corpus_verify.add_argument("--manifest", default="data/audit/corpus_manifest.jsonl")
+    corpus_verify.add_argument(
+        "--allow-missing",
+        action="store_true",
+        help="Validate the manifest and any present local files without requiring paper text.",
+    )
     corpus_verify.set_defaults(func=corpus_verify_command)
 
     freeze = subparsers.add_parser(

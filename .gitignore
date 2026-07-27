@@ -11,4 +11,13 @@ postgres_data/
 data/demo/raw/*.normalised.md
 data/demo/evals/review_cases.jsonl
 data/demo/wiki/paper_cards/*.md
+data/audit/corpus/text/*.txt
+data/audit/annotations/local/
+data/audit/annotations/*_ibraim_*.jsonl
+data/audit/annotations/*_annotator_human.jsonl
+results/local/
+results/reports/
+results/runs/
 *.egg-info/
+build/
+dist/

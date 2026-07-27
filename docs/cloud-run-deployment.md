@@ -22,7 +22,7 @@ policies.
 
 The deployed service also exposes three deliberately public routes:
 
-- `/` — recruiter landing page with the short product claim and measured facts.
+- `/` — public landing page with the product scope and measured facts.
 - `/demo` plus `POST /demo/ask` — deterministic, read-only retrieval over bundled synthetic
   sources. It has no write tools, database mutation, or external model request.
 - `/evidence` — the frozen retrieval comparison and explicit pending human-calibration boundary.
@@ -70,7 +70,7 @@ Do not call the deployment production-ready until all of these are true:
 - The API image starts with a non-local provider configuration.
 - Authentication and tenant checks execute before document or research-record access.
 - Secrets are injected by Secret Manager and are absent from logs.
-- A smoke test proves question -> evidence -> cited answer -> trace inspection.
+- A smoke test records question -> evidence -> cited answer -> trace inspection.
 - The public URL has a documented cost limit and a way to stop paid resources.
 
 ## Basic Private Smoke Deployment
@@ -107,7 +107,7 @@ verified account. Cloud Run is public at the transport layer in this mode becaus
 performs the end-user identity check. Keep every non-public application route behind an explicit
 authorization policy.
 
-## Interview Explanation
+## Design Rationale
 
 Cloud Run is appropriate for the first deployment because the workload is request-driven and
 low-volume. Cloud SQL keeps relational business records, approvals, audit metadata, and

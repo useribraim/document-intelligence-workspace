@@ -2,20 +2,19 @@
 
 ## 2026-07-27 private smoke revision
 
-- Project: `gen-lang-client-0605013452`
+- Project: `<redacted-project-id>`
 - Region: `europe-west1`
 - Service: `document-intelligence-workspace`
 - Revision: `document-intelligence-workspace-00001-bph`
 - Service URL: `https://document-intelligence-workspace-312779789755.europe-west1.run.app`
-- Runtime identity: `diw-cloud-run-runtime@gen-lang-client-0605013452.iam.gserviceaccount.com`
-- Build identity: `diw-cloud-run-builder@gen-lang-client-0605013452.iam.gserviceaccount.com`
+- Runtime identity: `diw-cloud-run-runtime@<redacted-project-id>.iam.gserviceaccount.com`
+- Build identity: `diw-cloud-run-builder@<redacted-project-id>.iam.gserviceaccount.com`
 - Limits: one vCPU, 512 MiB, minimum zero instances, maximum one instance
 - Authenticated `GET /startup`: HTTP 200 with `{"status":"ready"}`
 - Unauthenticated `GET /startup`: HTTP 403
 
-This proves a real container build, revision, route, and Cloud Run IAM boundary. It is not yet the
-public resume-demo gate: the Google OAuth web client and application-authenticated public revision
-must succeed first.
+This records a real container build, revision, route, and Cloud Run IAM boundary. The later public
+revision adds application-authenticated Google OAuth.
 
 ## 2026-07-27 public OAuth revision
 
@@ -32,14 +31,14 @@ must succeed first.
 
 The configured test user completed Google account selection on the deployed page. The browser
 returned a Google ID token to `/auth/whoami`, the deployed verifier accepted its audience and
-signature, and the page rendered `Authenticated as useribraim@gmail.com`.
+signature, and the page rendered the redacted verified account.
 
 This releases both the public Cloud Run URL and live Google OAuth/OIDC configuration claims.
 
-## 2026-07-27 recruiter-demo revision
+## 2026-07-27 public-demo revision
 
 - Revision: `document-intelligence-workspace-00003-b49`
-- Stable resume URL:
+- Stable public URL:
   `https://document-intelligence-workspace-312779789755.europe-west1.run.app/`
 - Public `GET /`, `/demo`, `/evidence`, `/signin`, `/startup`, and `/health`: HTTP 200
 - Public `POST /demo/ask`: HTTP 200 with an exact source quote, valid citation check,
@@ -52,26 +51,26 @@ This releases both the public Cloud Run URL and live Google OAuth/OIDC configura
 The live browser walkthrough opened the landing page without an account, followed the primary
 demo link, submitted the default question, and rendered the cited response plus execution trace.
 No browser console warnings or errors were recorded. The demo is deliberately deterministic and
-read-only; it proves the public product surface and retrieval/citation boundary, not persistent
+read-only; it validates the public product surface and retrieval/citation boundary, not persistent
 Cloud SQL state or the complete authenticated write workflow.
 
 ## 2026-07-27 Vertex smoke revision
 
 - Public service revision: `document-intelligence-workspace-00004-26q`
-- Stable resume URL:
+- Stable public URL:
   `https://document-intelligence-workspace-312779789755.europe-west1.run.app/`
 - Cloud Run Job: `diw-vertex-smoke`
 - Successful execution: `diw-vertex-smoke-z5m7b`
 - Vertex API: enabled
 - Runtime role: `roles/aiplatform.user`
 - Runtime identity:
-  `diw-cloud-run-runtime@gen-lang-client-0605013452.iam.gserviceaccount.com`
+  `diw-cloud-run-runtime@<redacted-project-id>.iam.gserviceaccount.com`
 - Models: `gemini-embedding-001` and `gemini-2.5-flash`
-- Evidence: [`vertex-cloud-run-smoke.json`](../results/integrations/vertex/vertex-cloud-run-smoke.json)
+- Evidence: [`vertex-cloud-run-smoke.json`](../results/evidence/vertex-cloud-run-smoke.json)
 
 The job used the deployed service image and completed real document/query embeddings, cited
 Gemini generation, exact-quote citation validation, and unsupported-query refusal with no recorded
-errors. It uses bundled synthetic documents and ephemeral SQLite; the public recruiter demo
+errors. It uses bundled synthetic documents and ephemeral SQLite; the public demo
 remains deterministic and read-only.
 
 ## Cost controls

@@ -1,6 +1,6 @@
 # MCP Stdio Validation
 
-## Released Boundary
+## Validated Boundary
 
 On 2026-07-27, the official Python MCP SDK `ClientSession` version 1.28.1 launched
 `python -m diw.mcp_server` as a separate stdio process and completed this transcript:
@@ -15,7 +15,7 @@ On 2026-07-27, the official Python MCP SDK `ClientSession` version 1.28.1 launch
    process-configured tenant and did not return the other tenant's evidence.
 
 The server exposed no write tools. The credential-free transcript is
-[`mcp-stdio-validation.json`](../../results/integrations/mcp/mcp-stdio-validation.json).
+[`mcp-stdio-validation.json`](../../results/evidence/mcp-stdio-validation.json).
 
 ## Client Configuration
 
@@ -41,7 +41,7 @@ transcript.
 This validates an external client process over local stdio. It does not claim a remotely hosted
 MCP transport, OAuth for MCP, or write-capable MCP tools.
 
-## Resume-Safe Claim
+## Validated Scope
 
 > Built a tenant-pinned, read-only MCP stdio server and validated tool discovery, evidence search,
 > record lookup, and cross-tenant denial through an external MCP client.
