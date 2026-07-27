@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "document-intelligence-workspace": {
+      "command": "/absolute/path/to/document-intelligence-workspace/.venv/bin/diw-mcp",
+      "args": [
+        "--tenant-id",
+        "tenant-id-owned-by-the-client-configuration",
+        "--database-url",
+        "sqlite+pysqlite:////absolute/path/to/diw.db"
+      ]
+    }
+  }
+}

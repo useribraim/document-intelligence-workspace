@@ -2,6 +2,16 @@
 
 Markdown-first document intelligence system for ML/NLP research sources and technical documents.
 
+**Live Cloud Run demo:** [Open the public recruiter page](https://document-intelligence-workspace-312779789755.europe-west1.run.app/)
+
+The stable service URL has three deliberate trust levels:
+
+- `/` and `/demo` are public and require no account; the demo is read-only and uses bundled
+  synthetic paper excerpts.
+- `/signin` proves live Google OIDC and is optional for a reviewer.
+- Data and agent routes remain protected; unscoped application routes fail closed in Google-auth
+  mode.
+
 The project is built to prove a controlled document AI loop, not a generic chat-with-PDFs app:
 
 1. Ingest long-form sources.
@@ -12,6 +22,33 @@ The project is built to prove a controlled document AI loop, not a generic chat-
 6. Log AI-run provenance for auditability.
 7. Route AI outputs through human review decisions.
 8. Evaluate retrieval quality, citation validity, refusal behaviour, and structured extraction.
+
+## Evidence Snapshot
+
+- **Retrieval:** on the frozen 40-question set, OpenAI `text-embedding-3-small` plus RRF
+  improved Recall@5 from 0.2609 to 0.2826, MRR from 0.1935 to 0.3022, and
+  gold-citation recall from 0.1087 to 0.2536 versus local hashing plus weighted fusion.
+  [Comparison report](results/reports/v1-hashing-weighted-vs-te3s-rrf.md)
+- **Safety and identity:** the deployed Google OAuth flow verified a real ID token and rendered
+  the authenticated account. Server-side tenant membership, approval-gated writes, idempotency,
+  and cross-tenant denial are tested.
+- **Vertex AI:** Cloud Run Job execution `diw-vertex-smoke-z5m7b` made real
+  `gemini-embedding-001` and `gemini-2.5-flash` calls, produced a cited supported answer, and
+  refused an unsupported legal query. The redacted trace records token use, chunks, citations,
+  prompt/run IDs, and no errors.
+- **MCP:** the official Python SDK, running as a separate client process, discovered and invoked
+  both read-only stdio tools; its transcript proves cross-tenant lookup denial and safe handling
+  of a model-supplied tenant override.
+- **Verification:** 91 tests pass locally; one optional PostgreSQL integration test is skipped
+  unless its database URL is configured.
+- **Deployment:** a public, scale-to-zero Cloud Run service presents a zero-login recruiter page,
+  read-only cited retrieval demo, and optional Google sign-in; protected identity and agent routes
+  reject missing tokens.
+- **Not yet claimed:** human-calibrated agreement metrics remain evidence-gated until the primary
+  and independent blind labels are complete.
+
+The exact resume-safe wording and its release gates are tracked in
+[resume-claim-gates.md](docs/resume-claim-gates.md).
 
 ## v1.8.2 Scope
 
@@ -27,7 +64,10 @@ Implemented:
 - Local database persistence for source documents, document versions, and chunks.
 - CLI commands for database initialisation and loading documents.
 - Deterministic local embedding provider for development and tests.
-- Chunk embedding storage.
+- Optional OpenAI text-embedding provider for measured semantic retrieval runs.
+- Optional Vertex AI `gemini-embedding-001` provider with retrieval-query/document task types.
+- Reciprocal-rank fusion reranking for hybrid retrieval.
+- Chunk embedding storage with per-model isolation, so embeddings from different providers coexist in one database.
 - Lexical, vector, and hybrid retrieval over stored chunks.
 - CLI commands for embedding chunks and retrieving ranked evidence.
 - Source-cited QA composer over retrieved chunks.
@@ -37,11 +77,15 @@ Implemented:
 - LLM provider interface for structured source-cited answers.
 - Deterministic structured provider for local development and tests.
 - OpenAI-compatible chat provider for real LLM runs when `OPENAI_API_KEY` is available.
+- Vertex AI Gemini structured-output provider through Application Default Credentials.
 - Prompt version metadata on generated answers.
 - Golden-case evaluation runner for structured extraction, citation validity, and refusal behaviour.
 - Persistent AI run records for answer generation and evaluation reports.
 - Local bounded agent core with typed tools, a five-step budget, duplicate-call protection,
   tenant-scoped document retrieval, and durable per-step audit records.
+- Read-only, tenant-pinned MCP stdio server for evidence search and research-record lookup.
+- Optional OIDC verification for tenant-scoped agent routes with issuer, audience, expiry,
+  subject, and tenant-claim enforcement.
 - Tenant, user, research-record, approval-request, and idempotent study-task persistence for
   the forthcoming research action workflow.
 - Manager approval gate before a study task can be created.
@@ -60,6 +104,10 @@ Implemented:
 - Review decision records for accepted, rejected, and edited suggestions.
 - CLI commands for listing suggestions and recording review decisions.
 - FastAPI backend exposing ingestion, embedding, question answering, AI-run inspection, and human review.
+- Public recruiter landing page and deterministic read-only cited demo with a visible execution
+  trace, exact-quote validation, no external model call, and no write tools.
+- Public evidence page that distinguishes automated retrieval measurements from pending human
+  calibration.
 - Minimal browser dashboard for documents, pending review suggestions, and recent AI runs.
 - Agent-style review workspace with answer thread, evidence inspector, AI-run metadata, and review actions.
 - Evidence-first workspace flow with retrieval preview before answer generation.
@@ -108,21 +156,34 @@ The project is evolving into a Research Knowledge & Action Assistant. The [flags
 
 Evaluation details are documented in [evaluation.md](docs/evaluation.md), and the current
 container/deployment boundary is recorded in [cloud-run-deployment.md](docs/cloud-run-deployment.md).
-The local bounded agent is implemented and tested; ADK, MCP, OAuth/OIDC, Cloud SQL deployment,
-and Vertex AI provider integration remain future work.
+The local bounded agent, RRF retrieval, live Vertex smoke workflow, externally validated thin MCP
+server, OIDC-protected agent boundary, and public Cloud Run deployment are implemented. Cloud SQL
+deployment, the persistent public workflow, remote MCP transport, and human calibration remain
+unverified. See [capability-status.md](docs/capability-status.md) for the exact claim boundary.
+
+## Claim-to-evidence audit pilot
+
+The workspace now has a claim-level audit path for testing whether a cited span supports the exact sentence-level claim. See [claim-evidence-audit.md](docs/claim-evidence-audit.md) for the reproducible pilot workflow and its deliberately narrow limits.
 
 ## Repository Layout
 
 ```text
 document-intelligence-workspace/
   src/diw/core/        # Domain logic that should remain framework-light
-  src/diw/api.py       # FastAPI app, dashboard, and review workspace
+  src/diw/api.py       # FastAPI routes, auth boundaries, and orchestration
+  src/diw/web_views.py # Public, sign-in, dashboard, and workspace HTML/JavaScript
   tests/               # Unit tests for deterministic core logic
   docs/                # Architecture, evaluation, and deployment notes
   data/demo/           # Public/synthetic demo sources and eval cases
 ```
 
 ## Development
+
+### Local API credentials
+
+For local OpenAI-backed commands, copy `.env.local.example` to `.env.local` and add your
+own `OPENAI_API_KEY`. The local file is ignored by Git and takes effect automatically when
+you run the CLI from the repository root. Do not put credentials in tracked files.
 
 Create and activate a virtual environment if desired:
 
@@ -245,7 +306,18 @@ PYTHONPATH=src python3 -m diw.cli retrieve \
   --top-k 3
 ```
 
-The local embedding provider is intentionally deterministic and API-free. It is used to build and test the retrieval pipeline before swapping in OpenAI/Azure embeddings and pgvector-backed vector search.
+The local embedding provider is intentionally deterministic and API-free. It builds and tests the retrieval pipeline without credentials. For measured semantic retrieval runs, an OpenAI embedding provider is available behind `--embedding-provider openai` (requires `OPENAI_API_KEY`, defaults to `text-embedding-3-small` at 1536 dimensions):
+
+```bash
+PYTHONPATH=src python3 -m diw.cli embed --embedding-provider openai
+PYTHONPATH=src python3 -m diw.cli retrieve \
+  "how does the workspace preserve source evidence" \
+  --mode hybrid \
+  --embedding-provider openai \
+  --top-k 3
+```
+
+Embeddings are stored per model name and dimension, so OpenAI and local hashing embeddings coexist in the same database and retrieval only uses vectors from the selected provider.
 
 Produce a source-cited answer:
 

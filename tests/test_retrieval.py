@@ -4,7 +4,7 @@ import unittest
 
 from diw.core.embeddings import LocalHashingEmbeddingProvider
 from diw.core.ingestion import ingest_file
-from diw.core.retrieval import retrieve_chunks
+from diw.core.retrieval import RetrievalResult, _rank_results, retrieve_chunks
 from diw.db.models import Base
 from diw.db.repository import (
     count_embeddings,
@@ -17,7 +17,60 @@ from diw.db.session import build_engine
 from sqlalchemy.orm import Session
 
 
+class _ForeignEmbeddingProvider:
+    """Stands in for a different embedding model (e.g. an API provider)."""
+
+    model_name = "foreign-embedding-v1"
+    dimensions = 32
+
+    def embed(self, text: str) -> list[float]:
+        return [0.0] * self.dimensions
+
+
 class RetrievalTests(unittest.TestCase):
+    def test_rrf_balances_lexical_and_vector_ranks(self):
+        results = [
+            RetrievalResult(
+                chunk_id=chunk_id,
+                document_id="doc",
+                version_id="version",
+                chunk_index=index,
+                heading_path=[],
+                text=chunk_id,
+                lexical_score=lexical,
+                vector_score=vector,
+                score=0,
+            )
+            for index, (chunk_id, lexical, vector) in enumerate(
+                [
+                    ("lexical-only", 1.0, 0.0),
+                    ("balanced", 0.8, 0.8),
+                    ("vector-only", 0.0, 1.0),
+                    ("weak", 0.1, 0.1),
+                ]
+            )
+        ]
+
+        ranked = _rank_results(results, top_k=4, mode="hybrid", reranker="rrf")
+
+        self.assertEqual(ranked[0].chunk_id, "balanced")
+        self.assertGreater(ranked[0].score, ranked[-1].score)
+
+    def test_unknown_reranker_is_rejected(self):
+        engine = build_engine("sqlite+pysqlite:///:memory:")
+        Base.metadata.create_all(engine)
+        try:
+            with Session(engine) as session:
+                with self.assertRaisesRegex(ValueError, "reranker"):
+                    retrieve_chunks(
+                        session,
+                        "query",
+                        LocalHashingEmbeddingProvider(),
+                        reranker="mystery",
+                    )
+        finally:
+            engine.dispose()
+
     def test_embed_missing_chunks_is_idempotent(self):
         engine = build_engine("sqlite+pysqlite:///:memory:")
         Base.metadata.create_all(engine)
@@ -71,6 +124,35 @@ class RetrievalTests(unittest.TestCase):
                 self.assertEqual(len(results), 1)
                 self.assertIn("Method", results[0].heading_path)
                 self.assertIn("hybrid retrieval", results[0].text.lower())
+        finally:
+            engine.dispose()
+
+    def test_retrieval_ignores_embeddings_from_other_models_or_dimensions(self):
+        engine = build_engine("sqlite+pysqlite:///:memory:")
+        Base.metadata.create_all(engine)
+        embedded_provider = LocalHashingEmbeddingProvider(dimensions=32)
+        try:
+            with TemporaryDirectory() as tmp, Session(engine) as session:
+                path = Path(tmp) / "paper.md"
+                path.write_text("# Paper\n\nHybrid retrieval evidence.\n", encoding="utf-8")
+                document = ingest_file(path, target_chars=220, overlap_chars=0)
+                save_ingested_document(session, document)
+                embed_missing_chunks(session, embedded_provider)
+                session.commit()
+
+                different_dimensions = LocalHashingEmbeddingProvider(dimensions=16)
+                self.assertEqual(
+                    retrieve_chunks(
+                        session, "hybrid retrieval", different_dimensions, top_k=5
+                    ),
+                    [],
+                )
+
+                foreign_model = _ForeignEmbeddingProvider()
+                self.assertEqual(
+                    retrieve_chunks(session, "hybrid retrieval", foreign_model, top_k=5),
+                    [],
+                )
         finally:
             engine.dispose()
 

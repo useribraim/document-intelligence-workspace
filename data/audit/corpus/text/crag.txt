@@ -1,0 +1,919 @@
+                                                                    Corrective Retrieval Augmented Generation
+                                                       Shi-Qi Yan1 * , Jia-Chen Gu2 * , Yun Zhu3 , Zhen-Hua Ling1
+                                            1
+                                           National Engineering Research Center of Speech and Language Information Processing,
+                                                       University of Science and Technology of China, Hefei, China
+                                                 2
+                                                   Department of Computer Science, University of California, Los Angeles
+                                                                            3
+                                                                              Google DeepMind
+                                        yansiki@mail.ustc.edu.cn, gujc@ucla.edu, yunzhu@google.com, zhling@ustc.edu.cn
+
+                                                                    Abstract                              Q: What is Henry             Q: Who was the screenwriter
+                                                                                                         Feilden's occupation?           for Death of a Batman?
+                                                Large language models (LLMs) inevitably
+                                                exhibit hallucinations since the accuracy of
+                                                generated texts cannot be secured solely by
+                                                                                                                                   Retriever
+                                                the parametric knowledge they encapsulate. Al-
+
+
+
+
+arXiv:2401.15884v3 [cs.CL] 7 Oct 2024
+                                                though retrieval-augmented generation (RAG)              Accurate Documents               Inaccurate Documents
+                                                is a practicable complement to LLMs, it relies
+                                                heavily on the relevance of retrieved docu-
+                                                                                                         Henry Feilden                    Batman (1989 film):
+                                                ments, raising concerns about how the model
+                                                                                                         (Conservative politician):       of the murder of Bruce
+                                                behaves if retrieval goes wrong. To this end, we         Henry Master Feilden             Wayne's parents. When
+                                                propose the Corrective Retrieval Augmented               was an Conservative              Hamm's script was
+                                                Generation (CRAG) to improve the robustness              Party politician…                rewritten, …
+                                                of generation. Specifically, a lightweight
+                                                retrieval evaluator is designed to assess the
+                                                overall quality of retrieved documents for a                         Politician.                    Hamm.
+                                                query, returning a confidence degree based                                         ✓                     ✗
+                                                on which different knowledge retrieval ac-
+                                                tions can be triggered. Since retrieval from
+                                                static and limited corpora can only return sub-          Generator                       Generator
+                                                optimal documents, large-scale web searches
+                                                are utilized as an extension for augmenting the        Figure 1: The examples show that a low-quality retriever
+                                                retrieval results. Besides, a decompose-then-          is prone to introducing a substantial amount of irrelevant
+                                                recompose algorithm is designed for retrieved          information, impeding the generators from acquiring
+                                                documents to selectively focus on key infor-           accurate knowledge and potentially misleading them.
+                                                mation and filter out irrelevant information in
+                                                them. CRAG is plug-and-play and can be                 the parametric knowledge they encapsulate (Zhang
+                                                seamlessly coupled with various RAG-based
+                                                                                                       et al., 2023b; Muhlgay et al., 2023).
+                                                approaches. Experiments on four datasets
+                                                covering short- and long-form generation tasks            Prior research has introduced the retrieval tech-
+                                                show that CRAG can significantly improve the           niques to incorporate the knowledge relevant to
+                                                performance of RAG-based approaches. 1                 input and augment generation, as exemplified
+                                                                                                                                      Retrieved
+                                                                                                       by retrieval-augmented generation      (RAG) (Lewis
+                                        1       Introduction                                                                         Documents
+                                                                                                       et al., 2020). In this framework, the input to models
+                                                                                                       is augmented by prepending relevant documents
+                                        Large language models (LLMs) have attracted                    that are retrieved from an external knowledge
+                                        increasing attention and exhibited impressive abili-           corpus (Guu et al., 2020). While RAG serves as a
+                                        ties to understand instructions and generate fluent            practicable complement to LLMs, its effectiveness
+                                        language texts (Brown et al., 2020; Ouyang et al.,             is contingent upon the relevance and accuracy of
+                                        2022; Touvron et al., 2023a). Nevertheless, LLMs               the retrieved documents (Li et al., 2022; Tan et al.,
+                                        inevitably manifest hallucinations (Ji et al., 2023)           2022). The heavy reliance of generation on the
+                                        due to their struggle with factual errors (Mallen              retrieved knowledge raises significant concerns
+                                        et al., 2023; Min et al., 2023) and inability to               about the model’s behavior and performance in
+                                        secure the accuracy of generated texts solely by               scenarios where retrieval may fail or return inaccu-
+                                            * Equal contribution.                                      rate results (Shi et al., 2023). As Figure 1 shows
+                                            1
+                                                The code is available at github.com/HuskyInSalt/CRAG   that a low-quality retriever is prone to introducing
+a substantial amount of irrelevant information,         four datasets of PopQA (Mallen et al., 2023), Biog-
+impeding the models from acquiring accurate             raphy (Min et al., 2023), Pub Health (Zhang et al.,
+knowledge and potentially misleading them, result-      2023a), and Arc-Challenge (Bhakthavatsalam et al.,
+ing in issues such as hallucinations (Zhang et al.,     2021) show that CRAG can significantly improve
+2023b). However, most conventional RAG ap-              the performance of standard RAG and state-of-the-
+proaches indiscriminately incorporate the retrieved     art Self-RAG, demonstrating its generalizability
+documents, regardless of whether these documents        across both short- and long-form generation tasks.
+are relevant or not (Rony et al., 2022). Furthermore,   To facilitate others to reproduce our results, we will
+current methods mostly treat complete documents         publish all source code later.
+as reference knowledge both during retrieval and           In summary, our contributions in this paper are
+utilization. But a considerable portion of the text     three-fold: 1) This paper studies the scenarios
+within these retrieved documents is often non-          where the retriever returns inaccurate results and,
+essential for generation, which should not have         to the best of our knowledge, makes the first
+been equally referred to and involved in RAG.           attempt to design corrective strategies for RAG to
+   On account of the above issues, this paper           improve its robustness. 2) A plug-and-play method
+particularly studies the scenarios where                named CRAG is proposed to improve the ability of
+the retriever returns inaccurate results.          A    automatic self-correction and efficient utilization
+method named Corrective Retrieval-Augmented             of retrieved documents. 3) Experimental results
+Generation (CRAG) is proposed to self-correct           extensively demonstrate CRAG’s adaptability to
+the results of retriever and improve the utilization    RAG-based approaches and its generalizability
+of documents for augmenting generation. A               across short- and long-form generation tasks.
+lightweight retrieval evaluator is designed to
+assess the overall quality of retrieved documents       2   Related Work
+for a query. This serves as a crucial component
+                                                        Hallucinations of LLMs Although LLMs have
+in RAG, contributing to informative generation
+                                                        exhibited impressive abilities to understand instruc-
+by reviewing and evaluating the relevance
+                                                        tions and generate fluent language texts (Bang et al.,
+and reliability of the retrieved documents. A
+                                                        2023; Qin et al., 2023; Zhong et al., 2023), one of
+confidence degree is quantified based on which
+                                                        the most severe issues that LLMs have still been
+different knowledge retrieval actions of {Correct,
+                                                        struggling with is hallucinations. As many studies
+Incorrect, Ambiguous} can be triggered. For the
+                                                        found (Tonmoy et al., 2024; Zhang et al., 2023b;
+latter two actions, large-scale web searches (Piktus
+                                                        Shuster et al., 2021), either outdated information
+et al., 2021; Komeili et al., 2022) are integrated as
+                                                        or incorrect knowledge that is activated would
+a strategic extension, since retrieval from static
+                                                        seriously result in hallucinations. Large-scale
+and limited corpora can only return sub-optimal
+                                                        unregulated training data collection, low proportion
+documents in terms of scope and diversity. This
+                                                        of high-quality sampling data, imperfection of
+augmentation is implemented to broaden the
+                                                        data allocation in the input space, and many
+spectrum of retrieved information, harnessing
+                                                        other realistic factors could impact the LLMs and
+the expansive and dynamic nature of the web
+                                                        exacerbate the problems. Thus, it is obvious that
+to complement and enrich the initially obtained
+                                                        the lack of accurate and specific knowledge can
+documents. Furthermore, to eliminate redundant
+                                                        lead to misleading or even inaccurate generation,
+contexts contained in retrieved documents that are
+                                                        which will severely hurt the experience of users in
+unhelpful for RAG, a decompose-then-recompose
+                                                        most practical applications.
+algorithm is meticulously crafted throughout the
+retrieval and utilization process. This algorithm       Retrieval-Augmented Generation RAG (Lewis
+ensures the refinement of retrieved information,        et al., 2020; Guu et al., 2020) is regarded as a
+optimizing the extraction of key insights and           useful method to address the issues above, which
+minimizing the inclusion of non-essential elements,     enhances the input questions of generative LMs
+thereby enhancing the utilization of retrieved data.    with retrieved documents. It usually provides an
+   CRAG is plug-and-play and experimentally             extra knowledge source from a specific corpus,
+implemented into RAG (Lewis et al., 2020) and           i.e., Wikipedia, which greatly improves the per-
+Self-RAG (Asai et al., 2024) for demonstrating its      formance of LMs in a variety of tasks, especially
+adaptability to RAG-based approaches. Results on        in the knowledge-intensive ones. The proposed
+methods generally leverage information retrieval to     framework is usually divided into a retriever R
+supply documents containing relevant knowledge          and a generator G. The retriever R aims to retrieve
+for generative LLMs. Earlier studies adopt either       the top-K documents D = {dr1 , ..., drk } that are
+sparse or dense retrievers at the front end of a pre-   relevant to the input X from the corpus C. Based
+trained language model that specializes in response     on the input X and the retrieved results D, the
+generation. Despite this, the methods above usually     generator G is responsible for generating the output
+ignore a question, what if the retrieval goes wrong?    Y. This framework can be formulated as:
+Since the purpose of introducing a retrieval is to
+secure that generative LMs can obtain relevant and              P (Y|X ) = P (D|X )P (Y, D|X ).          (1)
+accurate knowledge. If retrieved documents are
+                                                        It shows that the retriever and generator are seam-
+irrelevant, the retrieval system can even exacerbate
+                                                        lessly coupled, exhibiting low risk tolerance. Any
+the factual error that LMs make.
+                                                        unsuccessful retrieval can result in an unsatisfac-
+Advanced RAG Many advanced approaches                   tory response, regardless of the impressive abilities
+have been developed from the original RAG in            of the generator. This is exactly the focus of this
+recent years (Zhang et al., 2024; Kim et al., 2024;     paper to improve the robustness of generation.
+Wang et al., 2024; Liu et al., 2024). Considering
+that retrieval is sometimes unnecessary for some        4     CRAG
+queries, conversely, responses without retrieval        4.1   Overview of Model Inference
+are even more accurate in many situations. Self-
+RAG (Asai et al., 2024) is proposed to selectively      Figure 2 and Algorithm 1 present an overview
+retrieve knowledge and introduce a critic model         of CRAG at inference, which designs corrective
+to decide whether to retrieve. Yoran et al. (2024)      strategies to improve the robustness of generation.
+designed an NLI model to identify the irrelevant        Given an input query and the retrieved documents
+context and improve robustness. SAIL (Luo               from any retriever, a lightweight retrieval evaluator
+et al., 2023) is tuned on instructions to insert        is constructed to estimate the relevance score
+retrieved documents before instructions. While          of retrieved documents to the input query (Sec-
+Toolformer (Schick et al., 2023) is pre-trained for     tion 4.2). The relevance score is quantified into a
+calling APIs such as Wikipedia. In addition, in         total of three confidence degrees and then triggered
+some long-text generation tasks, external knowl-        the corresponding actions: {Correct, Incorrect,
+edge is needed more than once, and when to              Ambiguous} (Section 4.3). If the action Correct
+retrieve should be concerned. Jiang et al. (2023)       is triggered, the retrieved documents will be re-
+actively anticipate future content and decide when      fined into more precise knowledge strips. This
+and what to retrieve in long-form generation.           refinement operation involves knowledge decom-
+                                                        position, filter, and recomposition (Section 4.4).
+   Compared with recent studies (Schick et al.,
+                                                        If the action Incorrect is triggered, the retrieved
+2023; Luo et al., 2023; Asai et al., 2024) that are
+                                                        documents will be discarded. Instead, web searches
+the most relevant to our work, a main difference
+                                                        are resorted to and regarded as complementary
+should be highlighted. These approaches target
+                                                        knowledge sources for corrections (Section 4.5).
+on exploiting retrieval as a useful tool to augment
+                                                        Eventually, when it cannot confidently make a
+generation or whether retrieval is necessary, while
+                                                        correct or incorrect judgment, a soft and balanced
+this study particularly studies the scenarios where
+                                                        action Ambiguous which combines both of them is
+the retriever returns inaccurate results. To the best
+                                                        triggered. After optimizing the retrieval results, an
+of our knowledge, this paper makes the first attempt
+                                                        arbitrary generative model can be adopted.
+to explore and design corrective strategies for RAG
+to improve its robustness of generation.                4.2   Retrieval Evaluator
+
+3   Task Formulation                                    It is natural to wonder whether the retrieved docu-
+                                                        ments are accurate or not before using them, which
+Following previous work (Lewis et al., 2020; Asai       is significant since irrelevant or misleading mes-
+et al., 2024), given input X and an accessible          sages can be identified in this way. The accuracy
+corpus containing a large amount of knowledge           of the retrieval evaluator undeniably plays a pivotal
+documents C = {d1 , ..., dN }, the system is ex-        role in shaping the overall system performance, as
+pected to generate the output Y. The entire             it influences the outcomes of subsequent processes.
+  Retrieval              x: Who was the screenwriter for Death of a Batman?             Retrieved Documents                        d1         d2
+
+
+
+                     Retrieval         Ask: If retrieved   Knowledge Refinement
+                                       documents are
+                     Evaluator                                                      strip1
+                                        correct to x?          d1                                            strip1
+                                                                                    strip2                                                  kin
+                                                                                     …
+                                                               d2 Decompose strip                  Filter    stripk      Recompose
+                                                                                         k
+                                        Correct
+  Knowledge
+  Correction                                               Knowledge Searching
+                                       Ambiguous                                                                         k1
+
+                                                               x                q: Death of a Batman;                    k2                 kex
+                                                                              screenwriter; Wikipedia                    …
+                                       Incorrect                    Rewrite                                  Web                  Select
+                                                                                                            Search       kn
+
+
+
+
+                                 Correct                            Ambiguous                                            Incorrect
+
+
+                             x     +       kin             x        +     kin       +        kex                     x        +       kex
+
+ Generation
+                                                                    Generator
+
+Figure 2: An overview of the proposed CRAG at inference. A retrieval evaluator is constructed to evaluate the
+relevance of the retrieved documents to the input, and estimate a confidence degree based on which different
+knowledge retrieval actions of {Correct, Incorrect, Ambiguous} can be triggered.
+
+Our objective is to correct the retrieved documents                 not relevant. More details about this fine-tuning
+if they are irrelevant. Specifically, T5-large (Raffel              step can be referred to in Appendix B.3. For
+et al., 2020) is adopted for initializing the retrieval             every question, there are generally 10 documents
+evaluator and fine-tuned. Its parameter size is much                retrieved. The question is concatenated with each
+smaller than the most current LLMs (Touvron et al.,                 single document as the input, and the evaluator
+2023a,b; Chowdhery et al., 2023; Anil et al., 2023;                 predicts the relevance score for each question-
+Brown et al., 2020; Ouyang et al., 2022; OpenAI,                    document pair individually. We also tried to prompt
+2023). To ensure all experimental results were                      ChatGPT to identify the retrieval relevance for
+comparable with Self-RAG (Asai et al., 2024), the                   comparison, but it underperforms as elaborated in
+same retrieval results through Contriever (Izacard                  Section 5.5. Based on these calculated relevance
+et al., 2022) provided by Self-RAG were also                        scores, a final judgment is made as to whether
+adopted in our experiments. The relevance signals                   the retrieval is correct or not associated with the
+for fine-tuning the evaluator can be collected from                 action trigger. In our proposed framework, the
+the existing datasets. For example, PopQA (Mallen                   retrieval quality is evaluated at a relatively low
+et al., 2023) provides the golden subject wiki title                cost without the need to have access to large and
+from wikipedia for each question. We can use that                   expensive LLMs. Compared with the critic model
+to track a not 100% relevant but rather high-quality                of Self-RAG (Asai et al., 2024) that instruction-
+passage. We utilized that as the relevance signals                  tuned LLaMA-2 (7B), the evaluator designed in
+for fine-tuning the retrieval evaluator.2 On the other              CRAG demonstrates the advantages of being quite
+hand, the negative samples for fine-tuning were                     lightweight (0.77B).
+all randomly sampled from the retrieval results,
+which are rather similar to the input query but
+   2
+       https://huggingface.co/datasets/akariasai/PopQA
+  Algorithm 1: CRAG Inference
+   Require :E (Retrieval Evaluator), W (Query Rewriter), G (Generator)
+   Input :x (Input question), D = {d1 , d2 , ..., dk } (Retrieved documents)
+   Output :y (Generated response)
+ 1 scorei = E evaluates the relevance of each pair (x, di ), di ∈ D
+ 2 Confidence = Calculate and give a final judgment based on {score1 , score2 , ...scorek }
+   // Confidence has 3 optional values: [CORRECT], [INCORRECT] or [AMBIGUOUS]
+ 3 if Confidence == [CORRECT] then
+ 4     Internal_Knowledge = Knowledge_Refine(x, D)
+ 5     k = Internal_Knowledge
+ 6 else if Confidence == [INCORRECT] then
+ 7     External_Knowledge = Web_Search(W Rewrites x for searching)
+ 8     k = External_Knowledge
+ 9 else if Confidence == [AMBIGUOUS] then
+10     Internal_Knowledge = Knowledge_Refine(x, D)
+11     External_Knowledge = Web_Search(W Rewrites x for searching)
+12     k = Internal_Knowledge + External_Knowledge
+13 end
+14 G predicts y given x and k
+
+
+
+
+4.3   Action Trigger                                    considered irrelevant, which are unhelpful for
+To correct the irrelevant documents and refine the      generation. Once the knowledge from the retrieval
+target documents as needed, actions should be exe-      results is judged to be inaccurate, it is unwise to
+cuted discriminately. Based on the aforementioned       still get stuck in it, which is likely to result in
+confidence score for each retrieved document, three     fabricated facts. Therefore, we need to seek new
+types of actions are designed and triggered accord-     sources of knowledge for correction. Here, web
+ingly where the upper and lower thresholds are set.     search is introduced to search from the Internet as
+If the confidence score is higher than the upper        elaborated in Section 4.5. This corrective action
+threshold, the retrieved document is identified as      helps overcome the embarrassing challenge where
+Correct, while identified as Incorrect if below         no reliable knowledge can be referred to.
+the lower threshold. Otherwise, a more soft and         Ambiguous Except for the above two situations,
+intermediate action, i.e., Ambiguous is executed.       the remaining will be assigned to an intermediate
+Each retrieved document is conducted individually       action of Ambiguous. This generally occurs when
+and integrated eventually.                              the accuracy of the retrieval is hard to distinguish
+Correct Here, a retrieval is assumed Correct            and the evaluator gives an intermediate score.
+when the confidence score of at least one retrieved     Since the retrieval evaluator is not confident in its
+document is higher than the upper threshold. If         judgment, both types of processed knowledge in
+so, it means that there are relevant documents in       Correct and Incorrect are combined to comple-
+the retrieved results, and the knowledge from the       ment each other. Implementing such a moderating
+retrieval results is supposed to be more reliable and   and soft strategy can significantly contribute to
+accurate. However, even if a relevant document can      strengthening the robustness and resilience of the
+be found, there is inevitably some noisy knowledge      system, fostering a more adaptable framework for
+strips in this document. To extract the most            optimal performance.
+critical knowledge strips within this document, a       Discussion Preliminary experiments of employ-
+knowledge refinement method is further designed         ing only the Correct and Incorrect actions show
+which will be elaborated in Section 4.4.                that the efficacy of CRAG was easily affected by
+Incorrect Besides, a retrieval is assumed               the accuracy of the retrieval evaluator. The reason
+Incorrect when the confidence scores of all             might be the distinct knowledge switch for all input
+retrieved documents are below the lower threshold.      cases, regardless of the level of confidence in their
+This indicates that all retrieved documents are         judgment. The design of the Ambiguous action
+significantly helps to mitigate the dependence on            for every query. 3 Considering that knowledge
+the accuracy of the retrieval evaluator.                     from large-scale web searches could introduce
+                                                             biases or unreliable information, authoritative and
+4.4   Knowledge Refinement                                   regulated web pages like Wikipedia are preferred,
+                                                             which can significantly help mitigate these issues.
+Given a retrieved relevant document, a decompose-            Moreover, we utilize the URL links to navigate
+then-recompose knowledge refinement method                   web pages, transcribe their content, and employ the
+is designed to further extract the most critical             same knowledge refinement method as Section 4.4
+knowledge strips in it. To obtain fine-grained               to derive the relevant web knowledge, namely
+retrieval results, we segmented the retrieved results        external knowledge.
+into internal strips. If a retrieved result is as short as
+one or two sentences, it is regarded as an individual        5       Experiments
+strip, otherwise, retrieval documents are required to        We conducted experiments to extensively demon-
+be split into smaller units which generally consist          strate CRAG’s adaptability to RAG-based ap-
+of a few sentences according to the total length.            proaches and its generalizability across both short-
+The scale is assumed to include an independent               and long-form generation tasks.
+piece of information, and the filtering is based on
+the segments. Then, the retrieval evaluator fine-            5.1       Tasks, Datasets and Metrics
+tuned in Section 4.2 is employed to calculate the            CRAG was evaluated on four datasets, including
+relevance score of each knowledge strip. Based               PopQA (Mallen et al., 2023) (short-form gener-
+on these scores, irrelevant knowledge strips are             ation), Biography (Min et al., 2023) (long-form
+filtered out, while relevant ones are recomposed via         generation), PubHealth (Zhang et al., 2023a) (true-
+concatenation in order, namely internal knowledge.           or-false question), and Arc-Challenge (Bhaktha-
+                                                             vatsalam et al., 2021) (multiple-choice question).
+4.5   Web Search                                             Following previous work, accuracy was adopted
+                                                             as the evaluation metric for PopQA, PubHealth,
+It would be more intelligent if a system itself              and Arc-Challenge. FactScore (Min et al., 2023)
+could determine that its existing knowledge corpus           was adopted as the evaluation metric for Biography.
+could not solve the problem well and turn to                 Readers can refer to Appendix B.1 for more details.
+additional external knowledge for help. On the               The same metrics are used because our proposed
+contrary, even if a system knows that the existing           method is comparable to previous studies, since
+knowledge cannot solve the problem, but still                we used the same retrieval results as previous
+sticks to the limited knowledge corpus, it will only         work. The difference lies in that our motivation
+give a fabricated fact in the end, which is called           is to improve the retrieval quality by correcting
+hallucination.. Therefore, it is extremely important         the retrieval results that the system judges to
+to seek complementary external knowledge if                  be of low quality. This can be analogous to
+the retrieved results are all assumed irrelevant,            RAG’s augmentation to standalone parameterized
+and we consider a system that knows what it                  language models and we further augment RAG
+doesn’t know and what it cannot answer to be                 with corrective strategies.
+more intelligent than one that clings to limited
+knowledge and is incapable of seeking external               5.2       Baselines
+knowledge. Since retrieval from static and limited           We primarily compared CRAG with both ap-
+corpora can only return sub-optimal documents                proaches with and without retrieval, where the
+in terms of scope and diversity, large-scale web             latter can be further split into standard RAG and
+searches (Piktus et al., 2021; Komeili et al., 2022)         latest advanced RAG, including:
+are integrated as a strategic extension of RAG.
+                                                                Baselines without retrieval. We evaluated some
+Specifically, the inputs are rewritten into queries
+                                                             public LLMs, LLaMA2-7B,13B (Touvron et al.,
+composed of keywords by ChatGPT to mimic the
+                                                             2023b), instruction-tuned models, Alpaca-7B,13B
+daily usage of search engine. The prompt for
+                                                             (Dubois et al., 2023), and CoVE65B (Dhuliawala
+rewriting is shown in Appendix A. In CRAG,
+                                                             et al., 2024) which introduces iterative engineering
+a public and accessible commercial web search
+                                                                 3
+API is adopted to generate a series of URL links                     In this study, Google Search API is utilized for searching.
+                                           PopQA            Bio            Pub         ARC
+                  Method                 (Accuracy)     (FactScore)     (Accuracy)   (Accuracy)
+                                         LMs trained with propriety data
+                  LLaMA2-c13B                20.0          55.9            49.4          38.4
+                  Ret-LLaMA2-c13B            51.8          79.9            52.1          37.9
+                  ChatGPT                    29.3          71.8            70.1          75.3
+                  Ret-ChatGPT                50.8           -              54.7          75.3
+                  Perplexity.ai               -            71.2             -             -
+                                           Baselines without retrieval
+                  LLaMA27B                   14.7          44.5            34.2          21.8
+                  Alpaca7B                   23.6          45.8            49.8          45.0
+                  LLaMA213B                  14.7          53.4            29.4          29.4
+                  Alpaca13B                  24.4          50.2            55.5          54.9
+                  CoVE65B                     -            71.2             -             -
+                                             Baselines with retrieval
+                  LLaMA27B                   38.2        78.0              30.0          48.0
+                  Alpaca7B                   46.7        76.6              40.2          48.0
+                  SAIL                        -           -                69.2          48.4
+                  LLaMA213B                  45.7        77.5              30.2          26.0
+                  Alpaca13B                  46.1        77.7              51.1          57.6
+                                                  LLaMA2-hf-7b
+                  RAG                        50.5        44.9              48.9          43.4
+                  CRAG                       54.9        47.7              59.5          53.7
+                  Self-RAG*                  29.0        32.2               0.7          23.9
+                  Self-CRAG                  49.0        69.1               0.6          27.9
+                                              SelfRAG-LLaMA2-7b
+                  RAG                        52.8        59.2              39.0          53.2
+                  CRAG                       59.8        74.1              75.6          68.6
+                  Self-RAG                   54.9        81.2              72.4          67.3
+                  Self-CRAG                  61.8        86.2              74.8          67.2
+
+Table 1: Overall evaluation results on the test sets of four datasets. Results are separated based on the generation
+LLMs. Bold numbers indicate the best performance among all methods and LLMs. Gray-colored bold scores
+indicate the best performance using a specific LLM. * indicates the results reproduced by us, otherwise results
+except ours are cited from their original papers.
+
+to improve the factuality of LLM generations.               before instructions. (2) Self-RAG (Asai et al.,
+Propriety LLMs such as LLaMA2-chat13B and                   2024) that tuned the LLaMA2 on the instruction-
+ChatGPT are also included.                                  tuning data comtaining several sets of reflection
+   Standard RAG. We evaluated the standard                  tokens which were labeled by GPT-4 (OpenAI,
+RAG (Lewis et al., 2020) where an LM generates              2023). (3) Following Asai et al. (2024), we also
+output given the query prepended with the top               cited the results of retrieval-augmented baselines
+retrieved documents using the same retriever as             trained with private data: Ret-ChatGPT and Ret-
+in our system. Here we adopted several pub-                 LLaMA-chat, which deploy the same augmenta-
+lic instruction-tuned LLMs, including LLaMA2-               tion technique above, as well as perplexity.ai, an
+7B, 13B (Touvron et al., 2023b), Alpaca-7B,13B              InstructGPT-based production search system.
+(Dubois et al., 2023), as well as LLaMA2-7B                 5.3 Results
+instruction-tuned in Self-RAG (Asai et al., 2024).          Table 1 presents the results on four datasets. The
+   Advanced RAG. (1) SAIL (Luo et al., 2023) that           model coupling the proposed method with standard
+instruction-tuned an LM on the Alpaca instruction-          RAG is named CRAG and that coupling with Self-
+tuning data with top retrieved documents inserted           RAG is named Self-CRAG. Readers can refer to
+Appendix B.3 for more implementation details of                             LLaMA2-hf-7b SelfRAG-LLaMA2-7b
+our proposed methods. From these results, we can
+                                                         CRAG                    54.9             59.8
+conclude the following findings:                          w/o. Correct           53.2             58.3
+   First, the proposed method can significantly           w/o. Incorrect         54.4             59.5
+improve the performance of RAG and Self-RAG.              w/o. Ambiguous         54.0             59.0
+Specifically, as shown in table 1, CRAG outper-
+                                                         Self-CRAG               49.0             61.8
+formed RAG by margins of 7.0% accuracy on
+                                                          w/o. Correct           43.6             59.6
+PopQA, 14.9% FactScore on Biography, 36.6%                w/o. Incorrect         47.7             60.8
+accuracy on PubHealth, and 15.4% accuracy on              w/o. Ambiguous         48.1             61.5
+Arc-Challenge when based on SelfRAG-LLaMA2-
+7b, as well as by margins of 4.4% accuracy              Table 2: Ablation study for removing each single action
+on PopQA, 2.8% FactScore on Biography, and              on the PopQA dataset in terms of accuracy.
+10.3% on Arc-Challenge when based on LLaMA2-
+hf-7b. Compared with the current state-of-the-
+art Self-RAG, Self-CRAG outperformed it by                                  LLaMA2-hf-7b SelfRAG-LLaMA2-7b
+margins of 20.0% accuracy on PopQA, 36.9%                CRAG                   54.9              59.8
+FactScore on Biography, and 4.0% accuracy on              w/o. refinement       49.8              54.2
+Arc-Challenge when based on LLaMA2-hf-7b, as              w/o. rewriting        51.7              56.2
+well as by margins of 6.9% accuracy on PopQA,             w/o. selection        50.9              58.6
+5.0% FactScore on Biography, and 2.4% accuracy           Self-CRAG              49.0              61.8
+on PubHealth, when based on SelfRAG-LLaMA2-               w/o. refinement       35.9              52.2
+7b. These results demonstrated the adaptability           w/o. rewriting        37.2              58.4
+of CRAG which is plug-and-play and can be                 w/o. selection        24.9              57.9
+implemented into RAG-based approaches.
+   Second, the proposed method demonstrated             Table 3: Ablation study for removing each knowledge
+great generalizability across a variety of gen-         utilization operation on the PopQA in terms of accuracy.
+eration tasks. In particular, these benchmarks
+reported in Table 1 respectively represent different
+practical scenarios including short-form entity         5.4   Ablation Study
+generation (PopQA), long-form generation (Bi-
+ography), and closed-set tasks (PubHealth, Arc-         The impact of each triggered action. To fur-
+Challenge). These results verified the consistent       ther verify the effectiveness of triggered actions
+effectiveness of CRAG. Its versatility across a spec-   designed in the retrieval evaluator, ablation tests
+trum of tasks underscores its robust capabilities and   for removing each single action in the proposed
+generalizability across diverse scenarios.              method were conducted as shown in Table 2.
+   Third, the proposed method exhibited greater         Evaluations on the PopQA dataset were conducted
+flexibility in replacing the underlying LLM gen-        to demonstrate the performance change in terms of
+erator. It can be seen that CRAG still showed           accuracy. Specifically, when the action Correct
+competitive performance when the underlying             or Incorrect was removed, it was merged with
+LLMs was changed from SelfRAG-LLaMA2-7b                 Ambiguous so that the proportion that originally
+to LLaMA2-hf-7b, while the performance of Self-         triggered Correct or Incorrect would trigger
+RAG dropped significantly, even underperforming         Ambiguous. On the other hand, when the action
+the standard RAG on several benchmarks. The             Ambiguous was removed, there was only one
+reason for these results is that Self-RAG needs to be   threshold against which all input queries clearly
+instruction-tuned using human or LLM annotated          triggered Correct or Incorrect. From these
+data to learn to output special critic tokens as        results, it can be seen that there was a performance
+needed, while this ability is not learned in common     drop no matter which action was removed, illustrat-
+LLMs. CRAG does not have any requirements               ing that each action contributed to improving the
+for this ability. As you can imagine, when more         robustness of generation. To further illustrate the
+advanced LLMs are available in the future, they         study, experiments are also conducted by triggering
+can be coupled with CRAG easily, while additional       only one action once, and the results shown in the
+instruction tuning is still necessary for Self-RAG.     appendix also prove the consistency.
+                                          Accuracy                             70                                     Self-RAG        Self-CRAG
+
+
+
+
+                                                           Accuracy of generation
+  Our Retrieval Evaluator (T5-based)         84.3                              60
+  ChatGPT                                    58.0
+  ChatGPT-CoT                                62.4                              50
+  ChatGPT-few-shot                           64.7                              40
+                                                                               30
+Table 4: Evaluation of our retrieval evaluator and                                      no retrieval
+ChatGPT for the retrieval results on the PopQA dataset.                        20 69.8          60      50      40      30       20         10
+                                                                                    (Actual)
+                                                                                                       Accuracy of retrieval
+The impact of each knowledge utilization oper-
+                                                          Figure 3: The generation performance of Self-RAG
+ation. Table 3 illustrated how the performance
+                                                          and Self-CRAG given different retrieval performance
+changed if a key knowledge utilization operation          on the PopQA dataset with SelfRAG-LLaMA-7b. The
+was ablated. Evaluations on the PopQA dataset in          lower horizontal line demonstrates the performance of
+terms of accuracy were conducted by individually          the generator without retrieval.
+removing the knowledge utilization operations of
+document refinement, search query rewriting, and                                                        LLaMA2-hf-7b SelfRAG-LLaMA2-7b
+external knowledge selection. Removing document
+                                                           PopQA
+refinement denoted that the original retrieved docu-
+                                                            CRAG                                             54.9                59.8
+ments were directly fed to the following generator,         RAG                                              50.5                52.8
+as in most existing works. Additionally, removing           RAG w. web                                       52.2                53.8
+search query rewriting denoted that questions were          Self-CRAG                                        49.0                61.8
+not rewritten into queries consisting of keywords           Self-RAG                                         29.0                54.9
+during knowledge searching. Eventually, removing            Self-RAG w. web                                  24.9                57.9
+knowledge selection denoted that all searched con-
+tent of web pages was all regarded as the external        Table 5: Comparison results between CRAG, Self-
+knowledge without selection. These results help           CRAG and RAG, Self-RAG with the same input in
+                                                          terms of accuracy.
+derive the findings that the performance of the
+final system degraded no matter which knowledge
+utilization operation was removed, revealing that         retrieval performance. A part of accurate retrieval
+each knowledge utilization operation contributed          results were deliberately removed at random to
+to improving the utilization of knowledge.                imitate a low-quality retriever and evaluate how
+                                                          the performance changed. Figure 3 demonstrated
+5.5   Accuracy of the Retrieval Evaluator                 the performance change of Self-RAG and Self-
+The quality of the retrieval evaluator significantly      CRAG on the PopQA dataset. It can be seen
+determined the performance of the entire system.          that the generation performance of Self-RAG and
+Given the document retrieval results, we assessed         Self-CRAG dropped as the retrieval performance
+whether the retrieval evaluator can accurately            dropped, indicating that the generator relied heavily
+determine the overall quality of these results. The       on the quality of the retriever. Furthermore, as
+assessment accuracy on the PopQA dataset of               the retrieval performance dropped, the generation
+our retrieval evaluator and the commercial LLM            performance of Self-CRAG dropped more slightly
+ChatGPT on the document retrieval results was             than that of Self-RAG. These results imply the
+shown in Table 4. The prompts of ChatGPT,                 superiority of Self-CRAG over Self-RAG on en-
+ChatGPT-CoT, and ChatGPT-few-shot used in our             hancing the robustness to retrieval performance.
+experiments can be referred to in Appendix A.
+                                                          5.7                       Consistent Supplementation of Web
+Results reveal that the lightweight T5-based re-
+                                                                                    Search Knowledge
+trieval evaluator significantly outperformed the
+competitive ChatGPT in all settings.                      This paper highlights the necessity of enhancing
+                                                          the retrieved context by incorporating additional
+5.6   Robustness to Retrieval Performance                 information when the initial retrieval results are
+To further verify the robustness of the proposed          irrelevant and unreliable. Meanwhile, it is also
+method to retrieval performance, we studied how           crucial to confirm that the primary improvements
+the generation performance changed given different        in our method stem from the self-correction mech-
+                   TFLOPs per token   executing time(s)    while significantly enhancing performance, thereby
+      RAG               26.5               0.363           validating its lightweight nature.
+      CRAG              27.2               0.512
+      Self-RAG      26.5∼132.4             0.741
+                                                           6   Conclusion & Limitation
+      Self-CRAG      27.2∼80.2             0.908           This paper studies the problem where RAG-based
+                                                           approaches are challenged if retrieval goes wrong,
+Table 6: computational overhead assessment of RAG,
+CRAG, Self-CRAG, and Self-RAG about FLOPs per
+                                                           thereby exposing inaccurate and misleading knowl-
+token on GPUs and executing time per instance. The         edge to generative LMs. Corrective Retrieval
+upper bound of Self-CRAG is lower because only three       Augmented Generation is proposed to improve the
+passages are provided as input (correct, incorrect and     robustness of generation. Essentially, a lightweight
+ambiguous content). All the data in the table only         retrieval evaluator is to estimate and trigger three
+represents a rough estimate of the generation phase, the   knowledge retrieval actions discriminately. With
+retrieval and data-processing stages are not included.     the further leverage of web search and optimized
+                                                           knowledge utilization, CRAG has significantly
+anism, rather than solely from the supplementary           improved the ability of automatic self-correction
+information obtained through web searches. To              and efficient utilization of retrieved documents.
+further demonstrate the effectiveness of the pro-          Experiments extensively demonstrate its adaptabil-
+posed self-correction mechanism, both RAG and              ity to RAG-based approaches as well as general-
+Self-RAG were consistently supplemented with               izability across short- and long-form generation
+web search knowledge to ensure they had access             tasks. While we primarily proposed to improve the
+to the same scope of the retrieved knowledge.              RAG framework from a corrective perspective and
+The results in Table 5 show that consistently              CRAG can be seamlessly coupled with various
+supplementing RAG or Self-RAG with web search              RAG-based approaches, fine-tuning an external
+knowledge can improve the performance in most              retrieval evaluator is inevitable. How to eliminate
+cases (except Self-RAG w. web using the original           this external evaluator and equip LLMs with better
+LLaMA2 model), though the improvement remains              retrieval evaluation capabilities will be our future
+limited. Furthermore, augmenting RAG or Self-              work.
+RAG with the proposed self-correction mechanism
+significantly outperformed the models consistently
+supplemented with web search knowledge in all              References
+cases. This finding confirms that the observed             Rohan Anil, Andrew M. Dai, Orhan Firat, Melvin John-
+advancements are primarily attributable to the               son, Dmitry Lepikhin, Alexandre Passos, Siamak
+                                                             Shakeri, Emanuel Taropa, Paige Bailey, Zhifeng
+proposed self-correction mechanism.                          Chen, Eric Chu, Jonathan H. Clark, Laurent El
+                                                             Shafey, Yanping Huang, Kathy Meier-Hellstern,
+5.8    Computational Overhead Analysis                       Gaurav Mishra, Erica Moreira, Mark Omernick,
+                                                             Kevin Robinson, Sebastian Ruder, et al. 2023. PaLM
+To illustrate that our self-correction mechanism             2 technical report. CoRR, abs/2305.10403.
+serves as a lightweight, plug-and-play solution
+                                                           Akari Asai, Zeqiu Wu, Yizhong Wang, Avirup Sil, and
+for various RAG-based frameworks, we measured                Hannaneh Hajishirzi. 2024. Self-rag: Learning to
+the computational overhead. FLOPs prediction                 retrieve, generate, and critique through self-reflection.
+formulas in Narayanan et al. (2021) were employed,           In The Twelfth International Conference on Learning
+with the results presented in Table 6 which shows            Representations, ICLR 2024, Vienna, Austria, May
+                                                             7-11, 2024. OpenReview.net.
+the predicted FLOPs per token on GPUs. Due to
+the adaptive nature of Self-RAG, which varies its          Yejin Bang, Samuel Cahyawijaya, Nayeon Lee,
+generation strategies based on input, the compu-             Wenliang Dai, Dan Su, Bryan Wilie, Holy Lovenia,
+tational overhead cannot be precisely determined.            Ziwei Ji, Tiezheng Yu, Willy Chung, Quyet V. Do,
+                                                             Yan Xu, and Pascale Fung. 2023. A multitask,
+Therefore, we present an estimated range instead.            multilingual, multimodal evaluation of chatgpt on
+Additionally, we conducted the experiments on                reasoning, hallucination, and interactivity. pages
+PopQA to assess the average execution time per               675–718.
+instance in practice, as detailed in Table 6. The          Sumithra Bhakthavatsalam, Daniel Khashabi, Tushar
+findings indicate that the self-correction mecha-            Khot, Bhavana Dalvi Mishra, Kyle Richardson,
+nism incurs only modest computational overhead               Ashish Sabharwal, Carissa Schoenick, Oyvind
+  Tafjord, and Peter Clark. 2021. Think you have            Zhengbao Jiang, Frank F. Xu, Luyu Gao, Zhiqing
+  solved direct-answer question answering? try arc-da,        Sun, Qian Liu, Jane Dwivedi-Yu, Yiming Yang,
+  the direct-answer AI2 reasoning challenge. CoRR,            Jamie Callan, and Graham Neubig. 2023. Active
+  abs/2102.03315.                                             retrieval augmented generation. In Proceedings
+                                                              of the 2023 Conference on Empirical Methods
+Tom B Brown, Benjamin Mann, Nick Ryder, et al.                in Natural Language Processing, EMNLP 2023,
+  2020. Language models are few-shot learners. In             Singapore, December 6-10, 2023, pages 7969–7992.
+  Advances in neural information processing systems,          Association for Computational Linguistics.
+  pages 1877–1901.
+                                                            Jaehyung Kim, Jaehyun Nam, Sangwoo Mo, Jongjin
+Aakanksha Chowdhery, Sharan Narang, Jacob Devlin,              Park, Sang-Woo Lee, Minjoon Seo, Jung-Woo
+  Maarten Bosma, Gaurav Mishra, Adam Roberts,                  Ha, and Jinwoo Shin. 2024. Sure: Summarizing
+  Paul Barham, Hyung Won Chung, Charles Sutton,                retrievals using answer candidates for open-domain
+  Sebastian Gehrmann, Parker Schuh, Kensen Shi,                QA of llms. In The Twelfth International Conference
+  Sasha Tsvyashchenko, Joshua Maynez, Abhishek                 on Learning Representations, ICLR 2024, Vienna,
+  Rao, Parker Barnes, Yi Tay, Noam Shazeer,                   Austria, May 7-11, 2024. OpenReview.net.
+  Vinodkumar Prabhakaran, Emily Reif, Nan Du, Ben
+  Hutchinson, Reiner Pope, James Bradbury, Jacob            Mojtaba Komeili, Kurt Shuster, and Jason Weston.
+  Austin, Michael Isard, Guy Gur-Ari, Pengcheng Yin,         2022. Internet-augmented dialogue generation. In
+  Toju Duke, Anselm Levskaya, Sanjay Ghemawat,               Proceedings of the 60th Annual Meeting of the
+  Sunipa Dev, Henryk Michalewski, Xavier Garcia,             Association for Computational Linguistics (Volume
+  Vedant Misra, Kevin Robinson, Liam Fedus, Denny            1: Long Papers), ACL 2022, Dublin, Ireland, May
+  Zhou, Daphne Ippolito, David Luan, Hyeontaek Lim,          22-27, 2022, pages 8460–8478. Association for
+  Barret Zoph, Alexander Spiridonov, Ryan Sepassi,           Computational Linguistics.
+  David Dohan, Shivani Agrawal, Mark Omernick,
+  Andrew M. Dai, Thanumalayan Sankaranarayana               Patrick S. H. Lewis, Ethan Perez, Aleksandra
+  Pillai, Marie Pellat, Aitor Lewkowycz, Erica Moreira,       Piktus, Fabio Petroni, Vladimir Karpukhin, Naman
+  Rewon Child, Oleksandr Polozov, Katherine Lee,              Goyal, Heinrich Küttler, Mike Lewis, Wen-tau Yih,
+  Zongwei Zhou, Xuezhi Wang, Brennan Saeta, Mark              Tim Rocktäschel, Sebastian Riedel, and Douwe
+  Diaz, Orhan Firat, Michele Catasta, Jason Wei, Kathy        Kiela. 2020. Retrieval-augmented generation for
+  Meier-Hellstern, Douglas Eck, Jeff Dean, Slav Petrov,       knowledge-intensive NLP tasks. In Advances in
+  and Noah Fiedel. 2023. Palm: Scaling language               Neural Information Processing Systems 33: Annual
+  modeling with pathways. J. Mach. Learn. Res.,               Conference on Neural Information Processing
+  24:240:1–240:113.                                           Systems 2020, NeurIPS 2020, December 6-12, 2020,
+                                                              virtual.
+Shehzaad Dhuliawala, Mojtaba Komeili, Jing Xu,
+  Roberta Raileanu, Xian Li, Asli Celikyilmaz, and          Huayang Li, Yixuan Su, Deng Cai, Yan Wang, and
+  Jason Weston. 2024. Chain-of-verification reduces           Lemao Liu. 2022. A survey on retrieval-augmented
+  hallucination in large language models. pages 3563–         text generation. CoRR, abs/2202.01110.
+  3578.                                                     Yanming Liu, Xinyue Peng, Xuhong Zhang, Weihao
+Yann Dubois, Xuechen Li, Rohan Taori, Tianyi Zhang,           Liu, Jianwei Yin, Jiannan Cao, and Tianyu Du. 2024.
+  Ishaan Gulrajani, Jimmy Ba, Carlos Guestrin, Percy          RA-ISF: learning to answer and understand from
+  Liang, and Tatsunori B. Hashimoto. 2023. Alpaca-            retrieval augmentation via iterative self-feedback.
+  farm: A simulation framework for methods that learn         In Findings of the Association for Computational
+  from human feedback. CoRR, abs/2305.14387.                  Linguistics, ACL 2024, Bangkok, Thailand and
+                                                              virtual meeting, August 11-16, 2024, pages 4730–
+Kelvin Guu, Kenton Lee, Zora Tung, Panupong Pasupat,          4749. Association for Computational Linguistics.
+  and Ming-Wei Chang. 2020. Retrieval augmented
+  language model pre-training. In Proceedings of the        Hongyin Luo, Tianhua Zhang, Yung-Sung Chuang,
+  37th International Conference on Machine Learning,          Yuan Gong, Yoon Kim, Xixin Wu, Helen Meng, and
+  ICML 2020, 13-18 July 2020, Virtual Event, volume           James R. Glass. 2023. Search augmented instruction
+  119 of Proceedings of Machine Learning Research,            learning.   In Findings of the Association for
+  pages 3929–3938. PMLR.                                      Computational Linguistics: EMNLP 2023, Singapore,
+                                                              December 6-10, 2023, pages 3717–3729. Association
+Gautier Izacard, Mathilde Caron, Lucas Hosseini,              for Computational Linguistics.
+  Sebastian Riedel, Piotr Bojanowski, Armand Joulin,
+  and Edouard Grave. 2022. Unsupervised dense               Alex Mallen, Akari Asai, Victor Zhong, Rajarshi
+  information retrieval with contrastive learning. Trans.     Das, Daniel Khashabi, and Hannaneh Hajishirzi.
+  Mach. Learn. Res., 2022.                                    2023.      When not to trust language models:
+                                                              Investigating effectiveness of parametric and non-
+Ziwei Ji, Nayeon Lee, Rita Frieske, Tiezheng Yu,              parametric memories. In Proceedings of the 61st
+  Dan Su, Yan Xu, Etsuko Ishii, Yejin Bang, Andrea            Annual Meeting of the Association for Computational
+  Madotto, and Pascale Fung. 2023. Survey of                  Linguistics (Volume 1: Long Papers), ACL 2023,
+  hallucination in natural language generation. ACM           Toronto, Canada, July 9-14, 2023, pages 9802–9822.
+  Comput. Surv., 55(12):248:1–248:38.                         Association for Computational Linguistics.
+Sewon Min, Kalpesh Krishna, Xinxi Lyu, Mike                   NAACL 2022, Seattle, WA, United States, July
+  Lewis, Wen-tau Yih, Pang Wei Koh, Mohit Iyyer,              10-15, 2022, pages 2557–2571. Association for
+  Luke Zettlemoyer, and Hannaneh Hajishirzi. 2023.            Computational Linguistics.
+  Factscore: Fine-grained atomic evaluation of factual
+  precision in long form text generation.           In      Timo Schick, Jane Dwivedi-Yu, Roberto Dessì, Roberta
+  Proceedings of the 2023 Conference on Empirical             Raileanu, Maria Lomeli, Eric Hambro, Luke
+  Methods in Natural Language Processing, EMNLP               Zettlemoyer, Nicola Cancedda, and Thomas Scialom.
+  2023, Singapore, December 6-10, 2023, pages 12076–          2023. Toolformer: Language models can teach
+  12100. Association for Computational Linguistics.           themselves to use tools.
+
+Dor Muhlgay, Ori Ram, Inbal Magar, Yoav Levine,             Freda Shi, Xinyun Chen, Kanishka Misra, Nathan
+  Nir Ratner, Yonatan Belinkov, Omri Abend, Kevin             Scales, David Dohan, Ed H. Chi, Nathanael Schärli,
+  Leyton-Brown, Amnon Shashua, and Yoav Shoham.               and Denny Zhou. 2023. Large language models
+  2023. Generating benchmarks for factuality evalua-          can be easily distracted by irrelevant context. In
+  tion of language models. CoRR, abs/2307.06908.              Proceedings of the 40th International Conference
+                                                              on Machine Learning, volume 202 of Proceedings
+Deepak Narayanan, Mohammad Shoeybi, Jared                     of Machine Learning Research, pages 31210–31227.
+  Casper, Patrick LeGresley, Mostofa Patwary, Vijay           PMLR.
+  Korthikanti, Dmitri Vainbrand, Prethvi Kashinkunti,
+  Julie Bernauer, Bryan Catanzaro, Amar Phanishayee,        Kurt Shuster, Spencer Poff, Moya Chen, Douwe
+  and Matei Zaharia. 2021. Efficient large-scale              Kiela, and Jason Weston. 2021.           Retrieval
+  language model training on GPU clusters using               augmentation reduces hallucination in conversation.
+  megatron-lm. In International Conference for                In Findings of the Association for Computational
+  High Performance Computing, Networking, Storage             Linguistics: EMNLP 2021, Virtual Event / Punta
+  and Analysis, SC 2021, St. Louis, Missouri, USA,            Cana, Dominican Republic, 16-20 November, 2021,
+  November 14-19, 2021, page 58. ACM.                         pages 3784–3803. Association for Computational
+                                                              Linguistics.
+OpenAI. 2023. GPT-4 technical report.            CoRR,
+                                                            Chao-Hong Tan, Jia-Chen Gu, Chongyang Tao, Zhen-
+  abs/2303.08774.
+                                                              Hua Ling, Can Xu, Huang Hu, Xiubo Geng,
+Long Ouyang, Jeffrey Wu, Xu Jiang, Diogo Almeida,             and Daxin Jiang. 2022. Tegtok: Augmenting
+  Carroll L. Wainwright, Pamela Mishkin, Chong                text generation via task-specific and open-world
+  Zhang, Sandhini Agarwal, Katarina Slama, Alex               knowledge. In Findings of the Association for
+  Ray, John Schulman, Jacob Hilton, Fraser Kelton,            Computational Linguistics: ACL 2022, Dublin,
+  Luke Miller, Maddie Simens, Amanda Askell, Peter            Ireland, May 22-27, 2022, pages 1597–1609.
+  Welinder, Paul F. Christiano, Jan Leike, and Ryan           Association for Computational Linguistics.
+  Lowe. 2022. Training language models to follow            S. M. Towhidul Islam Tonmoy, S. M. Mehedi Zaman,
+  instructions with human feedback. In NeurIPS.                Vinija Jain, Anku Rani, Vipula Rawte, Aman Chadha,
+                                                               and Amitava Das. 2024. A comprehensive survey of
+Aleksandra Piktus, Fabio Petroni, Vladimir Karpukhin,
+                                                               hallucination mitigation techniques in large language
+  Dmytro Okhonko, Samuel Broscheit, Gautier Izacard,
+                                                               models. CoRR, abs/2401.01313.
+  Patrick S. H. Lewis, Barlas Oguz, Edouard Grave,
+  Wen-tau Yih, and Sebastian Riedel. 2021. The web          Hugo Touvron, Thibaut Lavril, Gautier Izacard, Xavier
+  is your oyster - knowledge-intensive NLP against a          Martinet, Marie-Anne Lachaux, Timothée Lacroix,
+  very large web corpus. CoRR, abs/2112.09924.                Baptiste Rozière, Naman Goyal, Eric Hambro, Faisal
+                                                              Azhar, Aurélien Rodriguez, Armand Joulin, Edouard
+Chengwei Qin, Aston Zhang, Zhuosheng Zhang,                   Grave, and Guillaume Lample. 2023a. Llama: Open
+  Jiaao Chen, Michihiro Yasunaga, and Diyi Yang.              and efficient foundation language models. CoRR,
+  2023. Is chatgpt a general-purpose natural language         abs/2302.13971.
+  processing task solver?     In Proceedings of the
+  2023 Conference on Empirical Methods in Natural           Hugo Touvron, Louis Martin, Kevin Stone, Peter
+  Language Processing, EMNLP 2023, Singapore,                 Albert, Amjad Almahairi, Yasmine Babaei, Nikolay
+  December 6-10, 2023, pages 1339–1384. Association           Bashlykov, Soumya Batra, Prajjwal Bhargava, Shruti
+  for Computational Linguistics.                              Bhosale, Dan Bikel, Lukas Blecher, et al. 2023b.
+                                                              Llama 2: Open foundation and fine-tuned chat
+Colin Raffel, Noam Shazeer, Adam Roberts, Katherine           models. CoRR, abs/2307.09288.
+  Lee, Sharan Narang, Michael Matena, Yanqi Zhou,
+  Wei Li, and Peter J. Liu. 2020. Exploring the             Zihao Wang, Anji Liu, Haowei Lin, Jiaqi Li, Xiaojian
+  limits of transfer learning with a unified text-to-text     Ma, and Yitao Liang. 2024.         RAT: retrieval
+  transformer. J. Mach. Learn. Res., 21:140:1–140:67.         augmented thoughts elicit context-aware reasoning
+                                                              in long-horizon generation. CoRR, abs/2403.05313.
+Md. Rashad Al Hasan Rony, Ricardo Usbeck, and
+ Jens Lehmann. 2022. Dialokg: Knowledge-structure           Ori Yoran, Tomer Wolfson, Ori Ram, and Jonathan
+ aware task-oriented dialogue generation. In Findings         Berant. 2024. Making retrieval-augmented language
+ of the Association for Computational Linguistics:            models robust to irrelevant context.
+Tianhua Zhang, Hongyin Luo, Yung-Sung Chuang, Wei
+   Fang, Luc Gaitskell, Thomas Hartvigsen, Xixin Wu,
+   Danny Fox, Helen Meng, and James R. Glass. 2023a.
+   Interpretable unified language checking. CoRR,
+   abs/2304.03728.
+Tianjun Zhang, Shishir G. Patil, Naman Jain, Sheng
+  Shen, Matei Zaharia, Ion Stoica, and Joseph E.
+  Gonzalez. 2024. RAFT: adapting language model to
+  domain specific RAG. CoRR, abs/2403.10131.
+Yue Zhang, Yafu Li, Leyang Cui, Deng Cai, Lemao Liu,
+  Tingchen Fu, Xinting Huang, Enbo Zhao, Yu Zhang,
+  Yulong Chen, Longyue Wang, Anh Tuan Luu, Wei
+  Bi, Freda Shi, and Shuming Shi. 2023b. Siren’s song
+  in the AI ocean: A survey on hallucination in large
+  language models. CoRR, abs/2309.01219.
+Qihuang Zhong, Liang Ding, Juhua Liu, Bo Du, and
+  Dacheng Tao. 2023. Can chatgpt understand too? A
+  comparative study on chatgpt and fine-tuned BERT.
+  CoRR, abs/2302.10198.
+A    Task Prompts                                             Table 10: The few-shot prompt to GPT-3.5 Turbo as the
+                                                              evaluator.
+The prompts for generating knowledge keywords
+as web search queries were illustrated in Table 7.             Given a question, does the following document have exact
+                                                               information to answer the question? Answer yes or no
+Table 7: The few-shot prompt to GPT-3.5 Turbo for              only.
+generating knowledge keywords as web search queries.           Question: In what city was Abraham Raimbach born?
+                                                               Document: Bancroft was born on November 25, 1839
+ Extract at most three keywords separated by comma from        in New Ipswich, New Hampshire to James Bancroft and
+ the following dialogues and questions as queries for the      Sarah Kimball. At an early age he was cared for by Mr.
+ web search, including topic background within dialogues       and Mrs. Patch of Ashby, Massachusetts, the neighboring
+ and main intent within questions.                             town. While not legally adopted, they named him Cecil
+                                                               Franklin Patch Bancroft, adding Franklin Patch after the
+ question: What is Henry Feilden’s occupation?                 son Mr. and Mrs. Patch had who recently died. He
+ query: Henry Feilden, occupation                              attended public schools in Ashby as well as the Appleton
+                                                               Academy in New Ipswich. He entered Dartmouth College
+ question: In what city was Billy Carlson born?                in 1856 at the age of sixteen and graduated in 1860 near
+ query: city, Billy Carlson, born                              the top of his class. Bancroft continued his education as he
+                                                               began his career in teaching. He took classes at the Union
+ question: What is the religion of John Gwynn?                 Theological Seminary in New York City during the 1864-
+ query: religion of John Gwynn                                 65 academic year. While there he was a member of the
+                                                               United States Christian Commission, traveling to support
+ question: What sport does Kiribati men’s national             soldiers during the Civil War. He then transferred to the
+ basketball team play?                                         Andover Theological Seminary where he would graduate
+ query: sport, Kiribati men’s national basketball team play    in 1867.
+                                                               Answer: No.
+ question: [question]
+ query:                                                        Question: In what country is Wilcza Jama, Sokółka
+                                                               County?
+                                                               Document: Wilcza Jama is a village in the administrative
+   The prompts to instruct ChatGPT as the evalua-              district of Gmina Sokółka, within Sokółka County,
+tor were illustrated in Table 8, Table 9, and Table 10         Podlaskie Voivodeship, in north-eastern Poland, close to
+                                                               the border with Belarus.
+respectively.                                                  Answer: Yes.
+
+Table 8: The direct prompt to GPT-3.5 Turbo as the             Question: What sport does 2004 Legg Mason Tennis
+evaluator.                                                     Classic play?
+                                                               Document: The 2004 Legg Mason Tenis Classic was the
+                                                               36th edition of this tennis tournament and was played
+ Given a question, does the following document have exact      on outdoor hard courts. The tournament was part of the
+ information to answer the question? Answer yes or no          International Series of the 2004 ATP Tour. It was held at
+ only.                                                         the William H.G. FitzGerald Tennis Center in Washington,
+ Question: [question]                                          D.C. from August 16 through August 22, 2004.
+ Document: [document]                                          Answer: Yes.
+
+                                                               Question: Who is the author of Skin?
+                                                               Document: The Skin We’re In: A Year of Black Resistance
+Table 9: The prompt to GPT-3.5 Turbo with Chain-of-            and Power is a book by Desmond Cole published by
+Thought as the evaluator.                                      Doubleday Canada in 2020. The Skin We’re In describes
+                                                               the struggle against racism in Canada during the year 2017,
+ Given a question, does the following document have exact      chronicling Cole’s role as an anti-racist activist and the
+ information to answer the question?                           impact of systemic racism in Canadian society. Among
+ Question: [question]                                          the events it discusses are the aftermath of the assault of
+ Document: [document]                                          Dafonte Miller in late 2016 and Canada 150. The work
+ Think Step by step, and answer with yes or no only.           argues that Canada is not immune to the anti-Black racism
+                                                               that characterizes American society. Due to an error by the
+                                                               publisher, the initial printing of the book’s cover did not
+                                                               include word B̈lackïn the subtitle. The mistake was later
+                                                               corrected. The book won the Toronto Book Award for 2020.
+                                                               In 2021, the book was nominated for the Shaughnessy
+                                                               Cohen Prize for Political Writing.
+                                                               Answer: No.
+
+                                                               Question: [question]
+                                                               Document: [document]
+                                                               Answer:
+B     Experiments                                         utilized on the Bio, Pub and ARC datasets during
+                                                          inference. The label of positive samples was 1,
+B.1    Tasks, Datasets and Metrics
+                                                          while that of negative ones was -1. At inference,
+CRAG was evaluated on four datasets, which are in         the evaluator scored the relevance from -1 to 1 for
+public domain and licensed for research purposes,         each document. The two confidence thresholds
+including:                                                for triggering one of the three actions were set
+   PopQA (Mallen et al., 2023) is a short-form            empirically. Specifically, they were set as (0.59,
+generation task. Generally, only one entity of            -0.99) in PopQA, (0.5, -0.91) in PubQA and Arc-
+factual knowledge is expected to be answered for          Challenge, as well as (0.95, -0.91) in Biography.
+each single question. In our experiments, we                 Internal Knowledge: To obtain fine-grained
+exactly followed the setting in Self-RAG (Asai            retrieval results, we segmented the retrieved results
+et al., 2024) which evaluated methods on a long-tail      into internal strips. If a retrieved result is as short as
+subset consisting of 1,399 rare entity queries whose      one or two sentences, it is regarded as an individual
+monthly Wikipedia page views are less than 100.           strip, otherwise, retrieval documents are required to
+Accuracy was adopted as the evaluation metric.            be split into smaller units which generally consist
+   Biography (Min et al., 2023) is a long-form            of a few sentences according to the total length.
+generation task that is tasked to generate a detailed     The scale is assumed to include an independent
+biography about a certain entity. Following previ-        piece of information, and the filtering is based on
+ous work, FactScore (Min et al., 2023) was adopted        the segments. We directly adopted the evaluator
+to evaluate the generated biographies.                    again for knowledge strips filtering, and the top-k
+   PubHealth (Zhang et al., 2023a) is a task              is set to 5, filter threshold as -0.5.
+in health care domain consisting of true-or-false            External Knowledge: Google Search API was
+questions. Claims are represented about health            adopted to search for the relevant URLs, top-k
+with factual information, and the model is tasked         is set to 5, and pages from Wikipedia will be
+to verify the authenticity and give the judgment.         added preferentially. The searched web pages
+Accuracy was adopted as the evaluation metric.            are generally in the form of HTML files, where
+   Arc-Challenge (Bhakthavatsalam et al., 2021)           content is split with special tokens like <p>
+is a multiple-choice question task about some             and </p>. Thus an extra segmentation like the
+daily commonsense science phenomena. Given                knowledge refinement is not required, related
+a scientific event that occurs in daily life, the model   knowledge paragraphs can be directly selected with
+is required to select the correct description among       the evaluator similar to internal knowledge. In
+3 or 4 optional choices. Accuracy was adopted as          this way, the accuracy of the search outcomes can
+the evaluation metric as well.                            be ensured without compromising the quality and
+                                                          relevance of the information used for generation.
+B.2    Experiments compute Resources                         Generator: As CRAG is a plug-and-play
+We used NVIDIA A800 80GB GPU for experi-                  method, all generation models that can be uti-
+ments. For LLaMA-2 (7B) generation, it occupies           lized in RAG fit our approach as well. To
+over 40GB memory during inference. For T5-large           be consistent with baselines for comparison, we
+(0.77B) fine-tuning, it takes much less compared          adopted LLaMA2 (Touvron et al., 2023b) for the
+with LLaMA-2.                                             generation. We first introduced the LLaMA2-hf-
+                                                          7b from huggingface to generate responses. Since
+B.3    Implementation Details                             Self-RAG (Asai et al., 2024) fine-tuned LLaMA2
+Retrieval Evaluator: We fine-tuned the retrieval          and reached a new state-of-the-art performance
+evaluator based on the lightweight T5-large (Raffel       on several tasks, we further utilized the launched
+et al., 2020) pre-trained model. The dataset we           model, SelfRAG-LLaMA2-7b, as a new generator to
+used is the version provided by Self-RAG (Asai            be consistent with their work and study the specific
+et al., 2024). Specifically, the original PopQA           improvement of our method.
+dataset consists of 14k samples, 1,399 of which              Self-CRAG: To demonstrate that our plug-and-
+were used for testing following Self-RAG (Asai            play approach can be utilized in other concurrent
+et al., 2024), and the remaining were used for            studies, we specifically designed to insert our
+fine-tuning to avoid information leakage. Besides,         CRAG into the Self-RAG (Asai et al., 2024)
+the fine-tuned evaluator was transferred and also         framework and named it Self-CRAG. Self-RAG
+Table 11: Ablation study for removing only a single
+action on the PopQA dataset in terms of accuracy.
+
+                   LLaMA2-hf-7b SelfRAG-LLaMA2-7b
+
+ CRAG                 54.9            59.8
+  only Correct        52.4            56.7
+  only Incorrect      47.0            48.5
+  only Ambiguous      52.7            58.0
+ Self-CRAG            49.0            61.8
+  only Correct        48.6            57.2
+  only Incorrect      40.8            53.3
+  only Ambiguous      44.9            59.8
+
+
+is an advanced RAG approach that introduces a
+critic model to decide whether to retrieve and which
+retrieved document to be referred for generation. It
+meets our demand for deciding which action to be
+triggered, thus we replaced the retrieved items in
+Self-RAG with our processed internal knowledge
+for Correct, external knowledge for Incorrect,
+and combined knowledge for Ambiguous.
+
+B.4   More Detailed Results
+Ablation Study: The following results in Table 11
+demonstrate the ablation study by triggering one
+action only for all instances.
+
+B.5   Results on PubHealth and Arc-Challenge
+It is worth mentioning that the performance on
+PubHealth based on LLaMA2-hf-7b was much
+worse than others. We studied these cases and
+found that LLaMA2-hf-7b is relatively weak in
+instruction comprehension. Most of the cases
+fail to generate True or False in such a binary-
+question task, resulting in a low accuracy during
+the evaluation. This situation somewhat happens in
+Arc-Challenge as well, when the model is tasked
+to generate the index of a candidate.
+

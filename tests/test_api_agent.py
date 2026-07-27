@@ -1,11 +1,13 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from diw.api import create_app
+from diw.auth import AuthenticatedPrincipal
 from diw.core.embeddings import LocalHashingEmbeddingProvider
 from diw.core.ingestion import ingest_file
 from diw.db.models import Base
@@ -83,6 +85,69 @@ class AgentApiTests(unittest.TestCase):
                     params={"tenant_id": "different-tenant"},
                 )
                 self.assertEqual(cross_tenant.status_code, 404)
+
+            class FakeAuthenticator:
+                def authenticate(self, token: str) -> AuthenticatedPrincipal:
+                    if token != "valid-token":
+                        raise ValueError("invalid")
+                    return AuthenticatedPrincipal(
+                        subject="api-researcher",
+                        tenant_id=None,
+                        claims={
+                            "email": "researcher@example.com",
+                            "email_verified": True,
+                        },
+                    )
+
+            with patch.dict(
+                "os.environ",
+                {"GOOGLE_OAUTH_CLIENT_ID": "client.apps.googleusercontent.com"},
+            ):
+                with TestClient(
+                    create_app(database_url, authenticator=FakeAuthenticator())
+                ) as authenticated_client:
+                    sign_in = authenticated_client.get("/signin")
+                    self.assertEqual(sign_in.status_code, 200)
+                    self.assertIn(
+                        "client.apps.googleusercontent.com",
+                        sign_in.text,
+                    )
+
+                    whoami = authenticated_client.get(
+                        "/auth/whoami",
+                        headers={"Authorization": "Bearer valid-token"},
+                    )
+                    self.assertEqual(whoami.status_code, 200)
+                    self.assertEqual(whoami.json()["email"], "researcher@example.com")
+
+                    missing_token = authenticated_client.post(
+                        "/agent-runs",
+                        json={
+                            "tenant_id": tenant_id,
+                            "actor_user_id": user_id,
+                            "query": "What method does the paper use?",
+                            "dimensions": 32,
+                        },
+                    )
+                    self.assertEqual(missing_token.status_code, 401)
+
+                    authenticated = authenticated_client.post(
+                        "/agent-runs",
+                        headers={"Authorization": "Bearer valid-token"},
+                        json={
+                            "tenant_id": tenant_id,
+                            "actor_user_id": user_id,
+                            "query": "What method does the paper use?",
+                            "dimensions": 32,
+                        },
+                    )
+                    self.assertEqual(authenticated.status_code, 200)
+
+                    unscoped_route = authenticated_client.get(
+                        "/documents",
+                        headers={"Authorization": "Bearer valid-token"},
+                    )
+                    self.assertEqual(unscoped_route.status_code, 403)
 
 
 if __name__ == "__main__":

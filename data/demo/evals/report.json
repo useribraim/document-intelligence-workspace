@@ -77,9 +77,9 @@
         "citations": [
           {
             "label": "C1",
-            "chunk_id": "175b3a3a-2a76-54c9-b5b4-fd2f2118cccf:1",
-            "document_id": "51a5b9ff-512e-54c0-bc65-f6aac708eed0",
-            "version_id": "175b3a3a-2a76-54c9-b5b4-fd2f2118cccf",
+            "chunk_id": "4a17160c-75ea-5da2-ae77-750189535dc4:1",
+            "document_id": "2965643d-8103-52ff-a184-572d04209975",
+            "version_id": "4a17160c-75ea-5da2-ae77-750189535dc4",
             "heading_path": [
               "Demo ML Paper Excerpt",
               "Cited Paper Section"
@@ -89,9 +89,9 @@
           },
           {
             "label": "C2",
-            "chunk_id": "b749398d-d851-5064-973e-b720fbbab5e6:1",
-            "document_id": "eb9f7de5-3edb-5466-b409-41a9118fc5d7",
-            "version_id": "b749398d-d851-5064-973e-b720fbbab5e6",
+            "chunk_id": "618c1be3-ee20-583c-8a0d-07c099374a1d:1",
+            "document_id": "30ec862f-d01f-5842-bd8d-4086adcee322",
+            "version_id": "618c1be3-ee20-583c-8a0d-07c099374a1d",
             "heading_path": [
               "Demo Ablation Paper Excerpt",
               "Cited Paper Section"
@@ -101,9 +101,9 @@
           },
           {
             "label": "C3",
-            "chunk_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb:1",
-            "document_id": "44d993bb-4e06-5277-9e84-669f1d0cd2b7",
-            "version_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb",
+            "chunk_id": "d7c16fac-a04e-576e-9c06-b8e5317b6b6d:1",
+            "document_id": "8fe58f13-9456-54d8-b2ff-20cdca025932",
+            "version_id": "d7c16fac-a04e-576e-9c06-b8e5317b6b6d",
             "heading_path": [
               "RAG Systems Paper",
               "Retrieval Pipeline"
@@ -159,9 +159,9 @@
         "citations": [
           {
             "label": "C1",
-            "chunk_id": "b749398d-d851-5064-973e-b720fbbab5e6:1",
-            "document_id": "eb9f7de5-3edb-5466-b409-41a9118fc5d7",
-            "version_id": "b749398d-d851-5064-973e-b720fbbab5e6",
+            "chunk_id": "618c1be3-ee20-583c-8a0d-07c099374a1d:1",
+            "document_id": "30ec862f-d01f-5842-bd8d-4086adcee322",
+            "version_id": "618c1be3-ee20-583c-8a0d-07c099374a1d",
             "heading_path": [
               "Demo Ablation Paper Excerpt",
               "Cited Paper Section"
@@ -171,9 +171,9 @@
           },
           {
             "label": "C2",
-            "chunk_id": "175b3a3a-2a76-54c9-b5b4-fd2f2118cccf:1",
-            "document_id": "51a5b9ff-512e-54c0-bc65-f6aac708eed0",
-            "version_id": "175b3a3a-2a76-54c9-b5b4-fd2f2118cccf",
+            "chunk_id": "4a17160c-75ea-5da2-ae77-750189535dc4:1",
+            "document_id": "2965643d-8103-52ff-a184-572d04209975",
+            "version_id": "4a17160c-75ea-5da2-ae77-750189535dc4",
             "heading_path": [
               "Demo ML Paper Excerpt",
               "Cited Paper Section"
@@ -183,9 +183,9 @@
           },
           {
             "label": "C3",
-            "chunk_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb:1",
-            "document_id": "44d993bb-4e06-5277-9e84-669f1d0cd2b7",
-            "version_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb",
+            "chunk_id": "d7c16fac-a04e-576e-9c06-b8e5317b6b6d:1",
+            "document_id": "8fe58f13-9456-54d8-b2ff-20cdca025932",
+            "version_id": "d7c16fac-a04e-576e-9c06-b8e5317b6b6d",
             "heading_path": [
               "RAG Systems Paper",
               "Retrieval Pipeline"
@@ -241,9 +241,9 @@
         "citations": [
           {
             "label": "C1",
-            "chunk_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb:1",
-            "document_id": "44d993bb-4e06-5277-9e84-669f1d0cd2b7",
-            "version_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb",
+            "chunk_id": "d7c16fac-a04e-576e-9c06-b8e5317b6b6d:1",
+            "document_id": "8fe58f13-9456-54d8-b2ff-20cdca025932",
+            "version_id": "d7c16fac-a04e-576e-9c06-b8e5317b6b6d",
             "heading_path": [
               "RAG Systems Paper",
               "Retrieval Pipeline"
@@ -253,9 +253,9 @@
           },
           {
             "label": "C2",
-            "chunk_id": "b749398d-d851-5064-973e-b720fbbab5e6:1",
-            "document_id": "eb9f7de5-3edb-5466-b409-41a9118fc5d7",
-            "version_id": "b749398d-d851-5064-973e-b720fbbab5e6",
+            "chunk_id": "618c1be3-ee20-583c-8a0d-07c099374a1d:1",
+            "document_id": "30ec862f-d01f-5842-bd8d-4086adcee322",
+            "version_id": "618c1be3-ee20-583c-8a0d-07c099374a1d",
             "heading_path": [
               "Demo Ablation Paper Excerpt",
               "Cited Paper Section"
@@ -265,9 +265,9 @@
           },
           {
             "label": "C3",
-            "chunk_id": "175b3a3a-2a76-54c9-b5b4-fd2f2118cccf:1",
-            "document_id": "51a5b9ff-512e-54c0-bc65-f6aac708eed0",
-            "version_id": "175b3a3a-2a76-54c9-b5b4-fd2f2118cccf",
+            "chunk_id": "4a17160c-75ea-5da2-ae77-750189535dc4:1",
+            "document_id": "2965643d-8103-52ff-a184-572d04209975",
+            "version_id": "4a17160c-75ea-5da2-ae77-750189535dc4",
             "heading_path": [
               "Demo ML Paper Excerpt",
               "Cited Paper Section"
@@ -323,9 +323,9 @@
         "citations": [
           {
             "label": "C1",
-            "chunk_id": "0b4dddb9-7d70-59c6-883e-6ef45bfe29db:1",
-            "document_id": "9646256f-6bf1-51cd-a435-51d57c4d5977",
-            "version_id": "0b4dddb9-7d70-59c6-883e-6ef45bfe29db",
+            "chunk_id": "3b379a6f-e8a0-5fc7-b4cd-1fa479f36df1:1",
+            "document_id": "231aa755-4502-5c16-829e-ba03d3b0b9b7",
+            "version_id": "3b379a6f-e8a0-5fc7-b4cd-1fa479f36df1",
             "heading_path": [
               "Evaluation Harness Paper",
               "Benchmark Design"
@@ -335,9 +335,9 @@
           },
           {
             "label": "C2",
-            "chunk_id": "175b3a3a-2a76-54c9-b5b4-fd2f2118cccf:1",
-            "document_id": "51a5b9ff-512e-54c0-bc65-f6aac708eed0",
-            "version_id": "175b3a3a-2a76-54c9-b5b4-fd2f2118cccf",
+            "chunk_id": "4a17160c-75ea-5da2-ae77-750189535dc4:1",
+            "document_id": "2965643d-8103-52ff-a184-572d04209975",
+            "version_id": "4a17160c-75ea-5da2-ae77-750189535dc4",
             "heading_path": [
               "Demo ML Paper Excerpt",
               "Cited Paper Section"
@@ -347,9 +347,9 @@
           },
           {
             "label": "C3",
-            "chunk_id": "b749398d-d851-5064-973e-b720fbbab5e6:1",
-            "document_id": "eb9f7de5-3edb-5466-b409-41a9118fc5d7",
-            "version_id": "b749398d-d851-5064-973e-b720fbbab5e6",
+            "chunk_id": "618c1be3-ee20-583c-8a0d-07c099374a1d:1",
+            "document_id": "30ec862f-d01f-5842-bd8d-4086adcee322",
+            "version_id": "618c1be3-ee20-583c-8a0d-07c099374a1d",
             "heading_path": [
               "Demo Ablation Paper Excerpt",
               "Cited Paper Section"
@@ -390,14 +390,26 @@
       "retrieved_chunk_count": 4,
       "answer": {
         "query": "What metric is used for citation-valid answers?",
-        "answer": "Metric: recall@3 for retrieval and citation-validity rate for answers. [C1] Metric: pass rate by task, retrieval hit rate, field coverage, citation validity, and refusal accuracy. [C2] Metric: citation-valid answer rate and refusal accuracy. [C3]",
+        "answer": "Metric: recall@3 for retrieval and citation-validity rate for answers. [C1] Metric: recall@3 for retrieval and citation-validity rate for answers. [C2] Earlier note: vector-only retrieval is sufficient for all questions. [C3]",
         "insufficient_evidence": false,
         "citations": [
           {
             "label": "C1",
-            "chunk_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb:1",
-            "document_id": "44d993bb-4e06-5277-9e84-669f1d0cd2b7",
-            "version_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb",
+            "chunk_id": "d7c16fac-a04e-576e-9c06-b8e5317b6b6d:2",
+            "document_id": "8fe58f13-9456-54d8-b2ff-20cdca025932",
+            "version_id": "d7c16fac-a04e-576e-9c06-b8e5317b6b6d",
+            "heading_path": [
+              "RAG Systems Paper",
+              "Failure Analysis"
+            ],
+            "quote": "Metric: recall@3 for retrieval and citation-validity rate for answers.",
+            "score": 0.574364
+          },
+          {
+            "label": "C2",
+            "chunk_id": "d7c16fac-a04e-576e-9c06-b8e5317b6b6d:1",
+            "document_id": "8fe58f13-9456-54d8-b2ff-20cdca025932",
+            "version_id": "d7c16fac-a04e-576e-9c06-b8e5317b6b6d",
             "heading_path": [
               "RAG Systems Paper",
               "Retrieval Pipeline"
@@ -406,28 +418,16 @@
             "score": 0.497015
           },
           {
-            "label": "C2",
-            "chunk_id": "0b4dddb9-7d70-59c6-883e-6ef45bfe29db:1",
-            "document_id": "9646256f-6bf1-51cd-a435-51d57c4d5977",
-            "version_id": "0b4dddb9-7d70-59c6-883e-6ef45bfe29db",
+            "label": "C3",
+            "chunk_id": "3b379a6f-e8a0-5fc7-b4cd-1fa479f36df1:2",
+            "document_id": "231aa755-4502-5c16-829e-ba03d3b0b9b7",
+            "version_id": "3b379a6f-e8a0-5fc7-b4cd-1fa479f36df1",
             "heading_path": [
               "Evaluation Harness Paper",
-              "Benchmark Design"
+              "Conflicting Evidence"
             ],
-            "quote": "Metric: pass rate by task, retrieval hit rate, field coverage, citation validity, and refusal accuracy.",
-            "score": 0.464659
-          },
-          {
-            "label": "C3",
-            "chunk_id": "b749398d-d851-5064-973e-b720fbbab5e6:1",
-            "document_id": "eb9f7de5-3edb-5466-b409-41a9118fc5d7",
-            "version_id": "b749398d-d851-5064-973e-b720fbbab5e6",
-            "heading_path": [
-              "Demo Ablation Paper Excerpt",
-              "Cited Paper Section"
-            ],
-            "quote": "Metric: citation-valid answer rate and refusal accuracy.",
-            "score": 0.397244
+            "quote": "Earlier note: vector-only retrieval is sufficient for all questions.",
+            "score": 0.471918
           }
         ],
         "extracted_fields": {
@@ -459,44 +459,44 @@
       "retrieved_chunk_count": 4,
       "answer": {
         "query": "Why is hybrid retrieval preferred in the corrected note?",
-        "answer": "Corrected note: hybrid retrieval is preferred because lexical evidence helps prevent unsupported answers. [C1] Method: ablation study comparing lexical retrieval, vector retrieval, and hybrid retrieval. [C2] Method: hybrid retrieval with lexical filtering, vector search, and evidence thresholding. [C3]",
+        "answer": "Corrected note: hybrid retrieval is preferred because lexical evidence helps prevent unsupported answers. [C1] Later milestones add PostgreSQL storage, pgvector embeddings, hybrid retrieval, source-cited generation, and evaluation metrics. [C2] Method: ablation study comparing lexical retrieval, vector retrieval, and hybrid retrieval. [C3]",
         "insufficient_evidence": false,
         "citations": [
           {
             "label": "C1",
-            "chunk_id": "0b4dddb9-7d70-59c6-883e-6ef45bfe29db:2",
-            "document_id": "9646256f-6bf1-51cd-a435-51d57c4d5977",
-            "version_id": "0b4dddb9-7d70-59c6-883e-6ef45bfe29db",
+            "chunk_id": "3b379a6f-e8a0-5fc7-b4cd-1fa479f36df1:2",
+            "document_id": "231aa755-4502-5c16-829e-ba03d3b0b9b7",
+            "version_id": "3b379a6f-e8a0-5fc7-b4cd-1fa479f36df1",
             "heading_path": [
               "Evaluation Harness Paper",
               "Conflicting Evidence"
             ],
             "quote": "Corrected note: hybrid retrieval is preferred because lexical evidence helps prevent unsupported answers.",
-            "score": 0.647133
+            "score": 0.602772
           },
           {
             "label": "C2",
-            "chunk_id": "b749398d-d851-5064-973e-b720fbbab5e6:1",
-            "document_id": "eb9f7de5-3edb-5466-b409-41a9118fc5d7",
-            "version_id": "b749398d-d851-5064-973e-b720fbbab5e6",
+            "chunk_id": "17230b6e-37c0-5b4e-af38-1434b141ab81:3",
+            "document_id": "23308042-1eeb-5689-82b3-370363903ebe",
+            "version_id": "17230b6e-37c0-5b4e-af38-1434b141ab81",
+            "heading_path": [
+              "Retrieval Notes",
+              "Evaluation"
+            ],
+            "quote": "Later milestones add PostgreSQL storage, pgvector embeddings, hybrid retrieval, source-cited generation, and evaluation metrics.",
+            "score": 0.311214
+          },
+          {
+            "label": "C3",
+            "chunk_id": "618c1be3-ee20-583c-8a0d-07c099374a1d:1",
+            "document_id": "30ec862f-d01f-5842-bd8d-4086adcee322",
+            "version_id": "618c1be3-ee20-583c-8a0d-07c099374a1d",
             "heading_path": [
               "Demo Ablation Paper Excerpt",
               "Cited Paper Section"
             ],
             "quote": "Method: ablation study comparing lexical retrieval, vector retrieval, and hybrid retrieval.",
             "score": 0.306071
-          },
-          {
-            "label": "C3",
-            "chunk_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb:1",
-            "document_id": "44d993bb-4e06-5277-9e84-669f1d0cd2b7",
-            "version_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb",
-            "heading_path": [
-              "RAG Systems Paper",
-              "Retrieval Pipeline"
-            ],
-            "quote": "Method: hybrid retrieval with lexical filtering, vector search, and evidence thresholding.",
-            "score": 0.252424
           }
         ],
         "extracted_fields": {},
@@ -531,15 +531,15 @@
         "citations": [
           {
             "label": "C1",
-            "chunk_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb:2",
-            "document_id": "44d993bb-4e06-5277-9e84-669f1d0cd2b7",
-            "version_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb",
+            "chunk_id": "d7c16fac-a04e-576e-9c06-b8e5317b6b6d:2",
+            "document_id": "8fe58f13-9456-54d8-b2ff-20cdca025932",
+            "version_id": "d7c16fac-a04e-576e-9c06-b8e5317b6b6d",
             "heading_path": [
               "RAG Systems Paper",
               "Failure Analysis"
             ],
             "quote": "## Failure Analysis",
-            "score": 0.615337
+            "score": 0.554914
           }
         ],
         "extracted_fields": {},
@@ -569,44 +569,44 @@
       "retrieved_chunk_count": 4,
       "answer": {
         "query": "What should answer generation do when evidence does not mention the requested obligation?",
-        "answer": "Unsupported query policy: answer generation should refuse when retrieved evidence does not mention the requested obligation. [C1] Metric: citation-valid answer rate and refusal accuracy. [C2] Corrected note: hybrid retrieval is preferred because lexical evidence helps prevent unsupported answers. [C3]",
+        "answer": "Unsupported query policy: answer generation should refuse when retrieved evidence does not mention the requested obligation. [C1] Limitation: the benchmark is deterministic and should later be expanded with harder adversarial cases. [C2] Metric: citation-valid answer rate and refusal accuracy. [C3]",
         "insufficient_evidence": false,
         "citations": [
           {
             "label": "C1",
-            "chunk_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb:2",
-            "document_id": "44d993bb-4e06-5277-9e84-669f1d0cd2b7",
-            "version_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb",
+            "chunk_id": "d7c16fac-a04e-576e-9c06-b8e5317b6b6d:2",
+            "document_id": "8fe58f13-9456-54d8-b2ff-20cdca025932",
+            "version_id": "d7c16fac-a04e-576e-9c06-b8e5317b6b6d",
             "heading_path": [
               "RAG Systems Paper",
               "Failure Analysis"
             ],
             "quote": "Unsupported query policy: answer generation should refuse when retrieved evidence does not mention the requested obligation.",
-            "score": 0.750315
+            "score": 0.688048
           },
           {
             "label": "C2",
-            "chunk_id": "b749398d-d851-5064-973e-b720fbbab5e6:1",
-            "document_id": "eb9f7de5-3edb-5466-b409-41a9118fc5d7",
-            "version_id": "b749398d-d851-5064-973e-b720fbbab5e6",
+            "chunk_id": "3b379a6f-e8a0-5fc7-b4cd-1fa479f36df1:2",
+            "document_id": "231aa755-4502-5c16-829e-ba03d3b0b9b7",
+            "version_id": "3b379a6f-e8a0-5fc7-b4cd-1fa479f36df1",
+            "heading_path": [
+              "Evaluation Harness Paper",
+              "Conflicting Evidence"
+            ],
+            "quote": "Limitation: the benchmark is deterministic and should later be expanded with harder adversarial cases.",
+            "score": 0.277776
+          },
+          {
+            "label": "C3",
+            "chunk_id": "618c1be3-ee20-583c-8a0d-07c099374a1d:1",
+            "document_id": "30ec862f-d01f-5842-bd8d-4086adcee322",
+            "version_id": "618c1be3-ee20-583c-8a0d-07c099374a1d",
             "heading_path": [
               "Demo Ablation Paper Excerpt",
               "Cited Paper Section"
             ],
             "quote": "Metric: citation-valid answer rate and refusal accuracy.",
             "score": 0.237535
-          },
-          {
-            "label": "C3",
-            "chunk_id": "0b4dddb9-7d70-59c6-883e-6ef45bfe29db:2",
-            "document_id": "9646256f-6bf1-51cd-a435-51d57c4d5977",
-            "version_id": "0b4dddb9-7d70-59c6-883e-6ef45bfe29db",
-            "heading_path": [
-              "Evaluation Harness Paper",
-              "Conflicting Evidence"
-            ],
-            "quote": "Corrected note: hybrid retrieval is preferred because lexical evidence helps prevent unsupported answers.",
-            "score": 0.236458
           }
         ],
         "extracted_fields": {},
@@ -636,14 +636,26 @@
       "retrieved_chunk_count": 4,
       "answer": {
         "query": "Which section discusses generic words causing retrieval mistakes?",
-        "answer": "Method: ablation study comparing lexical retrieval, vector retrieval, and hybrid retrieval. [C1] Metric: recall@3 for retrieval and citation-validity rate for answers. [C2] Near miss: lexical retrieval can over-rank chunks that share generic words but miss the key concept. [C3]",
+        "answer": "Near miss: lexical retrieval can over-rank chunks that share generic words but miss the key concept. [C1] Method: ablation study comparing lexical retrieval, vector retrieval, and hybrid retrieval. [C2] Metric: recall@3 for retrieval and citation-validity rate for answers. [C3]",
         "insufficient_evidence": false,
         "citations": [
           {
             "label": "C1",
-            "chunk_id": "b749398d-d851-5064-973e-b720fbbab5e6:1",
-            "document_id": "eb9f7de5-3edb-5466-b409-41a9118fc5d7",
-            "version_id": "b749398d-d851-5064-973e-b720fbbab5e6",
+            "chunk_id": "d7c16fac-a04e-576e-9c06-b8e5317b6b6d:2",
+            "document_id": "8fe58f13-9456-54d8-b2ff-20cdca025932",
+            "version_id": "d7c16fac-a04e-576e-9c06-b8e5317b6b6d",
+            "heading_path": [
+              "RAG Systems Paper",
+              "Failure Analysis"
+            ],
+            "quote": "Near miss: lexical retrieval can over-rank chunks that share generic words but miss the key concept.",
+            "score": 0.358244
+          },
+          {
+            "label": "C2",
+            "chunk_id": "618c1be3-ee20-583c-8a0d-07c099374a1d:1",
+            "document_id": "30ec862f-d01f-5842-bd8d-4086adcee322",
+            "version_id": "618c1be3-ee20-583c-8a0d-07c099374a1d",
             "heading_path": [
               "Demo Ablation Paper Excerpt",
               "Cited Paper Section"
@@ -652,28 +664,16 @@
             "score": 0.324937
           },
           {
-            "label": "C2",
-            "chunk_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb:1",
-            "document_id": "44d993bb-4e06-5277-9e84-669f1d0cd2b7",
-            "version_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb",
+            "label": "C3",
+            "chunk_id": "d7c16fac-a04e-576e-9c06-b8e5317b6b6d:1",
+            "document_id": "8fe58f13-9456-54d8-b2ff-20cdca025932",
+            "version_id": "d7c16fac-a04e-576e-9c06-b8e5317b6b6d",
             "heading_path": [
               "RAG Systems Paper",
               "Retrieval Pipeline"
             ],
             "quote": "Metric: recall@3 for retrieval and citation-validity rate for answers.",
             "score": 0.285268
-          },
-          {
-            "label": "C3",
-            "chunk_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb:2",
-            "document_id": "44d993bb-4e06-5277-9e84-669f1d0cd2b7",
-            "version_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb",
-            "heading_path": [
-              "RAG Systems Paper",
-              "Failure Analysis"
-            ],
-            "quote": "Near miss: lexical retrieval can over-rank chunks that share generic words but miss the key concept.",
-            "score": 0.254357
           }
         ],
         "extracted_fields": {},
@@ -708,21 +708,21 @@
         "citations": [
           {
             "label": "C1",
-            "chunk_id": "0b4dddb9-7d70-59c6-883e-6ef45bfe29db:2",
-            "document_id": "9646256f-6bf1-51cd-a435-51d57c4d5977",
-            "version_id": "0b4dddb9-7d70-59c6-883e-6ef45bfe29db",
+            "chunk_id": "3b379a6f-e8a0-5fc7-b4cd-1fa479f36df1:2",
+            "document_id": "231aa755-4502-5c16-829e-ba03d3b0b9b7",
+            "version_id": "3b379a6f-e8a0-5fc7-b4cd-1fa479f36df1",
             "heading_path": [
               "Evaluation Harness Paper",
               "Conflicting Evidence"
             ],
             "quote": "Earlier note: vector-only retrieval is sufficient for all questions.",
-            "score": 0.600927
+            "score": 0.552322
           },
           {
             "label": "C2",
-            "chunk_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb:1",
-            "document_id": "44d993bb-4e06-5277-9e84-669f1d0cd2b7",
-            "version_id": "0fab1c5c-1f67-572f-ba27-96b0496444cb",
+            "chunk_id": "d7c16fac-a04e-576e-9c06-b8e5317b6b6d:1",
+            "document_id": "8fe58f13-9456-54d8-b2ff-20cdca025932",
+            "version_id": "d7c16fac-a04e-576e-9c06-b8e5317b6b6d",
             "heading_path": [
               "RAG Systems Paper",
               "Retrieval Pipeline"
@@ -732,9 +732,9 @@
           },
           {
             "label": "C3",
-            "chunk_id": "b749398d-d851-5064-973e-b720fbbab5e6:1",
-            "document_id": "eb9f7de5-3edb-5466-b409-41a9118fc5d7",
-            "version_id": "b749398d-d851-5064-973e-b720fbbab5e6",
+            "chunk_id": "618c1be3-ee20-583c-8a0d-07c099374a1d:1",
+            "document_id": "30ec862f-d01f-5842-bd8d-4086adcee322",
+            "version_id": "618c1be3-ee20-583c-8a0d-07c099374a1d",
             "heading_path": [
               "Demo Ablation Paper Excerpt",
               "Cited Paper Section"
@@ -797,9 +797,9 @@
         "citations": [
           {
             "label": "C1",
-            "chunk_id": "175b3a3a-2a76-54c9-b5b4-fd2f2118cccf:1",
-            "document_id": "51a5b9ff-512e-54c0-bc65-f6aac708eed0",
-            "version_id": "175b3a3a-2a76-54c9-b5b4-fd2f2118cccf",
+            "chunk_id": "4a17160c-75ea-5da2-ae77-750189535dc4:1",
+            "document_id": "2965643d-8103-52ff-a184-572d04209975",
+            "version_id": "4a17160c-75ea-5da2-ae77-750189535dc4",
             "heading_path": [
               "Demo ML Paper Excerpt",
               "Cited Paper Section"
@@ -814,5 +814,6 @@
         "prompt_version": "source-cited-qa-v1"
       }
     }
-  ]
+  ],
+  "ai_run_id": "ed6b336d-d6dc-4060-91bc-328e7a3155c5"
 }

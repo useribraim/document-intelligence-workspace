@@ -1,0 +1,32 @@
+{
+  "freeze_version": "v1.0",
+  "created_at": "2026-07-24T13:57:33.479225+00:00",
+  "artifacts": [
+    {
+      "path": "data/audit/corpus_manifest.jsonl",
+      "sha256": "258078d65c39d3279a95c5c54146e32c7aaf549793784113fd24dc0326f7be7f",
+      "bytes": 4704
+    },
+    {
+      "path": "data/audit/questions/v1_40_gold.jsonl",
+      "sha256": "45f78999ea8fadf51b89eaa76a69ef9d7a6a06438c53f7fa691f41dc1575f6e9",
+      "bytes": 16926
+    },
+    {
+      "path": "docs/annotation-rubric.md",
+      "sha256": "11ec77466ff715e4893b56ee90cba9d2da6a4ac33c36f37bf63b227e7c48150d",
+      "bytes": 3337
+    },
+    {
+      "path": "results/runs/v1-hybrid-gpt5mini-001.json",
+      "sha256": "3192f540c181b004e47528830cafd1060ff882f4d33c9181c726a0f79bc59417",
+      "bytes": 462065
+    },
+    {
+      "path": "results/runs/v1-hybrid-repair-gpt5mini-001.json",
+      "sha256": "f2098fb2a6958c5d0ea59170cabfc96860f3a041a71245db9cdeef5fedf6023f",
+      "bytes": 465413
+    }
+  ],
+  "rule": "Do not overwrite frozen artifacts, labels, thresholds, prompts, or questions. Create a new versioned manifest and document the change instead."
+}

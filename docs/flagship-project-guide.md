@@ -23,9 +23,14 @@ Document QA proves grounding. An action assistant must additionally prove identi
   research record cannot be read through another tenant, another tenant's document is never
   retrieved, a repeated tool call is stopped, and a task cannot be created before manager
   approval.
+- A tenant-scoped agent API, read-only MCP stdio server, Google OAuth/OIDC verifier, and public
+  Cloud Run deployment. The stable service URL provides a zero-login recruiter page, deterministic
+  cited demo, public evidence page, and optional live Google sign-in.
+- A frozen 40-question retrieval evaluation and a measured semantic-embedding plus RRF comparison.
 
-Not implemented yet: the public agent endpoint, Google ADK, MCP, OAuth/OIDC, Google Cloud
-deployment, BigQuery metrics export, and the expanded evaluation suite.
+Not implemented yet: Google ADK orchestration, Cloud SQL deployment, the persistent public write
+workflow, BigQuery metrics export, remote MCP transport, and completed human calibration. A
+bounded live Vertex workflow and external stdio MCP-client validation are complete.
 
 ## What We Are Building
 
@@ -71,9 +76,8 @@ The model never writes SQL, accesses another tenant, bypasses approval, or runs 
 
 Add tenant, user, research-record, approval, agent-run-step, and study-task data models. Implement typed tools, a bounded local agent loop, durable approval state, and deterministic tests. `/ask` remains unchanged.
 
-**Progress:** tenant, approval, task-idempotency, scoped document access, typed tools, and a
-bounded local agent loop are implemented and tested. The next change exposes the agent through
-a dedicated API while preparing the migration and authentication boundary.
+**Progress:** tenant, approval, task-idempotency, scoped document access, typed tools, a bounded
+agent loop, and a dedicated tenant-checked agent API are implemented and tested.
 
 **Done when:** a seeded user can ask about a paper, see each tool call, request a task, approve it, and create exactly one task even if the request is retried.
 
@@ -83,11 +87,23 @@ Add OAuth/OIDC token verification, role policy, tenant-scoped repository access,
 
 **Done when:** cross-tenant reads and unapproved writes are rejected in automated tests.
 
+**Progress:** Google ID-token verification and the tenant-pinned read-only MCP server are
+implemented. The deployed OAuth flow is live-verified for the configured test user; unscoped
+routes fail closed. The official Python MCP SDK has discovered and invoked both read tools through
+a separate stdio process; cross-tenant record lookup and a model-supplied tenant override fail
+safely. The write-proposal tool and remote transport remain.
+
 ### 3. Google Cloud Vertical Slice
 
 Deploy Cloud Run API/worker, Cloud SQL, Cloud Storage, Pub/Sub, Vertex AI Gemini and embeddings, Secret Manager, and Terraform. Use a public, licensed paper corpus plus personal study material only where access remains private.
 
 **Done when:** the live system ingests a document asynchronously and completes a traced, cited agent run.
+
+**Progress:** the bounded API is deployed to Cloud Run with a stable public URL, scale-to-zero,
+one-instance cap, recruiter landing page, and read-only cited demo. A separate Cloud Run Job using
+the same runtime identity has completed real Vertex embeddings, Gemini generation, cited-answer
+validation, and refusal checks. Cloud SQL, worker ingestion, Secret Manager, Terraform, and
+putting Vertex behind the persistent interactive workflow are still pending.
 
 ### 4. Evaluation And Operations
 

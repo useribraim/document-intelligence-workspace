@@ -7,7 +7,7 @@ from uuid import uuid4
 from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
-from diw.core.embeddings import EmbeddingProvider
+from diw.core.embeddings import EmbeddingProvider, embed_documents
 from diw.core.ingestion import IngestedDocument
 from diw.db.models import (
     AIRun,
@@ -472,8 +472,7 @@ def count_pgvector_embeddings(session: Session) -> int:
 
 def embed_missing_chunks(session: Session, provider: EmbeddingProvider) -> int:
     chunks = session.scalars(select(Chunk).order_by(Chunk.id)).all()
-    created = 0
-
+    missing_chunks: list[Chunk] = []
     for chunk in chunks:
         existing = session.get(ChunkEmbedding, embedding_id(chunk.id, provider.model_name))
         if existing is not None and existing.content_hash == chunk.content_hash:
@@ -482,8 +481,10 @@ def embed_missing_chunks(session: Session, provider: EmbeddingProvider) -> int:
         if existing is not None:
             session.delete(existing)
             session.flush()
+        missing_chunks.append(chunk)
 
-        vector = provider.embed(chunk.text)
+    vectors = embed_documents(provider, [chunk.text for chunk in missing_chunks])
+    for chunk, vector in zip(missing_chunks, vectors):
         created_at = datetime.now(timezone.utc)
         embedding = ChunkEmbedding(
             id=embedding_id(chunk.id, provider.model_name),
@@ -497,9 +498,8 @@ def embed_missing_chunks(session: Session, provider: EmbeddingProvider) -> int:
         session.add(embedding)
         session.flush()
         _upsert_pgvector_embedding(session, embedding, vector)
-        created += 1
 
-    return created
+    return len(missing_chunks)
 
 
 def _upsert_pgvector_embedding(

@@ -1,0 +1,218 @@
+{
+  "schema_version": "mcp-stdio-validation-v1",
+  "recorded_at": "2026-07-27T09:07:20.979853+00:00",
+  "client": {
+    "implementation": "official Python MCP SDK ClientSession",
+    "package": "mcp",
+    "package_version": "1.28.1",
+    "transport": "stdio",
+    "server_process": "python -m diw.mcp_server"
+  },
+  "server_boundary": {
+    "configured_tenant_id": "37e5229d-aa52-46e3-a8db-8b757d6652bc",
+    "tenant_source": "server process configuration",
+    "model_can_supply_tenant_id": false,
+    "write_tools_exposed": false
+  },
+  "discovered_tools": [
+    {
+      "name": "search_documents",
+      "description": "Search evidence in documents granted to this MCP server's tenant.",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "top_k": {
+            "default": 5,
+            "title": "Top K",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "search_documentsArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_research_record",
+      "description": "Read a research record only when it belongs to the configured tenant.",
+      "inputSchema": {
+        "properties": {
+          "record_id": {
+            "title": "Record Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "record_id"
+        ],
+        "title": "get_research_recordArguments",
+        "type": "object"
+      }
+    }
+  ],
+  "transcript": [
+    {
+      "operation": "initialize",
+      "status": "ok",
+      "server_name": "Document Intelligence Workspace",
+      "server_version": "1.28.1",
+      "protocol_version": "2025-11-25",
+      "latency_ms": 441.87
+    },
+    {
+      "operation": "tools/list",
+      "status": "ok",
+      "tools": [
+        {
+          "name": "search_documents",
+          "description": "Search evidence in documents granted to this MCP server's tenant.",
+          "inputSchema": {
+            "properties": {
+              "query": {
+                "title": "Query",
+                "type": "string"
+              },
+              "top_k": {
+                "default": 5,
+                "title": "Top K",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "query"
+            ],
+            "title": "search_documentsArguments",
+            "type": "object"
+          }
+        },
+        {
+          "name": "get_research_record",
+          "description": "Read a research record only when it belongs to the configured tenant.",
+          "inputSchema": {
+            "properties": {
+              "record_id": {
+                "title": "Record Id",
+                "type": "string"
+              }
+            },
+            "required": [
+              "record_id"
+            ],
+            "title": "get_research_recordArguments",
+            "type": "object"
+          }
+        }
+      ],
+      "latency_ms": 1.78
+    },
+    {
+      "operation": "tools/call",
+      "tool": "search_documents",
+      "arguments": {
+        "query": "How does the Alpha tenant preserve citations?",
+        "top_k": 5
+      },
+      "is_error": false,
+      "result": {
+        "tenant_id": "37e5229d-aa52-46e3-a8db-8b757d6652bc",
+        "query": "How does the Alpha tenant preserve citations?",
+        "results": [
+          {
+            "chunk_id": "d5c03461-1957-56b0-8d09-0e6d30a7ceda:0",
+            "document_id": "5d31ddb8-42a3-5821-833c-06d96b39304d",
+            "version_id": "d5c03461-1957-56b0-8d09-0e6d30a7ceda",
+            "chunk_index": 0,
+            "heading_path": [
+              "Alpha evidence"
+            ],
+            "text": "# Alpha evidence\n\nThe Alpha tenant uses citation-preserving hybrid retrieval for research notes.",
+            "lexical_score": 0.5,
+            "vector_score": 0.46188,
+            "score": 1.0
+          }
+        ]
+      },
+      "latency_ms": 16.01
+    },
+    {
+      "operation": "tools/call",
+      "tool": "get_research_record",
+      "arguments": {
+        "record_id": "114bc858-6d66-435d-b666-c159cba50dd6"
+      },
+      "is_error": false,
+      "result": {
+        "found": true,
+        "record": {
+          "id": "114bc858-6d66-435d-b666-c159cba50dd6",
+          "record_type": "paper_note",
+          "title": "Alpha retrieval note",
+          "payload": {
+            "status": "reviewed",
+            "topic": "citation-preserving retrieval"
+          }
+        }
+      },
+      "latency_ms": 2.67
+    },
+    {
+      "operation": "tools/call",
+      "tool": "get_research_record",
+      "arguments": {
+        "record_id": "f7cba41d-53dd-4443-91f4-0a209dfb9471"
+      },
+      "expected": "not found because record belongs to another tenant",
+      "is_error": false,
+      "result": {
+        "found": false
+      },
+      "latency_ms": 2.32
+    },
+    {
+      "operation": "tools/call",
+      "tool": "search_documents",
+      "arguments": {
+        "query": "ORCHID-BETA",
+        "top_k": 5,
+        "tenant_id": "994a8fee-85ac-4db3-9cc9-06d287a818b4"
+      },
+      "expected": "tenant override rejected or ignored while results remain pinned to Alpha",
+      "is_error": false,
+      "result": {
+        "tenant_id": "37e5229d-aa52-46e3-a8db-8b757d6652bc",
+        "query": "ORCHID-BETA",
+        "results": [
+          {
+            "chunk_id": "d5c03461-1957-56b0-8d09-0e6d30a7ceda:0",
+            "document_id": "5d31ddb8-42a3-5821-833c-06d96b39304d",
+            "version_id": "d5c03461-1957-56b0-8d09-0e6d30a7ceda",
+            "chunk_index": 0,
+            "heading_path": [
+              "Alpha evidence"
+            ],
+            "text": "# Alpha evidence\n\nThe Alpha tenant uses citation-preserving hybrid retrieval for research notes.",
+            "lexical_score": 0.0,
+            "vector_score": 0.0,
+            "score": 1.0
+          }
+        ]
+      },
+      "latency_ms": 2.39
+    }
+  ],
+  "assertions": {
+    "discovered_exact_read_only_tools": true,
+    "tool_schemas_exclude_tenant_id": true,
+    "evidence_search_is_tenant_pinned": true,
+    "owned_research_record_found": true,
+    "cross_tenant_research_record_hidden": true,
+    "model_supplied_tenant_override_failed_safely": true
+  },
+  "errors": [],
+  "total_latency_ms": 633.43
+}

@@ -12,6 +12,272 @@ from sqlalchemy.orm import Session
 
 
 class CliTests(unittest.TestCase):
+    def test_annotation_decisions_summary_and_agreement_use_claim_pairs_only(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            annotations = root / "annotations.jsonl"
+            decisions = root / "decisions.json"
+            completed = root / "completed.jsonl"
+            records = [
+                {
+                    "review_type": "answer_level",
+                    "question_id": "q1",
+                    "claim_id": None,
+                    "citation_id": None,
+                    "answer_completeness": None,
+                    "refusal_appropriate": None,
+                },
+                {
+                    "review_type": "claim_citation",
+                    "question_id": "q1",
+                    "claim_id": "q1_c1",
+                    "citation_id": "C1",
+                    "source_exists": None,
+                    "citation_relevant": None,
+                    "support_label": None,
+                    "support_rationale": None,
+                },
+            ]
+            annotations.write_text(
+                "".join(json.dumps(record) + "\n" for record in records), encoding="utf-8"
+            )
+            decisions.write_text(
+                json.dumps(
+                    {
+                        "answer_level": {
+                            "q1": {
+                                "answer_completeness": "complete",
+                                "refusal_appropriate": None,
+                            }
+                        },
+                        "claim_citation": {
+                            "q1_c1": {
+                                "source_exists": True,
+                                "citation_relevant": "yes",
+                                "support_label": "fully_supported",
+                                "support_rationale": "Exact span supports claim.",
+                            }
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            with patch("sys.stdout"):
+                self.assertEqual(
+                    main(
+                        [
+                            "annotation-apply-decisions",
+                            "--annotations",
+                            str(annotations),
+                            "--decisions",
+                            str(decisions),
+                            "--out",
+                            str(completed),
+                            "--annotator-id",
+                            "test-ai",
+                            "--annotation-method",
+                            "test_method",
+                        ]
+                    ),
+                    0,
+                )
+
+            with patch("sys.stdout") as stdout:
+                self.assertEqual(main(["annotation-summary", "--annotations", str(completed)]), 0)
+            summary = json.loads("".join(call.args[0] for call in stdout.write.call_args_list))
+            self.assertEqual(summary["claim_citation_records"], 1)
+            self.assertEqual(summary["support_counts"], {"fully_supported": 1})
+            self.assertEqual(summary["completed_records"], 2)
+            self.assertEqual(summary["pending_records"], 0)
+
+            with patch("sys.stdout") as stdout:
+                self.assertEqual(
+                    main(
+                        [
+                            "annotation-agreement",
+                            "--first",
+                            str(completed),
+                            "--second",
+                            str(completed),
+                        ]
+                    ),
+                    0,
+                )
+            agreement = json.loads("".join(call.args[0] for call in stdout.write.call_args_list))
+            self.assertEqual(agreement["shared_pairs"], 1)
+            self.assertEqual(agreement["cohen_kappa"], 1.0)
+            self.assertTrue(agreement["gate_passed"])
+
+            incomplete = root / "incomplete.jsonl"
+            incomplete.write_text(annotations.read_text(encoding="utf-8"), encoding="utf-8")
+            with patch("sys.stdout") as stdout:
+                self.assertEqual(
+                    main(
+                        [
+                            "annotation-agreement",
+                            "--first",
+                            str(completed),
+                            "--second",
+                            str(incomplete),
+                            "--require-complete",
+                            "--minimum-pairs",
+                            "1",
+                        ]
+                    ),
+                    1,
+                )
+            blocked = json.loads("".join(call.args[0] for call in stdout.write.call_args_list))
+            self.assertFalse(blocked["gate_passed"])
+            self.assertEqual(blocked["labeled_pairs"], 0)
+
+    def test_claim_audit_runs_with_deterministic_provider_and_gold_metrics(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "paper.md"
+            manifest = root / "manifest.jsonl"
+            questions = root / "questions.jsonl"
+            database = root / "audit.db"
+            output = root / "run.json"
+            source.write_text(
+                "# Paper\n\n## Method\n\nHybrid retrieval combines lexical and vector retrieval.\n",
+                encoding="utf-8",
+            )
+            manifest.write_text(
+                json.dumps({"document_id": "paper", "text_path": str(source)}) + "\n",
+                encoding="utf-8",
+            )
+            database_url = f"sqlite+pysqlite:///{database}"
+            with patch("sys.stdout"):
+                self.assertEqual(
+                    main(["load", str(source), "--database-url", database_url]), 0
+                )
+            import sqlite3
+            connection = sqlite3.connect(database)
+            try:
+                chunk_id = connection.execute("select id from chunks").fetchone()[0]
+            finally:
+                connection.close()
+            questions.write_text(
+                json.dumps(
+                    {
+                        "question_id": "q1",
+                        "question": "How does hybrid retrieval work?",
+                        "category": "direct_extraction",
+                        "expected_evidence_status": "sufficient",
+                        "source_documents": ["paper"],
+                        "gold_evidence_chunk_ids": [chunk_id],
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            with patch("sys.stdout"):
+                self.assertEqual(
+                    main(
+                        [
+                            "claim-audit",
+                            "--questions", str(questions),
+                            "--manifest", str(manifest),
+                            "--database-url", database_url,
+                            "--require-gold-evidence",
+                            "--out", str(output),
+                        ]
+                    ),
+                    0,
+                )
+
+            run = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(run["question_count"], 1)
+            self.assertEqual(run["runs"][0]["temperature"], None)
+            self.assertEqual(run["summary"]["retrieval_eval_cases"], 1)
+
+    def test_evidence_repair_reuses_saved_baseline_without_a_model_call(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            baseline_path = root / "baseline.json"
+            repaired_path = root / "repaired.json"
+            chunk_id = "paper:1"
+            baseline_path.write_text(
+                json.dumps(
+                    {
+                        "run_id": "baseline",
+                        "config": {"evidence_repair": False},
+                        "runs": [
+                            {
+                                "run_id": "baseline",
+                                "question_id": "q1",
+                                "expected_evidence_status": "sufficient",
+                                "gold_evidence_chunk_ids": [chunk_id],
+                                "retrieval_recall_at_k": 1.0,
+                                "retrieval_mrr": 1.0,
+                                "gold_citation_recall": 1.0,
+                                "expected_min_claim_count": 1,
+                                "structural_complete": True,
+                                "retrieval_config_hash": "old",
+                                "answer": "Hybrid retrieval uses lexical and vector search [C1]",
+                                "answer_sha256": "old",
+                                "insufficient_evidence": False,
+                                "latency_ms": 5,
+                                "input_tokens": 10,
+                                "cached_input_tokens": 0,
+                                "output_tokens": 5,
+                                "completion_attempts": 1,
+                                "estimated_cost_usd": 0.01,
+                                "claims": [{"claim_id": "q1_c1", "text": "Hybrid retrieval uses lexical and vector search", "citation_ids": ["C1"]}],
+                                "annotations_pending": [{"claim_id": "q1_c1", "claim_text": "Hybrid retrieval uses lexical and vector search", "citation_id": "C1", "evidence_span": "Hybrid retrieval uses lexical and vector search.", "quote_alignment": "exact", "source_exists": True, "citation_relevant": "yes", "support_label": "partially_supported", "support_rationale": "Fixture partial label."}],
+                                "retrieved_passages": [{"rank": 1, "chunk_id": chunk_id, "document_id": "paper", "version_id": "v1", "chunk_index": 1, "heading_path": ["Method"], "text": "Hybrid retrieval uses lexical and vector search.", "lexical_score": 1.0, "vector_score": 1.0, "score": 1.0}],
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            with patch("sys.stdout"):
+                self.assertEqual(
+                    main([
+                        "audit-evidence-repair", "--run", str(baseline_path),
+                        "--out", str(repaired_path), "--run-id", "repaired",
+                    ]),
+                    0,
+                )
+
+            repaired = json.loads(repaired_path.read_text(encoding="utf-8"))
+            self.assertEqual(repaired["parent_run_id"], "baseline")
+            self.assertEqual(repaired["summary"]["fully_supported_rate"], 1.0)
+            self.assertEqual(repaired["summary"]["repair_incremental_cost_usd"], 0.0)
+
+    def test_retrieval_trace_reports_rank_changes_from_saved_runs(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            left_path = root / "left.json"
+            right_path = root / "right.json"
+            output = root / "trace.json"
+            left_path.write_text(
+                json.dumps({"run_id": "left", "runs": [{"question_id": "q1", "gold_evidence_chunk_ids": ["gold"], "retrieved_passage_ids": ["gold", "other"]}]}),
+                encoding="utf-8",
+            )
+            right_path.write_text(
+                json.dumps({"run_id": "right", "runs": [{"question_id": "q1", "gold_evidence_chunk_ids": ["gold"], "retrieved_passage_ids": ["other", "gold"]}]}),
+                encoding="utf-8",
+            )
+
+            with patch("sys.stdout"):
+                self.assertEqual(
+                    main([
+                        "audit-retrieval-trace", "--left", str(left_path),
+                        "--right", str(right_path), "--out", str(output),
+                    ]),
+                    0,
+                )
+
+            trace = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(trace["summary"]["identical_top_k_questions"], 0)
+            self.assertEqual(trace["traces"][0]["left_gold_ranks"], [1])
+            self.assertEqual(trace["traces"][0]["right_gold_ranks"], [2])
+
     def test_normalise_command_writes_output(self):
         with TemporaryDirectory() as tmp:
             source = Path(tmp) / "paper.md"

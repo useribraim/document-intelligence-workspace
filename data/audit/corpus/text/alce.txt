@@ -1,0 +1,1459 @@
+                                               Enabling Large Language Models to Generate Text with Citations
+
+                                                             Tianyu Gao Howard Yen Jiatong Yu Danqi Chen
+                                                      Department of Computer Science & Princeton Language and Intelligence
+                                                                             Princeton University
+                                                            {tianyug,hyen,jiatongy,danqic}@cs.princeton.edu
+
+
+
+                                                                                                                    Question
+                                                               Abstract                                             When did the US break away from England?
+
+                                             Large language models (LLMs) have emerged                              Model output
+                                                                                                                    The US took the first step towards gaining independence from
+                                             as a widely-used tool for information seeking,                         GB when it declared independence on July 2, 1776 (although the
+                                             but their generated outputs are prone to halluci-         LLM          event is now commemorated on July 4, 1776, the date when the
+
+
+
+
+arXiv:2305.14627v2 [cs.CL] 31 Oct 2023
+                                                                                                                    Declaration of Independence was oﬀicially adopted by Congress)
+
+                                                                                                    Retrieve
+                                             nation. In this work, our aim is to allow LLMs                         [1][2]. The Treaty of Paris was later signed on September 3, 1783,
+                                             to generate text with citations, improving their                       formally separating the United States from the British Empire [3].
+                                             factual correctness and verifiability. Existing
+                                                                                                                    [1] Decolonization of   [2] Decolonization: …    [3] American Revolu-
+                                             work mainly relies on commercial search en-                            the Americas: … in-     It was oﬀicially adop-   tion: … The Treaty of   …
+                                                                                                                    dependence from GB      ted by Congress on       Paris was signed
+                                             gines and human evaluation, making it chal-            Corpus
+                                                                                                                    on July 2, 1776 …       July 4, 1776 …           September 3, 1783 ...
+                                             lenging to reproduce and compare different
+                                             modeling approaches. We propose ALCE, the              Figure 1: The task setup of ALCE. Given a question,
+                                             first benchmark for Automatic LLMs’ Citation           the system generates text while providing citing pas-
+                                             Evaluation. ALCE collects a diverse set of             sages from a large retrieval corpus. Each statement may
+                                             questions and retrieval corpora and requires           contain multiple citations (e.g., [1][2]).
+                                             building end-to-end systems to retrieve sup-
+                                             porting evidence and generate answers with
+                                             citations. We develop automatic metrics along          to provide citations to one or a few text passages
+                                             three dimensions—fluency, correctness, and ci-         for any statement they generate (Figure 1). Incor-
+                                             tation quality—and demonstrate their strong            porating citations brings several benefits: (1) users
+                                             correlation with human judgements. Our exper-          can easily verify LLMs’ claims with the provided
+                                             iments with state-of-the-art LLMs and novel            citations; (2) LLMs can generate text that faithfully
+                                             prompting strategies show that current systems
+                                                                                                    follows cited passages, which has the promise to
+                                             have considerable room for improvement—For
+                                             example, on the ELI5 dataset, even the best            improve correctness and alleviate hallucination.
+                                             models lack complete citation support 50% of              Multiple commercial systems have adopted this
+                                             the time. Our analyses further highlight promis-       paradigm: Bing Chat2 and perplexity.ai3 respond to
+                                             ing future directions, including developing bet-       user questions in natural language with references
+                                             ter retrievers, advancing long-context LLMs,           to Web pages. Nakano et al. (2021); Menick et al.
+                                             and improving the ability to synthesize infor-
+                                                                                                    (2022) share a similar motivation, but they mainly
+                                             mation from multiple sources.1
+                                                                                                    experiment with commercial search engines and
+                                         1   Introduction                                           closed-source models, making their results difficult
+                                                                                                    to evaluate. Retrieval-augmented LMs (Borgeaud
+                                         Large language models (LLMs; Brown et al., 2020;
+                                                                                                    et al., 2022; Izacard et al., 2022) incorporate re-
+                                         OpenAI, 2023) have gained increasing popularity
+                                                                                                    trieved passages during both training and infer-
+                                         as a tool for information seeking. While they gener-
+                                                                                                    ence, but do not guarantee faithfulness to retrieved
+                                         ate engaging and coherent responses, their outputs
+                                                                                                    passages or explicitly provide citations. Addition-
+                                         are prone to hallucination and often contain fac-
+                                                                                                    ally, previous studies mostly rely on human eval-
+                                         tually incorrect information (Ji et al., 2023). This
+                                                                                                    uation (Nakano et al., 2021; Menick et al., 2022;
+                                         makes it harder for users to trust and verify LLM-
+                                                                                                    Liu et al., 2023), which is expensive and difficult to
+                                         generated outputs without any supporting evidence.
+                                                                                                    reproduce. We argue that the absence of automated
+                                            In this work, we study a new generation
+                                                                                                    evaluation hinders the advances of such systems.
+                                         paradigm for LLMs, in which we require LLMs
+                                             1                                                                 2
+                                               Our code and data are available at https://github.                  https://www.bing.com/new
+                                                                                                               3
+                                         com/princeton-nlp/ALCE.                                                   https://www.perplexity.ai
+ Dataset      Corpus (#passages)   Question type         Example
+ ASQA         Wikipedia (21M)      Factoid (ambiguous)   Q: When did the US break away from England?
+                                                         A: The US declared independence on July 2, 1776 [1][2] ... The
+                                                         Treaty of Paris was later signed on September 3, 1783 [3].
+ QAMPARI      Wikipedia (21M)      Factoid (list)        Q: Which films have Gong Li as a member of their cast?
+                                                         A: The Story of Qiu Ju [1], Farewell My Concubine [2], The
+                                                         Monkey King 2 [3], Mulan [3], Saturday Fiction [3] ...
+ ELI5         Sphere (899M)        Why/How/What          Q: How do student loans affect getting a mortgage?
+                                                         A: Student loans can affect the debt to income ratio [1], which is
+                                                         a key factor in determining the amount that ... [2][3]
+
+Table 1: The three datasets used in our ALCE benchmark. These datasets cover a wide range of question types and
+the corresponding corpora span from Wikipedia to Web-scale document collection.
+
+   We present ALCE, the first reproducible bench-         with post-hoc citing achieves good correctness but
+mark for automatically evaluating LLMs’ gener-            much worse citation quality; (2) although interac-
+ations with citations. ALCE assumes a natural-            tive retrieval approaches (Yao et al., 2023; Schick
+language question and a retrieval corpus, and re-         et al., 2023) offer more flexibility in when/what
+quires building end-to-end systems to retrieve rel-       to retrieve, they do not improve the performance
+evant passages from the corpus, generate a re-            on this challenging benchmark; (3) summarizing
+sponse to the question, and cite corresponding sup-       the retrieved passages in a shorter text improves
+porting passages. We compile three datasets that          correctness but not citation quality; (4) reranking
+cover different types of questions and corpora—           multiple generations boosts citation quality mea-
+ASQA (Stelmakh et al., 2022), QAMPARI (Ru-                sured by human evaluation; (5) incorporating more
+bin et al., 2022), and ELI5 (Fan et al., 2019)—as         retrieved passages in context does not help Chat-
+shown in Table 1. Different from previous bench-          GPT but improves GPT-4 performance.
+marks (Lee et al., 2019; Bohnet et al., 2022), ALCE          Our extensive analyses highlight three major
+evaluates long-text generation, focusing on auto-         challenges of building LLMs to generate text with
+matically evaluating citation quality, and allows         citations: (1) the retrieval quality is crucial to the
+citing multiple passages for individual statements.       final performance and has substantial room for im-
+   We design automatic evaluation methods in three        provement; (2) LLMs’ limited context window re-
+dimensions: fluency, correctness, and citation            stricts the number of passages they can incorporate;
+quality. Specifically, we use MAUVE (Pillutla             (3) current LLMs struggle to synthesize multiple
+et al., 2021) to measure fluency, propose tailored        documents in context without being distracted by
+correctness metrics for each dataset, and adopt a         irrelevant ones, although better instruction tuning
+natural language inference (NLI) model (Honovich          brings significant improvement. These challenges
+et al., 2022) to measure citation quality. We show-       pose promising research directions for developing
+case how the three dimensions together contribute         better systems integrating retrieval and LLMs.
+to a robust evaluation, preventing systems from ex-
+ploiting shortcuts. Additionally, we conduct human        2    Task Setup and Datasets
+evaluation and demonstrate a strong correlation           Our task is formalized as follows: Given a query
+with our automatic metrics.                               q and a corpus of text passages D, the system
+   We experiment on multiple systems with state-          is required to return an output S, which consists
+of-the-art LLMs and retrievers and also propose           of n statements s1 , ..., sn , and each statement si
+novel prompting strategies to synthesize retrieved        cites a list of passages Ci = {ci,1 , ci,2 , . . .}4 , where
+text into text generation. Although all systems are       ci,j ∈ D. In this work, we segment LLMs’ output
+capable of providing fluent and coherent responses,       into statements by sentence boundaries.5 While
+there remains substantial room for improvement in         LLMs may include sentences that do not require a
+terms of correctness and citation quality: For exam-      citation, such as “I’m happy to help”, we observe
+ple, on the ELI5 dataset, around 50% generations          that almost all sentences that LLMs output provide
+of our ChatGPT and GPT-4 baselines are not fully
+                                                              4
+supported by the cited passages. Additionally, we               In practice, we allow at most 3 citations for each state-
+                                                          ment as more citations usually do not help.
+find that (1) a closed-book model (generating an-             5
+                                                                QAMPARI requires a list as the answer, and we choose
+swers without accessing any retrieved documents)          each entity in the generated list as a statement.
+valuable information and require citations, similar        3     Automatic Evaluation
+to findings in Liu et al. (2023). In this work, cita-      Our benchmark measures the following three di-
+tions are enclosed by box brackets such as [1][2].         mensions of system responses:
+   We divide the corpus D into 100-word passages           • Fluency: whether the model’s generated text is
+following previous works on open-domain question             fluent and coherent.
+answering (Karpukhin et al., 2020; Petroni et al.,
+                                                           • Correctness: whether the answer is accurate
+2021; Piktus et al., 2021), in contrast to commer-
+                                                             and covers all aspects of interest.
+cial systems like Bing Chat, which cite entire Web
+pages. We take 100-word passages because it is              • Citation quality: whether the answer is well
+easier for humans to verify, and allows for more              supported by the cited passages and no irrelevant
+retrieved passages to fit in LLMs’ limited context.           passages are cited.
+   We choose QA datasets so that (1) they contain          In the following, we present automatic metrics for
+factual questions, in which references are impor-          each dimension and discuss why the combination
+tant; (2) questions require long-text answers that         of the three metrics provides a robust evaluation.
+cover multiple aspects; (3) answering the questions        3.1    Fluency
+requires synthesizing multiple sources. We select
+three datasets (Table 1) and introduce them below.         We use MAUVE (Pillutla et al., 2021) to evaluate
+See §B for additional statistics.                          the fluency of the output (§C). We deploy MAUVE
+                                                           for ASQA and ELI5 and omit it for QAMPARI, as
+   ASQA (Stelmakh et al., 2022) is a long-form fac-
+                                                           QAMPARI only requires a list of short answers as
+toid dataset. As shown in Figure 1, each question is
+                                                           the response and LLMs consistently adhere to the
+an ambiguous question from AmbigQA (Min et al.,
+                                                           format in our experiments. As MAUVE is sensitive
+2020) that requires multiple short answers to cover
+                                                           to output length and text style, and most LLMs are
+different aspects, and the dataset provides a long-
+                                                           capable of producing fluent text, we mainly employ
+form answer that covers all short answers. Since
+                                                           it as a sanity check as long as the MAUVE scores
+most questions can be answered by Wikipedia, we
+                                                           are high enough.
+use the 2018-12-20 Wikipedia snapshot as D.
+   QAMPARI (Rubin et al., 2022) is a factoid QA            3.2    Correctness
+dataset constructed from Wikipedia, where the an-          Our objective is to measure the informativeness and
+swer is a list of entities that are drawn from differ-     utility of the generation to the question. Liu et al.
+ent passages. Same as ASQA, we use the 2018-12-            (2023) propose to directly evaluate perceived utility
+20 Wikipedia as the corpus.                                by humans, a process difficult to automate. There-
+   ELI5 (Fan et al., 2019) is a long-form QA               fore, we use correctness—whether the response is
+dataset built on the Reddit forum “Explain Like I’m        accurate compared to a ground truth answer—as a
+Five”.6 Most ELI5 questions are how/why/what               proxy. Evaluating the correctness of long-form gen-
+questions that require long answers and multiple           eration is a challenging task (Krishna et al., 2021),
+passages as evidence. Due to the diverse topics dis-       and we describe our strategy for each dataset be-
+cussed in the questions, we use Sphere (Piktus et al.,     low. Figure 2 illustrates the metrics and we include
+2021)—a filtered version of Common Crawl7 —as              additional implementation details in §C.
+the corpus. The ELI5 dataset is widely used in                For ASQA, we follow Stelmakh et al. (2022)
+related work due to its challenging nature (Nakano         and calculate the recall of correct short answers by
+et al., 2021; Menick et al., 2022; Liu et al., 2023).      checking whether the short answers (provided by
+   We randomly select 1,000 examples from the              the dataset) are exact substrings of the generation
+development set of each dataset for ALCE. Our              (exact match recall; EM recall).
+benchmark primarily assesses the citation capabili-           For QAMPARI, we follow Rubin et al. (2022)
+ties of existing LLMs and does not provide training        and calculate the precision and recall of the model
+data, as there are no available examples that pro-         prediction, by checking the exact match to the gold
+vide supervision for citations in these datasets.          answer list. We add one additional adjustment:
+                                                           considering that users often want to know only a
+    6                                                      few example answers of the question, our evalua-
+     https://www.reddit.com/r/explainlikeimfive/
+    7
+     https://commoncrawl.org. We also filter out any Web   tion considers recall to be 100% if the prediction
+pages from Reddit.                                         includes at least 5 correct answers (recall-5).
+  ASQA Exact Match Recall                                                                  Question
+                                                                                           When did the US break away from England?
+  Question
+  When did the US break away from England?                                                 Model output
+                                                                                           {statement 1} [1][2]. {statement 2} [3].{statement 3} [2][4][5].
+  Model output
+  … it declared independence on July 3, 1776 … The Treaty of
+  Paris was signed on September 3, 1783 …                                                  Citation Recall
+  Short answers (from the dataset)                                                         Recall = 1 if the concatenation of all cited passages fully supports the segment.
+                                                                     String exact match
+  July 2, 1776      July 4, 1776     September 3, 1783               Recall=33.3%          We use an NLI model to determine “fully support”.
+
+                                                                                           {statement 1} [1][2]            Premise: passage [1][2]         NLI
+  QAMPARI Precision, Recall                                                                                                                                         “entailment”
+                                                                                           {statement 2} [3]               Hypothesis: {statement 1}      model
+  Question
+                                                                                           {statement 3} [2][4][5]
+  Which films have Gong Li as a member of their cast?
+  Model output                                                                             For this question, citation recall = 2 / 3 = 66%
+  Saturday Fiction, The Great Wall, Mulan, Shadow.
+  Short answers (from the dataset)                               String exact match        Citation Precision
+  The Story of Qiu Ju       Mulan    Saturday Fiction            Recall=66.6%
+                                                                 Precision=50%             Detect “irrelevant” citation: one citation alone does not support the claim, and
+                                                                                           removing it does not affect other citations combined to support the claim.
+  ELI5 Claim Recall
+  Question
+                                                                                           {statement 1} [1][2] :
+  How do student loans aﬀect getting a mortgage?                                                         [1]   [2]          Precision = 1
+                                                                                                         [2]   [1]          Precision = 1
+  Model output
+  They do not appear in credit history and do not aﬀect debt to                            {statement 2} [3]         If recall = 0, then precision = 0
+  income ratio. Thus they do not aﬀect getting a mortgage.
+                                                                                           {statement 3} [2][4][5]    :
+  Claims (generated by text-davinci-003 based on gold answers)                                            [2]     [4][5]      [2] is “irrelevant’’. Precision = 0
+                                                                     NLI
+  Student loan does not appear in credit history.                    Claim recall=33.3%                   [4]     [2][5]       Precision = 1
+  Student loan can aﬀect the debt to income ratio.                                                        [5]     [2][4]       Precision = 1
+
+  Debt to income ratio aﬀects mortgage applications.                                       For this question, citation precision = 4 / 6 = 66%
+
+
+ Figure 2: Evaluation of correctness (details in §3.2).                                   Figure 3: Evaluation of citation quality (details in §3.3).
+                                                                                          We use an NLI model to verify whether a statement is
+   Unlike ASQA and QAMPARI, the ELI5 dataset                                              supported by its citations.
+does not provide short entity answers. Fan et al.
+(2019) use ROUGE for evaluation, which does                                               passages. Figure 3 provides an illustrated example.
+not reflect the correctness well (Krishna et al.,                                            We use the NLI model TRUE (Honovich et al.,
+2021; §A). Inspired by works in summariza-                                                2022) again to automatically examine whether the
+tion evaluation (Zhang and Bansal, 2021; Kamoi                                            cited passages entail the model generation. We con-
+et al., 2023; Wang et al., 2020), we use Instruct-                                        duct human evaluation (§6) to demonstrate strong
+GPT (text-davinci-003; Ouyang et al., 2022)                                               human correlation of our metric.
+to generate three “sub-claims”. Then we use
+TRUE8 (Honovich et al., 2022), a T5-11B (Raf-                                             Citation recall. We calculate the citation recall of
+fel et al., 2020) model fine-tuned on a collection of                                     each statement (0 or 1) and average over all state-
+natural language inference (NLI) datasets, to check                                       ments in the model response. For each statement si ,
+whether the model output entails the sub-claims                                           its citation recall is 1 if and only if there is at least
+(claim recall). TRUE targets factual correctness                                          one citation (Ci ̸= ∅) and ϕ(concat(Ci ), si ) = 1,
+and has been used by previous works in similar                                            where ϕ(premise, hypothesis) is the NLI model
+context (Bohnet et al., 2022; Gao et al., 2023). We                                       that outputs 1 if the premise entails the hypoth-
+demonstrate that claim recall provides a more ac-                                         esis, and 0 otherwise; concat(Ci ) concatenates all
+curate measure of correctness than existing metrics                                       passages in Ci together (details in §C). The NLI
+(more details in §A).                                                                     evaluation is in accordance with the attributable to
+                                                                                          identified sources (AIS) framework (Rashkin et al.,
+3.3     Citation Quality                                                                  2023): ϕ(concat(Ci ), si ) = 1 implies that si is true
+We evaluate citation qualities using two metrics: (1)                                     based solely on concat(Ci ).
+citation recall, which determines if the output is en-                                    Citation precision. Our citation precision evalua-
+tirely supported by cited passages, and (2) citation                                      tion detects citations that are irrelevant, but it does
+precision, which identifies any irrelevant citations.                                     not require citing a minimal set. We follow this de-
+Although we prioritize citation recall as it entails                                      sign because human writing often cites redundant
+a well-supported and truthful answer, enhancing                                           sources to enhance credibility; human readers may
+precision is crucial for better user satisfaction, re-                                    also appreciate multiple citations, especially when
+ducing the need for human review of extraneous                                            it pertains to critical claims such as medical advice.
+    8
+      https://huggingface.co/google/t5_xxl_true_                                             We calculate the citation precision for each ci-
+nli_mixture. Details in §C.                                                               tation (0 or 1) and average over all citations in the
+    Instruction: Write an accurate, engaging, and            et al., 2022) and DPR (Karpukhin et al., 2020);
+    concise answer for ...                                   we use BM25 for Sphere. For each question, we
+    <Retrieve for the question>                              retrieve the top-100 passages.
+    Document [1](Title: American Decolonization)
+    ...                                                      4.2    Synthesis
+    Document [2](Title: Decolonization) ...
+    Document [3](Title: American Revolution) ...             We focus on how to prompt an LLM to interact
+    ...
+                                                             with the retriever, and synthesize and cite the ev-
+    Question: When did US break away from England?           idence (without fine-tuning internal parameters).
+    Answer: The United States took the first step            One noteworthy challenge is that existing LLMs
+    towards gaining independence ... [1][2]. The
+    Treaty of Paris was later signed ... [3].                all have limited context window and thus can only
+                                                             fit a handful of passages.
+Table 2: An example of our VANILLA method. Differ-
+ent colors represent prompt, model generation, and           VANILLA. We simply provide the model with the
+<actions>. We also provide two in-context demonstra-         top-k 9 passages and instruct the model to cite ac-
+tions before the test example.                               cordingly (Table 2). We also use in-context learn-
+                                                             ing (Brown et al., 2020) and prepend two demon-
+response. We first define if a citation is “irrele-          strations. The complete instruction is in Table 23.
+vant”. Intuitively, a citation ci,j is “irrelevant” if (a)
+ci,j itself cannot support si and (b) removing ci,j          S UMM/S NIPPET. With a 4K context window, we
+does not affect the rest of the citations to support         can at most safely fit k = 5 passages. As shown in
+si . Formally, ci,j is “irrelevant” if and only if           Figure 4, top-5 retrieved passages can only cover
+                                                             56.8% percent of the answers in ASQA.
+ (a) ϕ(ci,j , si ) = 0, AND                                     To tackle this limitation, we propose to provide
+ (b) ϕ(concat(Ci \ {ci,j }), si ) = 1.                       summaries or snippets of passages instead of the
+ci,j has a precision of 1 if si has recall=1 and             full text (summaries are abstractive but snippets are
+ci,j is not irrelevant. For example (Figure 3),              spans from passages). We acquire summaries and
+when s3 cites three references [2][4][5] and                 snippets by prompting ChatGPT with instructions
+recall=1, [2] is “irrelevant” if ϕ([2], s3 ) = 0 and         (prompts in Table 25 and 26).10 Then we replace
+ϕ([4][5], s3 ) = 1. For condition (b) to work, we            all passages with summaries/snippets. Summaries
+set recall=1 as a prerequisite for precision= 1.             or snippets significantly reduce the passage length,
+Note that this algorithm overlooks the scenario              allowing for more passages to fit in: for ASQA,
+when one citation partially supports the statement.          they reduce passage length by 6× on average.
+We discuss the details in §E.                                   Though S UMM/S NIPPET allows for more re-
+                                                             trieved passages, they are lossy compressions. To
+3.4     ALCE is Robust to Shortcut Cases                     alleviate this problem, we propose I NTERACT, an
+We showcase how the ALCE evaluation is robust                interactive prompting scheme to allow the model to
+to two possible shortcuts in §D: (1) using the top-1         check the full text of certain passages. At each step,
+retrieved passage as the response and citing itself,         the model can execute one of three actions: (1)
+and (2) using the first two sentences of the top-1           “Check: Document [1][2]” to check the full text
+passage. Both cases have almost-perfect citation             of the corresponding documents; (2) “Output:” to
+scores, but (1) has low fluency due to its unnaturally       output a statement of the answer; (3) “End.” to end
+long length compared to human answers, and (2)               the generation. §C provides more details.
+has low correctness due to low coverage.                     I NLINE S EARCH. The above methods all dis-
+                                                             play retrieval results at the beginning. In I NLI -
+4     Modeling
+                                                             NE S EARCH , we allow LLMs to call “search” dur-
+In this section, we discuss three major modeling             ing the generation process (Yao et al., 2023; Press
+components for an ALCE system—retrieval, syn-                et al., 2022; Jiang et al., 2023). At each step, the
+thesis, and post-editing.                                    model can execute one of three actions: “Search:
+                                                                  9
+4.1     Retrieval                                                   We can fit at most k = 3 for models with 2K window
+                                                             and at most k = 5 for models with 4K context window.
+We explore simple, off-the-shelf retrievers. We use              10
+                                                                    We also query ChatGPT whether the passage is relevant
+dense retrievers for Wikipedia, including GTR (Ni            to the question, and filter out passages that are “irrelevant”.
+    Instruction: ...                                                                 Fluency    Correct.     Citation
+                                                                                    (MAUVE)     (EM Rec.)   Rec.   Prec.
+    <Retrieve for question “...”>
+    Question: When did US break away from England?                                      ChatGPT
+    Search: Declaration of Independence                         VANILLA (5-psg)         66.6       40.4     73.6   72.5
+    <Search the query among the top-100 passages>                 w/ R ERANK            77.0       40.2     84.8   81.6
+    Document [1](Title: ...) ...                                S UMM (10-psg)          70.0       43.3     68.9   61.8
+    Output: The United States ... [1].                            w/ I NTERACT          69.0       39.1     73.4   66.5
+    <Remove Document [1] from context>                          S NIPPET (10-psg)       69.8       41.4     65.3   57.4
+    Search: Treaty of Paris                                     I NLINE S EARCH         58.7       32.4     58.3   58.2
+    <Search the query among the top-100 passages>               C LOSED B OOK           52.7       38.3     26.7   26.7
+    Document [3](Title: ...) ...                                                GPT-4 (VANILLA prompting)
+    Output: The Treaty of Paris ... [3].                        GPT-4 (5-psg)           67.1       41.3     68.5   75.6
+    <Remove Document [3] from context>                          GPT-4 (20-psg)          64.9       44.4     73.0   76.5
+    End.                                                                       LLaMA (VANILLA prompting)
+                                                                LLaMA-13B (3-psg)       68.4       26.9     10.6   15.4
+          Table 3: An example of I NLINE S EARCH.               Vicuna-13B (3-psg)      82.6       31.9     51.1   50.1
+                                                                Chat-13B (5-psg)        72.4       35.2     38.4   39.4
+{query}” to search among the top-100 passages11                 Chat-70B (5-psg)        88.3       41.5     62.9   61.3
+by using GTR; the “Output” and “End” actions are
+the same as I NTERACT. For each “Search” action,              Table 4: Experiments on ASQA. For C LOSED B OOK,
+we display the best retrieved passage in the context.         we use P OST C ITE to get citations. k-psg: putting top-
+                                                              k passages from the retrieval results into the context.
+The passage is removed after one action to save
+                                                              Chat-13B and Chat-70B refer to LLaMA-2-Chat.
+context space. Table 3 shows an example.
+C LOSED B OOK. We also add a simple closed-                   Oasst (Köpf et al., 2023). They all have a 2K con-
+book baseline, where the model is only prompted               text window. We use short instructions for LLaMA
+with the instruction and the question, without any            (Table 24) to save context budget. Additionally,
+retrieved passages provided. Consequently, this               we test LLaMA-2-Chat, which were also trained to
+variant does not cite any evidences.                          follow instructions (Touvron et al., 2023b). These
+                                                              models have a context window of 4K tokens, which
+4.3       Post-editing                                        allows for 5 passages per question.
+In this section we discuss two strategies for refining
+                                                              5.1   Main Results
+the output to further improve its quality.
+                                                              We present the main results on three datasets in
+R ERANK. We randomly sample nsample = 4 re-                   Table 4, 5, and 6 respectively (full results in §G.6).
+sponses for each question, and select the best re-            We first note that all models achieve good fluency
+sponse using the automatic citation recall score.             scores (except some models on ELI5 mainly due to
+we expect R ERANK to improve the citation quality.            their longer generations). We summarize the main
+P OST C ITE. For each statement, we find the best             takeaways from the experiments below.
+matching passage among the top-100 retrieved pas-             VANILLA achieves strong performance. Despite
+sages using GTR and cite it. We combine this with             its simplicity, VANILLA (putting retrieved passages
+C LOSED B OOK in our experiments.                             in context) achieves close-to-the-best performance
+                                                              among all prompting strategies.
+5     Experiments
+                                                              Using summaries or snippets improves correct-
+We describe experiment details in §C. We use Chat-
+                                                              ness. We see a universal trend that S UMM or S NIP -
+GPT (gpt-3.5-turbo-0301) with a 4K context
+                                                              PET improves correctness, though on ASQA and
+window for most main experiments and ablations.
+                                                              ELI5, such an improvement comes at a cost of
+We also report results with ChatGPT-16K (gpt-
+                                                              citation quality due to the lossy compression. Com-
+3.5-turbo-16k-0613) and GPT-4 (gpt-4-0613;
+                                                              bining I NTERACT with S UMM/S NIPPET does not
+8K context window). For open-source models,
+                                                              bring improvement, and we hypothesize that check-
+we test LLaMA (Touvron et al., 2023a) and its
+                                                              ing the full passages offers limited benefit and cur-
+instruction-tuned versions, including Alpaca (Taori
+                                                              rent LLMs are not proficient in an interactive usage.
+et al., 2023), Vicuna (Chiang et al., 2023), and
+     11
+                                                              Retrieving text on the fly does not improve per-
+    We do not search over the entire corpus because {query}
+may leave out certain context in the question and searching   formance. All datasets show that VANILLA out-
+among the already-retrieved passages gives better results.    performs I NLINE S EARCH on citation quality (and
+                          Correctness       Citation                               Fluency   Correct.     Citation
+                         Rec.-5   Prec.   Rec.   Prec.                            (MAUVE)     (Claim)    Rec.   Prec.
+
+                       ChatGPT                                                       ChatGPT
+  VANILLA (5-psg)        20.8    20.8 20.5       20.9         VANILLA (5-psg)         57.2      12.0     51.1   50.0
+    w/ R ERANK           22.8    21.4 21.2       21.4           w/ R ERANK            56.1      11.4     69.3   67.8
+  S UMM (10-psg)         23.6    21.2 23.6       25.7         S UMM (10-psg)          40.3      12.5     51.5   48.2
+  S NIPPET (10-psg)      24.5    21.5 22.9       24.9         S NIPPET (10-psg)       62.9      14.3     50.4   45.0
+    w/ I NTERACT         21.9    23.0 21.9       23.4           w/ I NTERACT          68.0      13.3     47.8   45.0
+  I NLINE S EARCH        17.2    20.4 14.9       14.9         I NLINE S EARCH         49.7      13.4     45.6   43.7
+  C LOSED B OOK          32.9    19.8 10.0       10.0         C LOSED B OOK           32.6      18.6     15.5   15.5
+               GPT-4 (VANILLA prompting)                                     GPT-4 (VANILLA prompting)
+  GPT-4 (5-psg)          22.2    25.0 25.9       27.0         GPT-4 (5-psg)           38.4      14.2     44.0   50.1
+  GPT-4 (20-psg)         29.6    26.2 27.4       28.5         GPT-4 (20-psg)          41.5      18.3     48.5   53.4
+              LLaMA (VANILLA prompting)                                     LLaMA (VANILLA prompting)
+  LLaMA-13B (3-psg)       9.7     9.1    6.7     7.1          LLaMA-13B (3-psg)       50.0       3.9      3.1   5.3
+  Vicuna-13B (5-psg)     14.0    15.9 12.5       13.4         Vicuna-13B (3-psg)      58.2      10.0     15.6   19.6
+  Chat-13B (5-psg)       21.1    18.2    9.6     9.7          Chat-13B (5-psg)        34.7      13.4     17.3   15.8
+  Chat-70B (5-psg)       21.8    18.4 15.1       15.6         Chat-70B (5-psg)        38.6      12.8     38.3   37.9
+
+Table 5: Experiments on QAMPARI. “Rec.-5”: we set           Table 6: Experiments on ELI5. We use claim recall
+the recall to be 100% if the prediction includes at least   for the correctness evaluation. Chat-13B and Chat-70B
+5 correct answers.                                          refer to LLaMA-2-Chat.
+
+on correctness for ASQA and ELI5). By manually              GPT-4 brings limited improvement but is better
+examining the examples, we find that it is challeng-        at using long context. We evaluate GPT-4 with
+ing to ask detailed questions without seeing any            VANILLA and different numbers of passages (more
+passages. To improve I NLINE S EARCH, one may               results in §G.6). GPT-4 brings consistent (but lim-
+need to provide more context about the questions            ited) improvement on correctness, but often at a
+in advance or encourage the model to call retrievers        cost of citation quality. GPT-4 can also incorporate
+with more detailed and diverse queries.                     more passages due to its longer context window,
+                                                            which boosts both correctness and citation qual-
+R ERANK boosts citation quality. We observe that            ity. On the contrary, including more passages with
+R ERANK leads to consistent improvement in cita-            ChatGPT-16K does not improve the results (Ta-
+tion quality (on ASQA and ELI5). As the automatic           ble 7), suggesting that processing more passages
+scores may be biased in R ERANK, we also conduct            is non-trivial and GPT-4 is better at synthesizing
+human evaluation (§6) and verify its effectiveness.         information from its long context than ChatGPT.
+C LOSED B OOK+P OST C ITE delivers strong cor-
+                                                            5.2   Comparison of Different LLMs
+rectness but poor citation quality. C LOSED -
+B OOK outperforms VANILLA in correctness on                 Table 7 compares different LLMs on ASQA
+ELI5 and QAMPARI, and has only a 2% gap on                  using VANILLA (more results in §G.6). No-
+ASQA. However, C LOSED B OOK cannot provide                 tably, instruction-tuned models (Vicuna-13B and
+any citation; when combined with P OST C ITE, the           LLaMA-2-Chat) outperform the original LLaMA
+citation quality remains inadequate. For instance,          models in correctness and considerably enhance
+citation recall of C LOSED B OOK+P OST C ITE is             the citation quality. We observe that while the orig-
+lower than VANILLA by 47% on ASQA.                          inal LLaMA models are able to copy facts from
+   To understand why C LOSED B OOK achieves bet-            the context, they struggle with accurately citing the
+ter correctness and why P OST C ITE cannot deliver          sources or simply do not cite. Notably, the best
+satisfying citation quality, we manually examine            open-source model, LLaMA-2-70B-Chat, achieves
+model outputs and find that: (1) open-book mod-             comparable correctness score as the OpenAI mod-
+els are easily distracted by irrelevant passages and        els, but still lags behind in citation quality.
+generate responses with lower correctness, a phe-
+                                                            5.3   Retrieval Analysis
+nomenon also observed by Shi et al. (2023); (2)
+C LOSED B OOK often generates texts that are cor-           The retrieval results play a crucial role to the cor-
+rect but not similar to any retrieved passages, mak-        rectness and the citation quality. Figure 4 presents
+ing it difficult to match a citation post-hoc.              the retrieval recall@k with different datasets and
+                         ASQA                                   QAMPARI                                    ELI5
+           80
+                                                                                           30                                                 Fluency   Correct.    Citation
+           70                                    60
+                                                                                                                                             (MAUVE)     (EM)      Rec.   Prec.
+           60                                                                                                           Oracle
+
+
+Recall@k
+                                                 40                            Oracle      20                                                 ChatGPT (VANILLA)
+                                       Oracle
+           50                                                                                                                     DPR (5-psg)   61.8      36.1     65.0   65.6
+                               Vanilla (5-psg)                         Vanilla (5-psg)                          Vanilla (5-psg)
+           40                                    20                                                                               GTR (1-psg)   69.5      38.4     56.0   64.0
+                                                                                           10
+                                        DPR                                     DPR                                               GTR (3-psg)   66.6      39.6     72.8   73.9
+           30                           GTR                                     GTR                                     BM25      GTR (5-psg)   66.6      40.4     73.6   72.5
+                                                  0
+                5   20    50               100        5    20     50               100          5   20     50               100
+                          k                                        k                                        k
+
+Figure 4: Retrieval recall@k on ASQA (EM recall), QAMPARI (recall-5), and ELI5 (claim recall). Retrieval recall
+serves as an upper bound for model performance, and we compare them with two models’ correctness results in the
+figure (dashed lines): “Vanilla (5-psg)” is ChatGPT VANILLA with top-5 passages in context; “Oracle” is the same
+model except that it uses 5 gold passages (§G.1), whose recall matches Recall@100 on all three datasets.
+
+                                         Fluency          Correct.           Citation                improvement for ChatGPT. Specifically, correct-
+                                        (MAUVE)           (EM Rec.)       Rec.       Prec.           ness plateaus at top-1 passage and citation qual-
+                       Open-source (max #tokens=2K-4K)                                               ity plateaus at top-3. GPT-4 (Table 7) exhibits
+           LLaMA-13B (3-psg)       68.4        26.9    10.6                              15.4        an increasing trend with more passages, but the
+           Vicuna-13B (3-psg)      82.6        31.9    51.1                              50.1
+           Chat-13B (5-psg)        72.4        35.2    38.4                              39.4
+                                                                                                     improvement is not proportional to the retrieval
+           Chat-70B (5-psg)        88.3        41.5    62.9                              61.3        performance. This indicates the limited ability of
+                          ChatGPT (max #tokens=4K)                                                   LLMs in utilizing multiple passages within context.
+           ChatGPT (3-psg)         66.6        39.6    72.8                              73.9
+           ChatGPT (5-psg)         66.6        40.4    73.6                              72.5        5.4        Other Ablations
+                       ChatGPT-16K (max #tokens=16K)
+           ChatGPT (5-psg)         60.3        36.1    76.2                              76.5        We provide additional ablations in §G. In summary,
+           ChatGPT (10-psg)        56.3        36.7    75.3                              75.0        we find that (1) using comprehensive instructions
+           ChatGPT (20-psg)        56.7        36.1    73.7                              73.5
+                                                                                                     enhances the citation quality of instruction-tuned
+                            GPT-4 (max #tokens=8K)
+           GPT-4 (5-psg)           67.1        41.3    68.5                              75.6
+                                                                                                     models (§G.2); (2) including at least one demon-
+           GPT-4 (10-psg)          71.5        43.1    72.0                              75.5        stration improves the performance (§G.3); (3) fine-
+           GPT-4 (20-psg)          64.9        44.4    73.0                              76.5        tuned models (FiD; Izacard and Grave, 2021) with
+                                                                                                     P OST C ITE lag behind LLMs in both correctness
+Table 7: Comparison of different LLMs on ASQA
+                                                                                                     and citation quality and fail to generalize (§G.4).
+(GTR+VANILLA). LLaMA-13B and Vicuna-13B have
+a context limit of 2,048 tokens, and thus can only use a
+                                                                                                     6      Human Evaluation
+short version of instructions and at most top-3 passages.
+Chat-13B and Chat-70B refer to LLaMA-2-Chat.                                                         To verify that our automatic evaluation correlates
+                                                                                                     with human judgement, we conduct human eval-
+retrievers. As the number of passages increases, re-                                                 uation on selected models and request workers to
+trieval recall steadily improves. Additionally, Fig-                                                 judge model generations on three dimensions simi-
+ure 4 shows the correctness performance of two                                                       lar to Liu et al. (2023)—(1) utility: a 1-to-5 score
+models: (1) ChatGPT VANILLA with top-5 pas-                                                          indicating whether the generation helps answer the
+sages (our primary baseline); (2) an oracle ver-                                                     question; (2) citation recall: the annotator is given
+sion of the same model employing 5 gold passages                                                     a sentence and all passages that the sentence cited,
+(§G.1; the 5 gold passages match the retrieval re-                                                   and is asked to judge whether the passages fully
+call@100). Notably, both models’ correctness lags                                                    support the sentence; (3) citation precision: given
+behind the corresponding retrieval recall (except                                                    a sentence and one of its citations, the annotator
+for ELI5 top-5). The discrepancy suggests that de-                                                   is asked to judge whether the citation “fully sup-
+spite the presence of accurate answers in context,                                                   ports”, “partially supports”, or “does not support”
+LLMs struggle to utilize them in their outputs.                                                      the sentence. Each citation gets a precision score
+                                                                                                     1 if the output sentence has a citation recall of 1
+   We compare the impact of different retrievers
+                                                                                                     and this citation at least “partially supports” it. See
+and different numbers of passages to LLMs. Fig-
+                                                                                                     Appendix F for more details.
+ure 4 (right) shows that GTR outperforms DPR
+in both correctness and citation quality, emphasiz-                                                  Model outputs score high utility. The utility
+ing the importance of deploying better retrievers.                                                   scores do not differ significantly between models,
+Contrary to the retrieval recall trend in Figure 4,                                                  ranging 3.7-3.9 for ASQA and 3.5-3.6 for ELI5.
+more passages in context do not yield substantial                                                    Upon inspection, all tested models are mostly able
+                         Human scores   ALCE scores       model is provided the papers-to-cite and context
+                         Rec.   Prec.   Rec.   Prec.      and is required to recover the citing text. It is differ-
+    ChatGPT VANILLA      74.7   76.6    75.3   74.4       ent from ALCE as all citations are provided and the
+     w/ R ERANK          79.3   81.9    83.9   80.8       model only needs to perform the summarization.
+    Vicuna-13B VANILLA   51.6   51.5    50.3   50.1
+                                                          Retrieval-augmented LMs. Many studies have ex-
+Table 8: Human citation quality evaluation vs. ALCE       plored augmenting LMs with externally retrieved
+citation quality evaluation on ASQA.                      information. Guu et al. (2020); Borgeaud et al.
+                                                          (2022); Izacard et al. (2022) pre-train language
+                         Human scores   ALCE scores       models with retrieved passages, while Khandel-
+                         Rec.   Prec.   Rec.   Prec.      wal et al. (2020); Zhong et al. (2022) augment
+    ChatGPT VANILLA      50.8   52.4    52.8   50.4       LLMs’ output by interpolating it with a kNN mod-
+     w/ R ERANK          59.7   60.6    63.0   60.6       ule; though none of them explicitly provide cita-
+    Vicuna-13B VANILLA   13.4   19.2    13.6   18.1
+                                                          tions to the retrieved sources. Other works prompt
+Table 9: Human citation quality evaluation vs. ALCE
+                                                          or fine-tune LLMs to “retrieve on-the-fly” (Parisi
+citation quality evaluation on ELI5.                      et al., 2022; Schick et al., 2023; Shuster et al., 2022;
+                                                          Jiang et al., 2023; Yao et al., 2023; Press et al.,
+to output fluent answers that are related to the ques-    2022), which offers flexibility of when and what to
+tion, despite differences in factual correctness.         search. Gao et al. (2023); He et al. (2022) propose
+                                                          to first generate text without accessing external doc-
+Our automatic evaluation of citation quality              uments and then retrieve relevant documents and
+strongly correlates with human judgements. As             revise the generation to be consistent.
+shown in Table 8 (ASQA) and Table 9 (ELI5), the              Among previous explorations, Nakano et al.
+relative rankings induced by human and our auto-          (2021); Menick et al. (2022) are the closest to our
+matic metrics are consistent. The absolute citation       setting, where LLMs are trained to answer ques-
+scores from human and ALCE are very close except          tions while providing citations. However, they do
+for R ERANK (which uses the automated citation            not explore retrieval strategies and simply use com-
+recall for reranking). This suggests that an im-          mercial search engines, which are not reproducible,
+provement on ALCE citation metrics translates to          and their models and training data are closed-
+improvement on human preferences. Furthermore,            source. To the best of our knowledge, we are the
+the Cohen’s kappa coefficient between human and           first to implement end-to-end systems that retrieve,
+ALCE suggests substantial agreement for citation          synthesize, and cite documents with LLMs.
+recall (0.698) and moderate agreement for citation
+precision (0.525). We also show in §G.5 that our          8   Conclusion
+automatic evaluation achieves high accuracy when
+treating human annotations as gold labels (85.1%          We propose ALCE, the first automatic benchmark
+for citation recall and 77.6% for citation precision).    for evaluating LLM generations with citations. We
+                                                          deploy automatic metrics to measure fluency, cor-
+7     Related Work                                        rectness, and citation quality, and verify their effi-
+                                                          cacy via human evaluation. We explore a variety of
+Evaluating citations. Generating text with ci-            strategies for incorporating citations in LLMs and
+tations is closely related to attribution. Rashkin        demonstrate that current systems have considerable
+et al. (2023) define the “attributable to identified      room for improvement on ALCE.
+sources” (AIS) score to measure how faithful a gen-          Our experiments highlight a number of promis-
+erated text is to its sources. Bohnet et al. (2022) ap-   ing research directions, including (1) enhancing re-
+ply AIS scores on a single-document short-answer          trieval and refining retrieval integrations in LLMs,
+QA dataset. Honovich et al. (2022); Yue et al.            (2) developing long-context LLMs, and (3) advanc-
+(2023) study automatic evaluations for the AIS            ing LLMs’ ability to synthesize multiple sources.
+score. A concurrent work (Liu et al., 2023) conduct       What’s even more intriguing is that these research
+human evaluation on commercial generative search          proposals extend beyond the ALCE setup (for ex-
+engines to examine their citation qualities.              ample, long-context LLMs have numerous exciting
+   Scientific citation text generation (Funkquist         applications), and ALCE can serve as a valuable
+et al., 2022) is a related task to ALCE where the         testbed for their development.
+Limitations                                                 Lespiau, Bogdan Damoc, Aidan Clark, Diego
+                                                            De Las Casas, Aurelia Guy, Jacob Menick, Roman
+Our evaluation still has room for improvement: (1)          Ring, Tom Hennigan, Saffron Huang, Loren Mag-
+MAUVE is found to be sensitive to output length             giore, Chris Jones, Albin Cassirer, Andy Brock,
+and may provide unstable results; (2) for the ELI5’s        Michela Paganini, Geoffrey Irving, Oriol Vinyals,
+                                                            Simon Osindero, Karen Simonyan, Jack Rae, Erich
+correctness evaluation, the automatically generated         Elsen, and Laurent Sifre. 2022. Improving language
+claims may not cover all possible answers due to            models by retrieving from trillions of tokens. In Inter-
+the open-ended nature of the questions; (3) our ci-         national Conference on Machine Learning (ICML),
+tation quality evaluation is limited by the accuracy        volume 162, pages 2206–2240.
+of the NLI model; for citation precision, the NLI         Samuel Bowman, Gabor Angeli, Christopher Potts, and
+model cannot detect the case of “partially support”         Christopher D Manning. 2015. A large annotated
+and thus leads to a lower citation precision score          corpus for learning natural language inference. In
+                                                            Empirical Methods in Natural Language Processing
+than the human evaluation.
+                                                            (EMNLP).
+   Although we believe our curated datasets closely
+resemble the distribution of real-world user ques-        Tom B Brown, Benjamin Mann, Nick Ryder, Melanie
+tions, we acknowledge that they do not cover more           Subbiah, Jared Kaplan, Prafulla Dhariwal, Arvind
+                                                            Neelakantan, Pranav Shyam, Girish Sastry, Amanda
+challenging scenarios, such as multi-hop reasoning,         Askell, et al. 2020. Language models are few-shot
+math reasoning, and code completion.                        learners. In Advances in Neural Information Process-
+   In our experiments, we focus on prompting                ing Systems (NeurIPS).
+LLMs without updating their model weights. Train-         Wei-Lin Chiang, Zhuohan Li, Zi Lin, Ying Sheng,
+ing a model directly to incorporate citations re-          Zhanghao Wu, Hao Zhang, Lianmin Zheng, Siyuan
+mains challenging due to the lack of supervised            Zhuang, Yonghao Zhuang, Joseph E. Gonzalez, Ion
+data. However, we observe that certain human-              Stoica, and Eric P. Xing. 2023. Vicuna: An open-
+                                                           source chatbot impressing gpt-4 with 90%* chatgpt
+instruction datasets contain examples similar to our
+                                                           quality.
+task setup. We leave the exploration of training
+LLMs to generate citations for future work.               Angela Fan, Yacine Jernite, Ethan Perez, David Grang-
+                                                            ier, Jason Weston, and Michael Auli. 2019. ELI5:
+Acknowledgments                                             Long form question answering. In Association for
+                                                            Computational Linguistics (ACL), pages 3558–3567.
+We appreciate the helpful feedback from the mem-
+                                                          Martin Funkquist, Ilia Kuznetsov, Yufang Hou, and
+bers of the Princeton NLP group. We thank Alexan-          Iryna Gurevych. 2022. CiteBench: A benchmark for
+der Wettig, Nelson Liu, Tianyi Zhang, Yu Meng,             Scientific Citation Text Generation. arXiv preprint
+Sadhika Malladi, Yangsibo Huang, Zhiyuan Zeng,             arXiv:2212.09577.
+and Dan Friedman for the valuable discussion. We          Luyu Gao, Zhuyun Dai, Panupong Pasupat, Anthony
+thank Surge AI (especially Anna Folinsky and Ed-            Chen, Arun Tejasvi Chaganty, Yicheng Fan, Vin-
+win Chen) for their support with the human eval-            cent Y Zhao, Ni Lao, Hongrae Lee, Da-Cheng Juan,
+uation. Tianyu Gao is supported by an IBM PhD               et al. 2023. RARR: Researching and revising what
+                                                            language models say, using language models. In
+Fellowship. This research is supported by an NSF            Association for Computational Linguistics (ACL).
+CAREER award (IIS-2239290), a Sloan Research
+Fellowship, and Microsoft Azure credits through           Kelvin Guu, Kenton Lee, Zora Tung, Panupong Pasupat,
+the “Accelerate Foundation Models Academic Re-              and Ming-Wei Chang. 2020. REALM: Retrieval-
+                                                            augmented language model pre-training. In Interna-
+search” Initiative.                                         tional Conference on Machine Learning (ICML).
+                                                          Hangfeng He, Hongming Zhang, and Dan Roth. 2022.
+References                                                  Rethinking with retrieval: Faithful large language
+                                                            model inference. arXiv preprint arXiv:2301.00303.
+Bernd Bohnet, Vinh Q Tran, Pat Verga, Roee Aharoni,
+  Daniel Andor, Livio Baldini Soares, Jacob Eisenstein,   Ari Holtzman, Jan Buys, Li Du, Maxwell Forbes, and
+  Kuzman Ganchev, Jonathan Herzig, Kai Hui, et al.          Yejin Choi. 2020. The curious case of neural text de-
+  2022. Attributed question answering: Evaluation and       generation. In International Conference on Learning
+  modeling for attributed large language models. arXiv      Representations (ICLR).
+  preprint arXiv:2212.08037.
+                                                          Or Honovich, Roee Aharoni, Jonathan Herzig, Hagai
+Sebastian Borgeaud, Arthur Mensch, Jordan Hoff-             Taitelbaum, Doron Kukliansy, Vered Cohen, Thomas
+  mann, Trevor Cai, Eliza Rutherford, Katie Milli-          Scialom, Idan Szpektor, Avinatan Hassidim, and
+  can, George Bm Van Den Driessche, Jean-Baptiste           Yossi Matias. 2022. TRUE: Re-evaluating factual
+  consistency evaluation. In North American Chapter       Andreas Köpf, Yannic Kilcher, Dimitri von Rütte,
+  of the Association for Computational Linguistics: Hu-     Sotiris Anagnostidis, Zhi-Rui Tam, Keith Stevens,
+  man Language Technologies (NAACL-HLT), pages              Abdullah Barhoum, Nguyen Minh Duc, Oliver
+  3905–3920.                                                Stanley, Richárd Nagyfi, Shahul ES, Sameer Suri,
+                                                            David Glushkov, Arnav Dantuluri, Andrew Maguire,
+Gautier Izacard and Edouard Grave. 2021. Leveraging         Christoph Schuhmann, Huu Nguyen, and Alexander
+  passage retrieval with generative models for open do-     Mattick. 2023. Openassistant conversations – de-
+  main question answering. In Proceedings of the 16th       mocratizing large language model alignment. arXiv
+  Conference of the European Chapter of the Associ-         preprint arXiv:2304.07327.
+  ation for Computational Linguistics: Main Volume,
+  pages 874–880, Online. Association for Computa-         Kenton Lee, Ming-Wei Chang, and Kristina Toutanova.
+  tional Linguistics.                                       2019. Latent retrieval for weakly supervised open
+                                                            domain question answering. In Association for Com-
+Gautier Izacard, Patrick Lewis, Maria Lomeli, Lucas         putational Linguistics (ACL), pages 6086–6096.
+  Hosseini, Fabio Petroni, Timo Schick, Jane Dwivedi-     Nelson F Liu, Tianyi Zhang, and Percy Liang. 2023.
+  Yu, Armand Joulin, Sebastian Riedel, and Edouard          Evaluating verifiability in generative search engines.
+  Grave. 2022. Atlas: Few-shot learning with re-            arXiv preprint arXiv:2304.09848.
+  trieval augmented language models. arXiv preprint
+  arXiv:2208.03299.                                       Jacob Menick, Maja Trebacz, Vladimir Mikulik,
+                                                            John Aslanides, Francis Song, Martin Chadwick,
+Ziwei Ji, Nayeon Lee, Rita Frieske, Tiezheng Yu, Dan         Mia Glaese, Susannah Young, Lucy Campbell-
+  Su, Yan Xu, Etsuko Ishii, Ye Jin Bang, Andrea              Gillingham, Geoffrey Irving, et al. 2022. Teaching
+  Madotto, and Pascale Fung. 2023. Survey of halluci-        language models to support answers with verified
+  nation in natural language generation. ACM Comput-         quotes. arXiv preprint arXiv:2203.11147.
+  ing Surveys, 55(12):1–38.
+                                                          Sewon Min, Julian Michael, Hannaneh Hajishirzi, and
+Zhengbao Jiang, Frank F Xu, Luyu Gao, Zhiqing               Luke Zettlemoyer. 2020. AmbigQA: Answering am-
+  Sun, Qian Liu, Jane Dwivedi-Yu, Yiming Yang,              biguous open-domain questions. In Proceedings of
+  Jamie Callan, and Graham Neubig. 2023. Ac-                the 2020 Conference on Empirical Methods in Nat-
+  tive retrieval augmented generation. arXiv preprint       ural Language Processing (EMNLP), pages 5783–
+  arXiv:2305.06983.                                         5797, Online. Association for Computational Lin-
+                                                            guistics.
+Ryo Kamoi, Tanya Goyal, Juan Diego Rodriguez,             Reiichiro Nakano, Jacob Hilton, Suchir Balaji, Jeff Wu,
+  and Greg Durrett. 2023. WiCE: Real-World En-              Long Ouyang, Christina Kim, Christopher Hesse,
+  tailment for Claims in Wikipedia. arXiv preprint          Shantanu Jain, Vineet Kosaraju, William Saunders,
+  arXiv:2303.01432.                                         et al. 2021. WebGPT: Browser-assisted question-
+                                                            answering with human feedback. arXiv preprint
+Vladimir Karpukhin, Barlas Oguz, Sewon Min, Patrick         arXiv:2112.09332.
+  Lewis, Ledell Wu, Sergey Edunov, Danqi Chen, and
+  Wen-tau Yih. 2020. Dense passage retrieval for open-    Jianmo Ni, Chen Qu, Jing Lu, Zhuyun Dai, Gustavo
+  domain question answering. In Proceedings of the           Hernandez Abrego, Ji Ma, Vincent Zhao, Yi Luan,
+  2020 Conference on Empirical Methods in Natural            Keith Hall, Ming-Wei Chang, and Yinfei Yang. 2022.
+  Language Processing (EMNLP), pages 6769–6781,              Large dual encoders are generalizable retrievers. In
+  Online. Association for Computational Linguistics.         Empirical Methods in Natural Language Processing
+                                                             (EMNLP), pages 9844–9855.
+Urvashi Khandelwal, Omer Levy, Dan Jurafsky, Luke
+  Zettlemoyer, and Mike Lewis. 2020. Generalization       OpenAI. 2023. GPT-4 Technical Report.
+  through memorization: Nearest neighbor language
+  models. In International Conference on Learning         Long Ouyang, Jeffrey Wu, Xu Jiang, Diogo Almeida,
+  Representations (ICLR).                                   Carroll Wainwright, Pamela Mishkin, Chong Zhang,
+                                                            Sandhini Agarwal, Katarina Slama, Alex Ray, et al.
+                                                            2022. Training language models to follow instruc-
+Tushar Khot, Ashish Sabharwal, and Peter Clark. 2018.
+                                                            tions with human feedback. Advances in Neural In-
+  Scitail: A textual entailment dataset from science
+                                                            formation Processing Systems (NeurIPS), 35:27730–
+  question answering. In Conference on Artificial In-
+                                                            27744.
+  telligence (AAAI), volume 32.
+                                                          Aaron Parisi, Yao Zhao, and Noah Fiedel. 2022. TALM:
+Kalpesh Krishna, Aurko Roy, and Mohit Iyyer. 2021.          Tool augmented language models. arXiv preprint
+  Hurdles to progress in long-form question answering.      arXiv:2205.12255.
+  In Proceedings of the 2021 Conference of the North
+  American Chapter of the Association for Computa-        Fabio Petroni, Aleksandra Piktus, Angela Fan, Patrick
+  tional Linguistics: Human Language Technologies,          Lewis, Majid Yazdani, Nicola De Cao, James Thorne,
+  pages 4940–4957, Online. Association for Computa-         Yacine Jernite, Vladimir Karpukhin, Jean Maillard,
+  tional Linguistics.                                       Vassilis Plachouras, Tim Rocktäschel, and Sebastian
+  Riedel. 2021. KILT: a benchmark for knowledge             Freda Shi, Xinyun Chen, Kanishka Misra, Nathan
+  intensive language tasks. In Proceedings of the 2021        Scales, David Dohan, Ed Chi, Nathanael Schärli,
+  Conference of the North American Chapter of the             and Denny Zhou. 2023. Large language models can
+  Association for Computational Linguistics: Human            be easily distracted by irrelevant context. In Interna-
+  Language Technologies, pages 2523–2544, Online.             tional Conference on Machine Learning (ICML).
+  Association for Computational Linguistics.
+                                                            Kurt Shuster, Mojtaba Komeili, Leonard Adolphs,
+Aleksandra Piktus, Fabio Petroni, Vladimir Karpukhin,         Stephen Roller, Arthur Szlam, and Jason Weston.
+  Dmytro Okhonko, Samuel Broscheit, Gautier Izac-             2022. Language models that seek for knowledge:
+  ard, Patrick Lewis, Barlas Oğuz, Edouard Grave,            Modular search & generation for dialogue and
+  Wen-tau Yih, et al. 2021. The Web Is Your Oyster–           prompt completion. In Findings of the Association
+  Knowledge-Intensive NLP against a Very Large Web            for Computational Linguistics: EMNLP 2022, pages
+  Corpus. arXiv preprint arXiv:2112.09924.                    373–393.
+
+Krishna Pillutla, Swabha Swayamdipta, Rowan Zellers,        Ivan Stelmakh, Yi Luan, Bhuwan Dhingra, and Ming-
+  John Thickstun, Sean Welleck, Yejin Choi, and Zaid          Wei Chang. 2022. ASQA: Factoid questions meet
+  Harchaoui. 2021. MAUVE: Measuring the gap be-                long-form answers. In Proceedings of the 2022 Con-
+  tween neural text and human text using divergence            ference on Empirical Methods in Natural Language
+  frontiers. In Advances in Neural Information Pro-            Processing, pages 8273–8288, Abu Dhabi, United
+  cessing Systems.                                             Arab Emirates. Association for Computational Lin-
+                                                               guistics.
+Ofir Press, Muru Zhang, Sewon Min, Ludwig Schmidt,
+  Noah A Smith, and Mike Lewis. 2022. Measuring             Rohan Taori, Ishaan Gulrajani, Tianyi Zhang, Yann
+  and narrowing the compositionality gap in language          Dubois, Xuechen Li, Carlos Guestrin, Percy Liang,
+  models. arXiv preprint arXiv:2210.03350.                    and Tatsunori B. Hashimoto. 2023. Stanford Alpaca:
+                                                              An Instruction-following LLaMA model.
+Colin Raffel, Noam Shazeer, Adam Roberts, Katherine
+  Lee, Sharan Narang, Michael Matena, Yanqi Zhou,           James Thorne,       Andreas Vlachos,      Christos
+  Wei Li, and Peter J Liu. 2020. Exploring the limits         Christodoulopoulos, and Arpit Mittal. 2018.
+  of transfer learning with a unified text-to-text Trans-     FEVER: a large-scale dataset for fact extraction
+  former. The Journal of Machine Learning Research            and VERification. In North American Chapter
+  (JMLR), 21(140).                                            of the Association for Computational Linguistics:
+                                                              Human Language Technologies (NAACL-HLT),
+Pranav Rajpurkar, Jian Zhang, Konstantin Lopyrev, and         pages 809–819.
+   Percy Liang. 2016. SQuAD: 100,000+ questions
+   for machine comprehension of text. In Empirical          Hugo Touvron, Thibaut Lavril, Gautier Izacard, Xavier
+  Methods in Natural Language Processing (EMNLP),             Martinet, Marie-Anne Lachaux, Timothée Lacroix,
+   pages 2383–2392.                                           Baptiste Rozière, Naman Goyal, Eric Hambro, Faisal
+                                                              Azhar, et al. 2023a. LLaMA: Open and Effi-
+Hannah Rashkin, Vitaly Nikolaev, Matthew Lamm,                cient Foundation Language Models. arXiv preprint
+  Lora Aroyo, Michael Collins, Dipanjan Das, Slav             arXiv:2302.13971.
+  Petrov, Gaurav Singh Tomar, Iulia Turc, and David
+  Reitter. 2023. Measuring Attribution in Natural Lan-      Hugo Touvron, Louis Martin, Kevin Stone, Peter Al-
+  guage Generation Models. Computational Linguis-             bert, Amjad Almahairi, Yasmine Babaei, Nikolay
+  tics, pages 1–64.                                           Bashlykov, Soumya Batra, Prajjwal Bhargava, Shruti
+                                                              Bhosale, Dan Bikel, Lukas Blecher, Cristian Canton
+Samuel Joseph Amouyal Ohad Rubin, Ori Yoran, Tomer            Ferrer, Moya Chen, Guillem Cucurull, David Esiobu,
+  Wolfson, Jonathan Herzig, and Jonathan Berant.              Jude Fernandes, Jeremy Fu, Wenyin Fu, Brian Fuller,
+  2022. QAMPARI: An Open-domain Question An-                  Cynthia Gao, Vedanuj Goswami, Naman Goyal, An-
+  swering Benchmark for Questions with Many An-               thony Hartshorn, Saghar Hosseini, Rui Hou, Hakan
+  swers from Multiple Paragraphs. arXiv preprint              Inan, Marcin Kardas, Viktor Kerkez, Madian Khabsa,
+  arXiv:2205.12665.                                           Isabel Kloumann, Artem Korenev, Punit Singh Koura,
+                                                              Marie-Anne Lachaux, Thibaut Lavril, Jenya Lee, Di-
+Timo Schick, Jane Dwivedi-Yu, Roberto Dessì, Roberta          ana Liskovich, Yinghai Lu, Yuning Mao, Xavier Mar-
+  Raileanu, Maria Lomeli, Luke Zettlemoyer, Nicola            tinet, Todor Mihaylov, Pushkar Mishra, Igor Moly-
+  Cancedda, and Thomas Scialom. 2023. Toolformer:             bog, Yixin Nie, Andrew Poulton, Jeremy Reizen-
+  Language models can teach themselves to use tools.          stein, Rashi Rungta, Kalyan Saladi, Alan Schelten,
+  arXiv preprint arXiv:2302.04761.                            Ruan Silva, Eric Michael Smith, Ranjan Subrama-
+                                                              nian, Xiaoqing Ellen Tan, Binh Tang, Ross Tay-
+Tal Schuster, Adam Fisch, and Regina Barzilay. 2021.          lor, Adina Williams, Jian Xiang Kuan, Puxin Xu,
+  Get your vitamin C! robust fact verification with con-      Zheng Yan, Iliyan Zarov, Yuchen Zhang, Angela Fan,
+  trastive evidence. In North American Chapter of the         Melanie Kambadur, Sharan Narang, Aurelien Ro-
+  Association for Computational Linguistics: Human            driguez, Robert Stojnic, Sergey Edunov, and Thomas
+  Language Technologies (NAACL-HLT), pages 624–               Scialom. 2023b. Llama 2: Open foundation and
+  643.                                                        fine-tuned chat models.
+Alex Wang, Kyunghyun Cho, and Mike Lewis. 2020.
+  Asking and answering questions to evaluate the fac-
+  tual consistency of summaries. In Proceedings of the
+  58th Annual Meeting of the Association for Compu-
+  tational Linguistics, pages 5008–5020, Online. Asso-
+  ciation for Computational Linguistics.
+Adina Williams, Nikita Nangia, and Samuel Bowman.
+  2018. A broad-coverage challenge corpus for sen-
+  tence understanding through inference. In North
+  American Chapter of the Association for Computa-
+  tional Linguistics: Human Language Technologies
+  (NAACL-HLT).
+Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak
+  Shafran, Karthik R Narasimhan, and Yuan Cao. 2023.
+  React: Synergizing reasoning and acting in language
+  models. In International Conference on Learning
+  Representations (ICLR).
+
+Xiang Yue, Boshi Wang, Kai Zhang, Ziru Chen, Yu Su,
+  and Huan Sun. 2023. Automatic evaluation of at-
+  tribution by large language models. arXiv preprint
+  arXiv:2305.06311.
+
+Shiyue Zhang and Mohit Bansal. 2021. Finding a bal-
+  anced degree of automation for summary evaluation.
+  In Empirical Methods in Natural Language Process-
+  ing (EMNLP), pages 6617–6632.
+
+Yuan Zhang, Jason Baldridge, and Luheng He. 2019.
+  PAWS: Paraphrase adversaries from word scrambling.
+  In North American Chapter of the Association for
+  Computational Linguistics: Human Language Tech-
+  nologies (NAACL-HLT), pages 1298–1308.
+
+Zexuan Zhong, Tao Lei, and Danqi Chen. 2022. Train-
+  ing language models with memory augmentation. In
+  Empirical Methods in Natural Language Processing
+  (EMNLP), pages 5657–5673.
+A    Generating Claims for ELI5                          NLI model accurately predicts the entailment
+                                                         of sub-claims. We further analyze our sub-claim
+We elect not to use ROUGE-L as our main cor-             evaluation metrics by checking the error rate of
+rectness metrics since it does not account for the       the final prediction of the NLI model. To this end,
+different ways of expressing the same answer and it      we first manually annotate the entailment scores
+can be easily gamed (Krishna et al., 2021). We fur-      between 40 outputs and their sub-claims (in total
+ther illustrate this issue in Table 10. A system can     of 120 pairs; these are the same questions from the
+easily achieve high ROUGE-L score by retrieving          previous analysis). We then use the NLI model
+and returning the top passage from a BM25 index.         to obtain the entailment scores for the output and
+However, the claims evaluation metric does not           sub-claims. Using the human annotations as the
+reward this approach since the output often lacks        ground truth label, we found that the NLI model
+different aspects of the answers.                        achieved an accuracy of 80.0%.
+
+                          ROUGE-L      Claim recall      B    Dataset Statistics
+    ChatGPT VANILLA          20.6         12.0
+    ChatGPT O RACLE          21.2         21.3           For ASQA, human answers have an average length
+    LLaMa-13B VANILLA        16.2          3.9           of 65 words. For QAMPARI, each question has
+    Top-1 passage            19.1         3.0            on average 13 answers. For ELI5, human answers
+                                                         have an average length of 131 words.
+Table 10: Comparison between ROUGE-L and claim
+recall scores on ELI5.
+                                                         C    Implementation Details
+
+   Instead, we leverage the original answers to gen-     NLI model. We use the version of TRUE
+erate sub-claims and use them to serve as an esti-       model from https://huggingface.co/google/
+mate of the different aspects of the answers that        t5_xxl_true_nli_mixture, which is trained on
+we expect the model to cover. This approach is           SNLI (Bowman et al., 2015), MNLI (Williams
+inspired by works in summarization evaluation and        et al., 2018), Fever (Thorne et al., 2018), Sci-
+claim verification (Zhang and Bansal, 2021; Kamoi        tail (Khot et al., 2018), PAWS (Zhang et al., 2019),
+et al., 2023; Wang et al., 2020).                        and VitaminC (Schuster et al., 2021). This model
+   Specifically, we use text-davinci-003 to gen-         uses the following prompt: “premise: {PREMISE}
+erate the sub-claims. We first manually annotate         hypothesis: {}” and outputs “1” if the premise
+three question and answer pairs from the original        entails the hypothesis. We format each passage
+ELI5 training set with 3 sub-claims each. Then,          (when used as premise) by the format of “Title:
+we prompt text-davinci-003 with these pairs as           {TITLE}\n{TEXT}” and concatenate all passages
+demonstrations. The full prompt with an example          with “\n” as a separator.
+is shown in Table 22.
+                                                         MAUVE. When running MAUVE, we concatenate
+InstructGPT generates coherent and faithful              the question and the model output (or human an-
+sub-claims. To ensure that the generated sub-            swer) by space. We truncate both the references
+claims are of good quality, we manually inspect          and the model generations to 100 words, as we
+a random sample of 40 answers and their generated        found MAUVE results are unstable beyond this
+sub-claims (totaling to 120 sub-claims). For each        length for ELI5 (this is due to that ELI5 has a lot
+sub-claim, we assign a score of 1 if it is relevant to   of extremely long human answers).
+the question and faithful to the facts presented in
+                                                         Exact match for ASQA and QAMPARI. Both
+the ground truth, and 0 otherwise. We found that
+                                                         ASQA and QAMPARI provide aliases for their
+112 out of the 120 (93.33%) sub-claims received a
+                                                         short answers. We normalize the response and the
+score of 1, meaning that our generated sub-claims
+                                                         short answers similarly to Rajpurkar et al. (2016)
+are of high quality and faithful to the ground truth.
+                                                         and report the score with the best-matching aliases.
+Furthermore, the average number of words in the
+                                                         For ASQA, Stelmakh et al. (2022) also propose a
+generated sub-claims is 14 words, and they are
+                                                         QA-based evaluation which we found to be not as
+typically just one sentence long. This is aligned
+                                                         stable, and thus we do not report it in our paper.
+with the intent behind the metric—to capture short
+factual claims made by the original answer.              Output truncation. Before evaluation, we trun-
+cate model output by new lines, as non-instruction-           [2] will be counted as “irrelevant” while it should
+tuned models may generate more content after new              not be penalized. Liu et al. (2023) conduct hu-
+lines that are irrelevant.                                    man evaluation on citation precision in a different
+                                                              way: For each citation, they ask annotators to judge
+I NTERACT. Empirically, we found that models
+                                                              whether the citation (1) fully support, (2) partially
+tend to execute too many consecutive “check” ac-
+                                                              support, or (3) does not support si . One citation ci,j
+tions, so we force the model to always “output”
+                                                              is precise if (a) ci,j fully supports si or (b) Ci fully
+after each “check”. We limit the maximum number
+                                                              supports si , ci,j partially supports si , and no c ∈ Ci
+of passages to check as 3 to avoid exceeding the
+                                                              alone fully supports si . This evaluation solved the
+length limit. The full passages are removed from
+                                                              corner case we mentioned in the main paper (one
+the context after one action to save context space.
+                                                              citation partially supports the claim but is identi-
+Table 27 provides an example for I NTERACT.
+                                                              fied as “irrelevant”). However, it is challenging to
+Main experiments. For all experiments except                  conduct such evaluation automatically, as there is
+ChatGPT R ERANK, we run each model three times                no existing model that can judge whether a cita-
+with different seeds and each time we sample two              tion “partially” supports a claim. We also explore
+demonstrations from a pool of four. We report the             prompting ChatGPT to conduct such a task, which
+averaged scores for all experiments in the main               yields poor results. We defer it to future work to
+paper and we report the standard deviations in Ap-            collect supervised data to train a better ϕ that can
+pendix G.6.                                                   detect “partial support”.
+Decoding methods. Based on preliminary experi-
+ments we choose the following decoding methods:               F     Human Evaluation
+For ChatGPT and GPT-4, we use sampling with                   We employ Surge AI (https://www.surgehq.
+temperature 0.5; for all open-source models, we               ai/) for our human evaluation. The average pay to
+use Nucleus sampling (Holtzman et al., 2020) and              workers is 20 USD per hour. We randomly sample
+set top_p = 0.95.                                             100 examples from ASQA and ELI5 and annotate
+                                                              outputs of selected models: ChatGPT VANILLA,
+D     ALCE Catches Shortcut Cases
+                                                              ChatGPT R ERANK, and Vicuna-13B VANILLA.
+
+                    Fluency     Correct.      Citation        F.1   Utility
+                    (MAUVE)    (EM Rec.)    Rec.   Prec.      To check if the model output is useful to down-
+    ChatGPT           66.6        40.4      73.6   63.0       stream users, we measure the utility of the response
+    Top-1 passage     20.8        35.1      99.4   99.4       S. We first show the query q and model response
+    First 2 sents     67.2        18.9      98.7   98.7
+                                                              S to the worker and ask them to rate their agree-
+Table 11: ASQA cheating cases. “ChatGPT”: the Chat-           ment with the statement "The response is a helpful
+GPT VANILLA model with GTR-retrieved top-5 pas-               and informative answer to the query" on a Likert
+sages. “Top-1 passage”: use the top-1 retrieved passage       scale of 1-5, corresponding to Strongly Disagree,
+as the response. “First 2 sents”: use the first 2 sentences   Disagree, Neutral, Agree, and Strongly Agree.
+of the top-1 retrieved passage.
+                                                              F.2   Citation Recall
+  Table 11 demonstrates the experiments to show               The annotators are shown the question q, the state-
+that ALCE is robust to shortcut cases. Using the              ment si , and all of its citations Ci , and they rate if
+top-1 passages or first two sentences of the top-1            the joint set of citations fully support the statement
+passages induces almost perfect citation quality,             (recall=1) or if they do not support all the claims
+but fluency and correctness are dramatically lower.           (recall=0). We calculate the overall recall score
+                                                              for the generation by taking an average of all the
+E     Citation Recall Discussion                              statements’ recall scores.
+Our citation precision evaluation cannot detect a
+citation that partially supports the statement and            F.3   Citation Precision
+hence will falsely penalize it. Consider a state-             We show the question q and a pair of a statement
+ment s3 and its citations [2][4][5]: if [2] entails           si and one of its citation ci,j ∈ Ci to the annotator.
+partial information of s3 that [4][5] also entails,           We ask the annotator if the citation fully supports,
+             R@1    R@3     R@5     R@20     R@100                      R@1     R@3       R@5    R@20      R@100
+    DPR      29.6    44.5    51.5    64.6      74.1            BM25      3.0     6.6       9.6    19.3          31.8
+    GTR      35.1    50.7    56.8    70.3      78.4            Oracle   25.3    29.7      31.8     -             -
+    Oracle   63.8    72.8    78.4     -         -
+                                                              Table 14: Retrieval results for ELI5 (claim recall).
+  Table 12: Retrieval results for ASQA (EM recall).
+
+                                                                                Fluency      Correct.     Citation
+             R@1    R@3     R@5     R@20     R@100
+                                                                               (MAUVE)      (EM Rec.)    Rec.     Prec.
+    DPR       6.7    13.5    17.6    30.4      47.6
+    GTR      14.6    24.7    31.6    49.7      65.6                          ChatGPT (VANILLA, 5-doc)
+    Oracle   44.3    58.7    65.6     -         -             Short instruction    64.1      39.5     69.6        73.2
+                                                              Full instruction     66.6      40.4     73.6        72.5
+
+ Table 13: Retrieval results for QAMPARI (recall-5).
+                                                             Table 15: Effect of different instructions on ASQA.
+
+
+partially supports, or does not support the factual
+claims in si . Citation ci,j has a citation precision       G.3   Effect of Demonstrations
+of 1 if si has a recall of 1, and ci,j fully or partially   Table 16 shows results on effect of different num-
+supports si . Finally, we take an average of preci-         bers of demonstrations. We see that numbers of
+sion scores of all citations in the statement S to          demonstrations do not affect ChatGPT’s correct-
+obtain the citation precision score.                        ness but using at least one demonstration ensures
+                                                            high citation recall. For the original LLaMA model,
+G     More Experiments                                      Table 16 shows the trend that more demonstrations
+                                                            lead to better performance.
+G.1    Retrieval Analysis
+                                                            G.4   Fine-tuned Models
+Oracle. Since the original datasets do not contain
+gold passages at the same granularity level as our          To better understand the differences between fine-
+setting (100-word passages), we approximate gold            tuned models and prompted large language mod-
+passages by running the following algorithm on the          els, we train state-of-the-art question answer-
+top-100 retrieved passages. We first calculate the          ing model, Fusion-in-Decoder (FiD; Izacard and
+recall score for each passage. Then, we sort the            Grave (2021)), and evaluate it in conjunction with
+passages using their recall score and take the top 5        P OST C ITE. Due to the lack of training data with
+passages as our initial oracle set. Finally, we iterate     citation annotation, we first train a T5-base FiD
+through all passages that were not initially in the or-     model for 5 epochs on the ASQA training set with
+acle set and try to replace the passages in the oracle      a batch size of 64 and a learning rate of 1e-4. Dur-
+set in a greedy fashion: we calculate the change in         ing evaluation, we use P OST C ITE to add citations
+the recall score of the oracle set for every possible       to the output. We also use k = 5 passages during
+replacement and proceed with the replacement that           both training and evaluation of the FiD model.
+results in the largest recall improvement. The set
+                                                               Then, we evaluate this model on both ASQA
+of 5 oracle passages were able to match the recall
+                                                            (in-domain) and ELI5 (out-of-domain), and the re-
+scores of the top-100 retrieved passages.
+                                                            sults can be found in Tables 17 and 18. Note that
+Detailed retrieval results. We show detailed re-            this is not a direct comparison, as ALCE assumes
+trieval results in Tables 12, 13, and 14.                   only evaluation data available and uses only few-
+                                                            shot data for prompting. As the results show, the
+G.2    Effect of Instructions                               FiD baseline still significantly lags behind prompt-
+                                                            ing ChatGPT in both correctness and citation qual-
+Table 15 shows results of using a full instruction          ity (even though it is trained on 4000+ examples).
+(Table 23) and a short version of the instruction           When tested on another dataset (ELI5), FiD per-
+(Table 24). We see that the full version induces            forms even worse, showing that it is challenging
+stronger correctness and citation recall, while the         to solve the problem by fine-tuning a small pre-
+two instructions lead to similar citation precision.        trained model.
+                  Fluency       Correct.      Citation                               Fluency   Correct.    Citation
+
+                 (MAUVE)         (EM)        Rec.    Prec.                           (MAUVE)   (Claim)    Rec.   Prec.
+                                                                 ChatGPT               57.2      12.0     51.1   50.0
+                  ChatGPT (VANILLA)
+                                                                 FiD + P OST C ITE     25.2       4.4     39.3   39.3
+  #demo = 0        74.5      41.9   69.3             73.4
+  #demo = 1        68.9      39.8   74.6             73.2
+                                                             Table 18: Comparison of Fusion-in-Decoder with Chat-
+  #demo = 2        66.6      40.4   73.6             72.5
+                                                             GPT on ELI5. Both models use top-5 GTR passages.
+      Table 16: Different demonstrations on ASQA.
+                                                             both correctness and citation quality, the largest
+                      Fluency     Correct.      Citation     instruction-following models (i.e. LLaMA-2-70B-
+                      (MAUVE)    (EM Rec.)    Rec.   Prec.   Chat and Stable Beluga 2) can sometimes achieve
+  ChatGPT               66.6        40.4      73.6    72.5   competitive correctness to the SoTA.
+  FiD + P OST C ITE     75.8        28.4      58.1    58.0      Furthermore, we found that the open-source
+                                                             models follow a similar trend between different
+Table 17: Comparison of Fusion-in-Decoder with Chat-
+                                                             approaches as ChatGPT. Specifically, using S UMM
+GPT on ASQA. Both models use top-5 GTR passages.
+                                                             and S NIPPET improves correctness and R ERANK
+                                                             boosts citation quality.
+G.5     More Human Evaluation
+                                                             H      Prompts
+We evaluate the accuracy of our automatic metrics
+by treating the human annotations as gold labels.            We show detailed prompts used in our paper in
+For citation recall, ALCE achieves an accuracy of            Tables 23, 24, 25, 26, 27, 28, and 29.
+85.1%; for citation precision, ALCE has an accu-
+racy of 77.6%. Regarding detecting insufficient              I     Examples
+citations, ALCE has a recall of 82.3% and a pre-             In Tables 30 and 31 we show some examples of
+cision of 84.2%; regarding detecting “irrelevant”            questions and model generated outputs.
+citations, ALCE has a recall of 75.6% and a pre-
+cision of 66.1%—ALCE is effective in detecting
+“irrelevant” citations, but due to the limitation of
+the NLI model (cannot detect “partial support”), it
+has a relatively high false positive rate.
+
+G.6     Main Results
+We show full results of our experiments along with
+the standard deviation in Tables 19, 20, and 21. We
+repeat all experiments with three different random
+seeds. However, for ChatGPT R ERANK, we use
+only one seeded run since each run repeats the
+generation step four times, and more experiments
+would incur significant costs. Similarly, due to the
+cost of running ChatGPT-16K and GPT-4, we only
+use one seeded run for each model.
+
+G.7     Open-source Models
+In addition to the open-source models discussed in
+the main text, we also show the results of LLaMA-
+7B, Alpaca-7B, Vicuna-7B, LLaMA-33B, Oasst-
+33B, and Stable Beluga 2 in the Tables 19, 20, and
+21. For selected models, we also tested them using
+approaches beyond VANILLA.
+   Although open-source models generally lag be-
+hind the state-of-the-art models (i.e. GPT-4) in
+                                    Fluency      Correct.            Citation
+                                   (MAUVE)       (EM Rec.)      Rec.         Prec.      ROUGE-L       Length
+                                                ChatGPT
+VANILLA (5-psg)                    66.8 (2.0)    40.4 (0.6)   73.6 (1.1)   72.5 (1.8)   37.0 (0.4)   40.0 (3.1)
+  w/ R ERANK                       77.0 (−)       40.2 (−)    84.8 (−)     81.6 (−)     36.9 (−)     40.8 (−)
+S UMM (10-psg)                     70.0 (1.2)    43.3 (0.8)   68.8 (0.6)   61.8 (1.1)   36.9 (0.2)   49.8 (4.3)
+  w/ I NTERACT                     69.0 (2.7)    39.1 (0.5)   73.4 (0.2)   66.5 (4.9)   35.7 (0.2)   34.0 (0.9)
+S NIPPET (10-psg)                  69.8 (2.5)    41.4 (0.6)   65.3 (0.6)   57.4 (0.9)   36.4 (0.4)   43.0 (3.5)
+I NLINE S EARCH                    58.7 (1.3)    32.4 (0.6)   58.3 (1.3)   58.3 (1.3)   58.2 (1.1)   23.7 (1.1)
+C LOSED B OOK                      52.7 (4.9)    38.2 (0.1)   26.7 (1.1)   26.7 (1.1)   37.1 (0.3)   61.1 (4.5)
+O RACLE(5-psg)                     64.4 (0.6)    48.9 (1.2)   74.5 (0.6)   72.7 (1.0)   38.2 (1.0)   37.4 (3.0)
+                                              ChatGPT-16K
+VANILLA (5-psg)                    60.3 (−)       36.1 (−)    76.2 (−)     76.5 (−)     36.2 (−)      24.7 (−)
+VANILLA (10-psg)                   56.3 (−)       36.7 (−)    75.3 (−)     75.0 (−)     35.6 (−)      23.5 (−)
+VANILLA (20-psg)                   56.7 (−)       36.1 (−)    73.7 (−)     73.5 (−)     35.5 (−)      23.1 (−)
+                                                 GPT-4
+VANILLA (5-psg)                    67.1 (−)       41.3 (−)    68.5 (−)     75.6 (−)     39.2 (−)      31.8 (−)
+VANILLA (10-psg)                   71.5 (−)       43.1 (−)    72.0 (−)     75.5 (−)     39.7 (−)      33.8 (−)
+VANILLA (20-psg)                   64.9 (−)       44.4 (−)    73.0 (−)     76.5 (−)     40.1 (−)      34.3 (−)
+                                               Open-source
+LLaMA-7B VANILLA (3-psg)           69.8 (2.0)    22.6 (0.9)   6.2 (2.7)    9.2 (2.9)    29.1 (0.2)   61.3 (14.3)
+Alpaca-7B VANILLA (3-psg)          84.2 (2.7)    32.1 (1.7)   12.3 (7.2)   14.1 (7.0)   33.1 (0.8)   51.7 (12.8)
+Vicuna-7B VANILLA (3-psg)          82.9 (5.0)    34.6 (0.7)   40.3 (0.5)   42.6 (1.0)   35.9 (0.7)   48.9 (6.6)
+LLaMA-13B VANILLA (3-psg)          68.4 (6.4)    26.9 (0.4)   10.6 (4.7)   15.4 (5.2)   29.8 (0.5)   67.1 (19.1)
+ w/ R ERANK                        60.9 (14.5)   25.2 (2.5)   28.1 (9.3)   37.0 (7.2)   27.9 (2.4)   50.5 (14.3)
+LLaMA-13B S UMM (10-psg)           76.8 (4.7)    33.3 (0.7)   19.6 (3.9)   23.7 (4.7)   32.1 (0.3)   54.4 (1.5)
+LLaMA-13B S NIPPET (10-psg)        72.0 (0.8)    31.3 (1.1)   18.2 (3.1)   21.1 (3.6)   30.8 (0.4)   50.5 (4.5)
+LLaMA-13B O RACLE (3-psg)          69.5 (11.4)   34.3 (0.9)   10.8 (4.9)   15.8 (5.9)   30.6 (0.1)   67.3 (17.9)
+Vicuna-13B VANILLA (3-psg)         82.6 (9.4)    31.9 (3.9)   51.1 (1.4)   50.1 (2.5)   34.9 (1.3)   39.1 (6.6)
+ w/ R ERANK                        73.5 (2.1)    32.9 (1.3)   71.9 (1.9)   65.4 (1.5)   34.6 (0.3)   35.7 (4.2)
+Vicuna-13B S UMM (10-psg)          67.7 (0.3)    43.2 (0.1)   52.7 (2.6)   50.0 (2.1)   36.7 (0.2)   66.0 (1.2)
+Vicuna-13B S NIPPET (10-psg)       81.4 (3.0)    42.1 (1.2)   53.4 (1.9)   48.7 (1.6)   36.9 (0.4)   61.2 (7.4)
+Vicuna-13B O RACLE (3-psg)         72.9 (3.5)    42.5 (1.6)   52.2 (0.8)   50.7 (1.6)   36.5 (0.9)   38.7 (3.5)
+LLaMA-33B VANILLA (3-psg)          83.7 (5.4)    31.0 (0.8)   19.5 (5.3)   23.0 (5.3)   32.3 (0.6)   44.1 (9.3)
+ w/ R ERANK                        82.1 (3.0)    31.3 (1.1)   41.3 (6.4)   44.7 (5.5)   32.5 (0.9)   39.4 (8.0)
+LLaMA-33B S UMM (10-psg)           72.0 (3.0)    33.1 (1.9)   34.7 (5.8)   35.2 (6.0)   31.1 (0.8)   43.7 (5.0)
+LLaMA-33B S NIPPET (10-psg)        70.8 (3.1)    30.9 (1.4)   31.4 (4.2)   31.5 (5.3)   30.1 (0.7)   42.8 (3.6)
+LLaMA-33B O RACLE (3-psg)          82.6 (7.1)    39.3 (2.9)   20.2 (6.2)   23.9 (6.3)   33.1 (0.9)   42.0 (9.3)
+Oasst-33B VANILLA (3-psg)          82.9 (2.7)    34.8 (1.5)   36.2 (1.7)   38.3 (2.7)   35.5 (0.7)   45.2 (6.3)
+ w/ R ERANK                        83.2 (2.4)    35.1 (1.4)   66.7 (0.2)   64.3 (1.0)   35.0 (0.6)   41.8 (6.0)
+Oasst-33B S UMM (10-psg)           74.3 (4.6)    40.9 (1.1)   45.5 (1.9)   44.0 (2.9)   35.8 (0.6)   54.3 (4.8)
+Oasst-33B S NIPPET (10-psg)        79.3 (1.0)    40.1 (0.9)   45.0 (1.3)   43.3 (2.2)   35.8 (0.2)   50.9 (4.1)
+Oasst-33B O RACLE (3-psg)          85.1 (2.8)    44.3 (2.4)   37.0 (1.0)   39.6 (1.5)   36.5 (1.1)   44.2 (5.8)
+LLaMA-2-7B-Chat VANILLA (5-psg)    80.1 (6.5)    33.9 (2.1)   50.9 (4.5)   47.5 (3.7)   35.1 (0.9)   42.3 (10.1)
+LLaMA-2-13B-Chat VANILLA (5-psg)   72.4 (6.3)    35.2 (1.2)   38.4 (5.9)   39.4 (4.8)   35.8 (0.9)   38.0 (6.4)
+LLaMA-2-70B-Chat VANILLA (5-psg)   88.3 (4.1)    41.5 (0.8)   62.9 (1.4)   61.3 (2.1)   37.1 (0.4)   52.9 (9.5)
+Stable Beluga 2 VANILLA (5-psg)    59.7 (3.3)    37.2 (1.0)   63.6 (0.7)   63.5 (0.1)   35.3 (0.7)   23.8 (3.2)
+
+                                    Table 19: ASQA full results.
+                                           Correctness                 Citation
+                                       Rec.-5        Prec.        Rec.         Prec.      Num Pred.
+                                           ChatGPT
+VANILLA (5-psg)                       20.8 (2.2) 20.8 (0.2)     20.5 (0.7)   20.9 (0.7)    5.0 (0.5)
+  w/ R ERANK                          22.8 (−)     21.4 (−)     21.2 (−)     21.4 (−)      5.4 (−)
+S UMM (10-psg)                        23.6 (0.9) 21.2 (0.5)     23.6 (0.7)   25.7 (0.8)    6.7 (0.4)
+S NIPPET (10-psg)                     24.5 (1.4) 21.5 (1.8)     22.9 (1.6)   24.9 (0.4)    7.2 (0.9)
+  w/ I NTERACT                        21.9 (0.9) 23.0 (0.4)     21.9 (1.2)   23.4 (0.9)    6.7 (0.4)
+I NLINE S EARCH                       17.2 (1.1) 20.4 (0.8)     14.9 (0.8)   14.9 (0.8)    6.7 (0.2)
+C LOSED B OOK                         32.9 (1.1) 19.8 (1.6)     10.0 (0.4)   10.0 (0.4)   17.0 (2.9)
+O RACLE                               37.0 (3.1) 36.9 (0.6)     24.1 (1.2)   24.6 (1.3)    5.3 (0.6)
+                                        ChatGPT-16K
+VANILLA (5-psg)                       21.1 (−)     22.0 (−)     20.7 (−)     21.2 (−)      4.9 (−)
+VANILLA (10-psg)                      23.4 (−)     21.9 (−)     21.6 (−)     22.0 (−)      5.7 (−)
+VANILLA (20-psg)                      26.4 (−)     21.1 (−)     19.4 (−)     19.7 (−)      7.6 (−)
+                                             GPT-4
+VANILLA (5-psg)                       22.2 (−)     25.0 (−)     25.9 (−)     27.0 (−)      4.4 (−)
+VANILLA (10-psg)                      26.8 (−)     25.1 (−)     26.2 (−)     27.2 (−)      5.7 (−)
+VANILLA (20-psg)                      29.6 (−)     26.2 (−)     27.4 (−)     28.5 (−)      6.8 (−)
+                                         Open-source
+LLaMA-7B VANILLA (3-psg)               7.8 (3.4)   7.4 (2.7)     5.1 (0.5)   5.7 (0.8)     5.7 (0.6)
+Alpaca-7B VANILLA (3-psg)              9.4 (3.7)   9.5 (3.6)     6.4 (0.5)   6.8 (0.5)     5.1 (0.1)
+Vicuna-7B VANILLA (3-psg)             11.3 (1.4) 13.3 (2.3)     10.1 (0.6)   10.9 (0.5)    3.9 (0.3)
+LLaMA-13B VANILLA (3-psg)              9.7 (3.6)   9.1 (3.1)    6.7 (0.9)     7.1 (0.9)    5.9 (0.6)
+ w/ R ERANK                           10.0 (3.3)   10.7 (3.3)   9.9 (1.2)    10.2 (1.1)    5.4 (0.5)
+LLaMA-13B S UMM (10-psg)              14.8 (2.5)   12.6 (1.5)   7.4 (0.5)     8.0 (0.6)    8.1 (0.9)
+LLaMA-13B S NIPPET (10-psg)           17.7 (1.4)   15.7 (0.9)   8.8 (0.7)     9.9 (0.6)    8.2 (0.4)
+LLaMA-13B O RACLE (3-psg)             16.8 (6.6)   15.4 (5.6)   7.7 (1.0)     8.3 (1.1)    5.7 (0.7)
+Vicuna-13B VANILLA (3-psg)            14.0 (0.6)   15.9 (1.7)   12.5 (0.8)   13.4 (0.7)    4.7 (0.3)
+ w/ R ERANK                           13.0 (0.7)   17.2 (2.2)   17.3 (0.8)   17.7 (0.6)    4.4 (0.3)
+Vicuna-13B S UMM (10-psg)             21.1 (1.4)   17.1 (0.3)   15.7 (0.2)   17.8 (0.1)    6.9 (0.7)
+Vicuna-13B S NIPPET (10-psg)          21.9 (0.8)   18.2 (0.3)   16.8 (0.3)   19.7 (0.6)    7.5 (0.4)
+Vicuna-13B O RACLE (3-psg)            25.9 (1.6)   28.4 (2.6)   15.8 (1.4)   16.8 (1.4)    4.9 (0.5)
+LLaMA-33B VANILLA (3-psg)             14.7 (3.3)   12.0 (2.2)    7.9 (0.7)   8.3 (0.6)     7.2 (0.7)
+ w/ R ERANK                           14.0 (3.4)   13.9 (2.6)   10.7 (0.6)   11.1 (0.5)    6.4 (0.7)
+LLaMA-33B S UMM (10-psg)              19.0 (1.9)   14.8 (0.8)   12.5 (0.2)   15.0 (0.3)    7.6 (0.6)
+LLaMA-33B S NIPPET (10-psg)           19.6 (1.1)   15.7 (0.1)   12.8 (1.1)   15.2 (1.2)    7.8 (0.5)
+LLaMA-33B O RACLE (3-psg)             23.9 (6.9)   20.3 (5.2)    9.8 (1.2)   10.4 (1.2)    6.8 (0.9)
+Oasst-33B VANILLA (3-psg)             15.5 (1.5)   14.9 (1.4)    9.0 (1.6)   10.1 (1.8)    5.6 (0.3)
+ w/ R ERANK                           14.1 (1.1)   15.8 (1.0)   15.0 (1.6)   15.9 (1.6)    4.7 (0.3)
+Oasst-33B S UMM (10-psg)              21.0 (0.6)   17.5 (1.0)   12.9 (1.2)   16.6 (1.2)    7.1 (0.4)
+Oasst-33B S NIPPET (10-psg)           22.0 (0.4)   17.4 (0.3)   13.6 (1.7)   17.7 (1.6)    7.5 (0.1)
+Oasst-33B O RACLE (3-psg)             26.9 (3.7)   26.0 (3.3)   11.7 (1.0)   12.9 (1.2)    5.6 (0.4)
+LLaMA-2-7B-Chat VANILLA (5-psg)       16.2 (1.3)   15.3 (1.6)   10.6 (0.9)   10.9 (1.0)    5.5 (0.0)
+LLaMA-2-13B-Chat VANILLA (5-psg)      21.1 (0.9)   18.2 (0.5)    9.6 (1.5)    9.7 (1.5)    6.5 (0.3)
+LLaMA-2-70B-Chat VANILLA (5-psg)      21.8 (0.7)   18.4 (0.1)   15.1 (1.2)   15.6 (1.3)    7.1 (0.2)
+Stable Beluga 2                       19.7 (0.7)   21.2 (1.4)   18.6 (1.2)   20.7 (1.1)    5.1 (0.3)
+
+                               Table 20: QAMPARI full results.
+                                    Fluency      Correct.            Citation
+                                   (MAUVE)       (Claim)        Rec.         Prec.      ROUGE-L        Length
+                                                ChatGPT
+VANILLA (5-psg)                    57.2 (1.6)    12.0 (0.6) 51.1 (4.2)     50.0 (4.8)   20.6 (0.2)    91.5 (6.5)
+  w/ R ERANK                       56.1 (−)      11.4 (−)   69.3 (−)        67.8 (−)    20.3 (−)      103.4 (−)
+S UMM (10-psg)                     40.2 (1.2)    12.5 (0.2) 51.5 (1.1)     48.2 (2.0)   20.3 (0.1)    90.0 (6.6)
+S NIPPET (10-psg)                  62.9 (2.2)    14.3 (0.1) 50.4 (1.1)     45.0 (2.w)   21.0 (0.1)   100.0 (6.8)
+  w/ I NTERACT                     68.0 (5.8)    13.3 (0.5) 47.8 (3.3)     45.0 (3.1)   20.1 (0.2)    99.8 (6.1)
+I NLINE S EARCH                    49.7 (4.6)    13.4 (1.1) 45.6 (2.5)     43.7 (3.9)   20.4 (0.3)   103.0 (18.1)
+C LOSED B OOK                      32.6 (1.1)    18.6 (0.5) 15.4 (0.3)     15.4 (0.3)   22.8 (0.1)   108.3 (8.9)
+O RACLE (5-psg)                    59.4 (4.1)    21.3 (0.2) 57.8 (3.7)     56.0 (3.8)   21.2 (0.3)    93.0 (7.8)
+                                              ChatGPT-16K
+VANILLA (5-psg)                     31.6 (−)     14.4 (−)   44.6 (−)       44.1 (−)     21.4 (−)      87.6 (−)
+VANILLA (10-psg)                    26.6 (−)     14.4 (−)   45.5 (−)       43.3 (−)     21.5 (−)      87.5 (−)
+VANILLA (20-psg)                    31.6 (−)     15.9 (−)   43.4 (−)       40.9 (−)     21.7 (−)      92.6 (−)
+                                                 GPT-4
+VANILLA (5-psg)                     38.4 (−)     14.2 (−)   44.0 (−)       50.1 (−)     20.6 (−)      79.6 (−)
+VANILLA (10-psg)                    39.9 (−)     15.7 (−)   49.5 (−)       54.2 (−)     21.2 (−)      88.2 (−)
+VANILLA (20-psg)                    41.5 (−)     18.3 (−)   48.5 (−)       53.4 (−)     22.2 (−)      97.0 (−)
+                                               Open-source
+LLaMA-7B VANILLA (3-psg)           28.6 (17.9)   1.6 (0.9)   1.2 (0.0)     2.7 (0.1)    12.2 (1.3)    46.9 (1.2)
+Alpaca-7B VANILLA (3-psg)          45.9 (5.3)    9.2 (0.1)   4.5 (1.6)     5.2 (1.9)    18.8 (0.3)    67.1 (1.2)
+Vicuna-7B VANILLA (3-psg)          43.2 (3.9)    10.0 (0.5) 12.6 (2.3)     16.3 (2.6)   19.1 (0.4)    68.7 (2.0)
+LLaMA-13B VANILLA (3-psg)          50.0 (2.0)    3.9 (0.4)    3.1 (0.9)    5.3 (1.3)    16.1 (0.5)    63.3 (2.0)
+ w/ R ERANK                        46.7 (2.9)    4.3 (0.4)    9.7 (2.1)    15.0 (2.2)   16.1 (0.7)    63.0 (2.3)
+LLaMA-13B S UMM (10-psg)           28.6 (1.8)    2.9 (0.1)    2.5 (0.8)     3.8 (0.8)   8.5 (0.3)     33.1 (0.6)
+LLaMA-13B S NIPPET (10-psg)        48.4 (3.1)    5.7 (0.9)    5.8 (0.6)     7.6 (0.9)   15.1 (1.1)    60.2 (3.2)
+LLaMA-13B O RACLE (3-psg)          49.5 (2.4)    6.4 (0.6)    3.7 (0.7)     6.5 (1.0)   16.8 (0.5)    64.5 (1.7)
+Vicuna-13B VANILLA (3-psg)         58.2 (25.1)   10.0 (0.3)   15.6 (2.2)   19.6 (2.0)   19.1 (0.3)    69.6 (0.6)
+ w/ R ERANK                        45.9 (4.3)    9.2 (0.0)    31.7 (2.9)   38.2 (1.6)   18.6 (0.5)    69.7 (1.0)
+Vicuna-13B S UMM (10-psg)          22.4 (3.0)    4.9 (0.1)     9.7 (1.3)   12.2 (1.2)   9.3 (0.4)     33.0 (3.7)
+Vicuna-13B S NIPPET (10-psg)       48.1 (5.3)    11.2 (1.4)   27.2 (3.6)   27.9 (1.9)   18.4 (1.9)    76.8 (8.7)
+Vicuna-13B O RACLE (3-psg)         41.6 (3.1)    17.1 (0.4)   20.2 (3.0)   26.5 (3.0)   20.0 (0.3)    72.0 (0.3)
+LLaMA-33B VANILLA (3-psg)          58.8 (4.3)    6.2 (0.0)     9.3 (3.0)   12.1 (4.2)   16.9 (0.2)    60.0 (1.3)
+ w/ R ERANK                        65.9 (2.5)    6.0 (0.7)    22.5 (5.2)   26.1 (6.9)   17.5 (0.4)    61.0 (1.2)
+LLaMA-33B S UMM (10-psg)           23.3 (2.0)    3.0 (0.2)     6.2 (0.5)    8.2 (0.7)   7.5 (0.4)     26.2 (2.3)
+LLaMA-33B S NIPPET (10-psg)        53.2 (4.0)    7.4 (1.3)    13.7 (0.5)   15.1 (0.4)   14.4 (1.7)    53.3 (8.5)
+LLaMA-33B O RACLE (3-psg)          63.7 (2.8)    11.4 (0.5)   11.9 (2.6)   15.4 (3.6)   17.9 (0.2)    61.7 (2.6)
+Oasst-33B VANILLA (3-psg)          46.8 (7.6)    9.5 (0.2)    16.0 (2.5)   21.6 (3.5)   18.6 (0.3)    67.8 (1.5)
+ w/ R ERANK                        52.1 (6.1)    8.5 (0.5)    34.4 (2.9)   41.5 (2.5)   18.2 (0.3)    67.0 (1.5)
+Oasst-33B S UMM (10-psg)           24.8 (2.8)    3.9 (0.3)    12.3 (0.2)   16.3 (0.3)   9.1 (0.3)     31.6 (1.5)
+Oasst-33B S NIPPET (10-psg)        50.7 (4.6)    10.7 (1.2)   25.8 (3.3)   26.7 (2.3)   17.8 (1.8)    69.6 (8.6)
+Oasst-33B O RACLE (3-psg)          50.7 (12.1)   15.8 (0.1)   20.8 (2.8)   28.0 (3.2)   19.4 (0.1)    70.3 (1.1)
+LLaMA-2-7B-Chat VANILLA (5-psg)    27.8 (3.0)    10.9 (0.2)   19.8 (1.2)   15.0 (1.4)   20.5 (0.2)    87.8 (8.1)
+LLaMA-2-13B-Chat VANILLA (5-psg)   34.7 (1.5)    13.4 (0.4)   17.3 (1.3)   15.8 (1.4)   20.9 (0.2)    88.3 (6.3)
+LLaMA-2-70B-Chat VANILLA (5-psg)   38.6 (4.8)    12.8 (1.0)   38.3 (2.4)   37.9 (1.9)   21.3 (0.1)   110.8 (5.6)
+StableBeluga2                      33.0 (4.4)    14.0 (0.5)   27.9 (2.7)   29.0 (2.7)   20.6 (0.2)    75.6 (5.0)
+
+                                      Table 21: ELI5 full results.
+ Read the original question and passage, and generate 3 additional claims that are supported by the
+ passage and answer the question.
+
+ Original question: What’s the difference between Shia vs. Sunni Islam?
+ Passage: The main difference between Shia and Sunni Muslim is related to ideological heritage and
+ issues of leadership. This difference is first formed after the death of the Prophet Muhammad in 632
+ A.D. The ideological practice of the Sunni branch strictly follows Prophet Muhammad and his
+ teachings, while the Shia branch follows Prophet Muhammad’s son-in-law Ali. Nowadays, Sunni and
+ Shia are the major branches of Islam.
+ Claim 1: The major branches of Islam are Sunni and Shia.
+ Claim 2: Prophet Muhammad died in 632 A.D.
+ Claim 3: The ideological practice of the Sunni branch strictly follows Prophet Muhammad and his
+ teachings.
+
+ Original question: What causes Bi-polar disorder?
+ Passage: Bipolar disorder is an emotional disorder that causes extreme mood swings between
+ excitement and depression. The spectrum of mood swing may span from days to months. We are still not
+ certain of the exact factors that cause such disorder, but genetics is considered a major factor.
+ Claim 1: One symptom of Bi-polar disorder is extreme mood swings between excitement and depression.
+ Claim 2: Genetics could be one of the major factors that causes Bi-polar disorder.
+ Claim 3: The mood swing from Bi-polar disorder can last days to months.
+
+ Original question: How do we hear differences in sound besides volume and pitch?
+ Passage: Pitch refers to the frequency of soundwave, and volumn refers to the amplitude of the
+ soundwave. Besides volumn and pitch, we can also tell the difference between sounds based on the
+ tone of sound. For example, we can differentiate the sound of different instruments based on the
+ tone of the sounds.
+ Claim 1: Volume of sound is the amplitude of the soundwave.
+ Claim 2: Pitch is the frequency of soundwave.
+ Claim 3: We can use the tone of the sounds to differentiate the sound of different instruments.
+
+ Original question: How are we able to discern whether a sound is coming from in front of us or
+ behind us?
+ Passage: There are multiple explanations for why we can localize sounds. One explanation is that
+ sounds travelling to the corresponding side of one’s ear will be slightly louder. Another
+ explanation is that there is a slight difference in the hitting time to one’s left and right ear
+ based on the sound’s direction. However, these explanation means that when a sound is exactly in
+ front of someone or exactly behind someone, he or she can not tell the difference.
+ Claim 1: We can localize sounds by recognizing that the sound travelling to the corresponding side
+ of one’s ear will be slightly louder.
+ Claim 2: We can also localize sounds by recognizing the difference in hitting time to one’s left and
+ right ear based on the sound’s direction.
+ Claim 3: We cannot tell the difference between a sound that is exactly in front of us or exactly
+ behind us.
+
+Table 22: Prompt used to generate the sub-claims for ELI5 questions. Blue text is model generation. Brown text
+is the ELI5 example that we want to generate sub-claims for. We construct the prompt by manually writing the
+sub-claims for three questions from the training set.
+
+
+
+  Instruction: Write an accurate, engaging, and concise answer for the given question using only
+  the provided search results (some of which might be irrelevant) and cite them properly. Use an
+  unbiased and journalistic tone. Always cite for any factual claim. When citing several search
+  results, use [1][2][3]. Cite at least one document and at most three documents in each sentence.
+  If multiple documents support the sentence, only cite a minimum sufficient subset of the
+  documents.
+
+                                     Table 23: Instruction for VANILLA.
+
+
+
+  Instruction: Write a high-quality answer for the given question using only the provided search
+  results and cite them properly using [1][2][3].
+
+                                  Table 24: Short instruction for VANILLA.
+Summarize the following document within 50 words with the question of interest "{QUESTION}"
+Return "irrelevant" if the document is irrelevant to the question. Try to keep all the important
+dates, numbers, and names.
+
+Title: {TITLE}
+Text: {TEXT}
+Summary:
+
+                                   Table 25: Prompts for S UMM.
+
+Given the follow passage and the question "{QUESTION}", extract a useful span from the passage
+that can answer the question. Resolve all the coreference issues to make the extracted span
+understandable standalone. If the passage is not helpful for answering the question, return
+"irrelevant".
+
+Title: {TITLE}
+Text: {TEXT}
+Extracted span:
+
+                                  Table 26: Prompts for S NIPPET.
+
+Instruction: Write an accurate, engaging, and concise answer for the given question using only
+the provided search results and cite them properly. Use an unbiased and journalistic tone.
+Always cite for any factual claim.
+You are provided summaries/snippets of the search results. You can use "Check: Document [1][2]"
+to check the corresponding full documents (you should only check relevant documents and you can
+at most check 3 documents at a time) and use "Output:" to output a sentence in the answer. In the
+answer, cite properly by using [1][2][3]. Cite at least one document and at most three documents
+in each sentence. If multiple documents support the sentence, only cite a minimum sufficient
+subset of the documents. Use "End" to end the generation.
+
+<Retrieve for question “...”>
+<Get summaries/snippets for the passages and delete those that are “irrelevant”>
+Document [1](Title: ...) {SUMMARY OR SNIPPET}
+...
+
+Question: When did US break away from England?
+Check: Document [1][2]
+Document [1] {FULL TEXT}
+Document [2] {FULL TEXT}
+Output: The United States ... [1] ... [2].
+<Remove the full text of [1][2] from context>
+Check: Document [3]
+Document [3] {FULL TEXT}
+Output: The Treaty of Paris ... [3].
+<Remove the full text of [3] from context>
+End.
+
+                               Table 27: An example for I NTERACT.
+
+Instruction: Write an accurate, engaging, and concise answer for the given question using only
+the provided search results and cite them properly. Use an unbiased and journalistic tone.
+Always cite for any factual claim.
+You can use "Search: key words" to check the most relevant document’s full text and use
+"Output:" to output a sentence in the answer. In the answer, cite properly by using [1][2][3].
+Cite at least one document and at most three documents in each sentence. If multiple documents
+support the sentence, only cite a minimum sufficient subset of the documents. Use "End" to end
+the generation.
+
+                             Table 28: Instruction for I NLINE S EARCH.
+
+Instruction: Write an accurate, engaging, and concise answer for the given question. Use an
+unbiased and journalistic tone.
+
+                              Table 29: Instruction for C LOSED B OOK.
+Instruction: Write an accurate, engaging, and concise answer for ...
+Document [1](Title: How to Treat and Prevent Food Poisoning - MsPrepper) just a typical gastro
+upset. Salmonella is most commonly caused by eating undercooked or raw foods like eggs or meat.
+You know how your mom always warned you not to eat raw cookie dough? This is why. Most people do
+eat cookie dough and they are fine, but salmonella is a risk. If you do contract salmonella, you
+could start to feel bad within in a couple of hours after eating contaminated food, and sometimes
+it could take a day or two. Common symptoms are nausea and vomiting, loose stools (sometimes
+bloody), flu like symptoms, and stomach cramps. To treat
+Document [2](Title: FDA Issues Warning About Eating Raw Cookie Dough, But Not For Salmonella
+Risks) FDA Issues Warning About Eating Raw Cookie Dough, But Not For Salmonella Risks Used to
+licking the spoon or placating yourself with full-on chunks of raw cookie dough? The Food and
+Drug Administration issued a warning on Tuesday that strongly advises against continuing the
+habit. The agency asserted that consuming raw batter of any kind, whether for bread, cookies or
+pizza, could make a person sick. While you may have been warned in the past against eating raw
+dough due to the risk of contracting salmonella from raw eggs, the FDA is citing raw flour as the
+culprit for a
+Document [3](Title: It’s Probably OK to Eat Raw Cookie Dough — As Long As You’re Smart About It -
+The Crux - Very Top Secret Information) First, when most people think about health risks and
+cookie dough, they think about raw egg. Eggs can be contaminated with salmonella bacteria, and
+food safety recommendations encourage people to cook eggs until the white and yolk are firm in
+order to kill any bacteria. However, anyone making cookies can do things to reduce this risk by
+using pasteurized egg products. When my kids and I make cookie dough, we never use regular eggs.
+Instead, we use shell eggs that have been pasteurized to kill any harmful bacteria without
+actually cooking the egg itself. (A great public health innovation, if
+Document [4](Title: How Dangerous Is It to Eat Raw Cookie Dough? | Men’s Health) Can Eating Raw
+Cookie Dough Really Make You Sick? Scientists reveal the truth about this supposedly dangerous
+delicacy By Katherine Dempsey There are few things more tempting in life than eyeing a bowl of
+cookie dough and deciding whether or not to stick your finger in for a scoop. It’s a bit like
+playing Russian roulette. You could get lucky and enjoy the delicious dough without conseqence,
+but there’s always the risk of getting serously sick with a food-borne illness. That’s because
+multiple ingredients within the dough could be contaminated by pathogens such as Salmonella and
+E. coli, says Soohyoun
+Document [5](Title: How Dangerous Is It to Eat Raw Cookie Dough? | Men’s Health) is usually
+pasteurized, so it’s not likely that the egg would make you sick. However, other ingredients in
+the dough could potentially harbor pathogens. Experts say that a prime suspect in a 2009 E. coli
+outbreak linked to prepackaged cookie dough was actually the flour. Nuts and chocolate have also
+been linked to Salmonella outbreaks. Bottom line: You’re better off skipping raw cookie dough.
+At least you’ll have killer cookies as a consolation. The article How Bad Is It To Eat Raw Cookie
+Dough? originally ran on Prevention.com The 9 Foods Most Likely to Make You Sick Mmm, Just Don’t
+...
+
+Question: Why is it bad to eat cookie dough for risk of salmonella but things like Cookie Dough
+Bites are ok?
+Answer: Raw cookie dough is not recommended to be eaten due to the risk of salmonella [1][2].
+Eating raw flour is also a risk for food poisoning [2]. The egg in cookie dough is usually
+pasteurized, so it’s not likely that the egg would make you sick, but other ingredients in the
+dough could potentially harbor pathogens [4][5]. However, prepackaged cookie dough like Cookie
+Dough Bites is safe to eat because the dough is made with pasteurized egg products and
+heat-treated flour [2][3]..
+
+Ground truth claims:
+1. Cookie Dough Bites are safe to eat since they do not contain eggs.
+2. Salmonella is a bacteria found in eggs.
+3. Eating raw cookie dough carries the risk of salmonella infection.
+
+                                    Table 30: ELI5 example 1.
+Instruction: Write an accurate, engaging, and concise answer for ...
+Document [1](Title: Is Snapchat really worth $19 billion? - CSMonitor.com) reporting that the Los
+Angeles-based company is aiming to raise $500 million at a valuation of $16 billion to $19 billion,
+making it the third most highly valued tech start-up backed by venture capitalists. The Chinese
+handset maker Xiaomi is valued at $45 billion, while Uber is estimated to be valued at about $40
+billion, according to data from CB Insights. Read MoreVC investment hits $86B thanks to Uber, Xiaomi
+Snapchat was valued at $10 billion in August, according to a Dow Jones report. Some of its investors
+from previous rounds include Benchmark, Lightspeed Venture Partners and Kleiner Perkins Caufield
+Document [2](Title: What Are Venture Capital Investments? – DollarsAndSense.my) Ever wondered how
+highly valued technology giants like Google and Facebook were able to grow so fast and pay their
+employees so well in such a short amount of time, or how still growing start-ups like Uber are able
+to lose 1.2 billion US dollars in just the first half of this year alone and still command a
+valuation upwards of 50 billion US dollars? The answer lies with a special category of investment
+activity known as venture capital. Venture capitalists are professional investors who invest in a
+number of highly scalable high-risk technology ventures hoping to make a multi-fold
+Document [3](Title: Opinion | What Dara Khosrowshahi Must Do to Save Uber - The New York Times) at a
+discount. These are troubling signs. Every start-up must one day fulfill the market’s demand that
+it turn a profit, but Uber has never figured out how to do that. While ride sharing in some form
+will probably survive, it’s more likely that without some drastic changes, Uber won’t be around in
+three to five years. Mr. Khosrowshahi must avoid the mistakes of his predecessor by accepting that
+“pivots” (Silicon Valley-speak for the desperate changes troubled companies make to reassure their
+venture capitalist funders) are not the answer. None of the pivots Mr. Kalanick tried — like
+on-demand delivery
+Document [4](Title: Snapchat raising funding round at $19 billion valuation: Report) Snapchat
+raising funding round at $19 billion valuation: Report The mobile messaging app Snapchat is said to
+be seeking funding at a $19 billion valuation, according to a report, citing a person with knowledge
+of the matter. Bloomberg is reporting that the Los Angeles-based company is aiming to raise $500
+million at a valuation of $16 billion to $19 billion, making it the third most highly valued tech
+start-up backed by venture capitalists. The Chinese handset maker Xiaomi is valued at $45 billion,
+while Uber is estimated to be valued at about $40 billion, according to data from CB Insights.
+Document [5](Title: Unicorns And Wall Street | MoneyTips) not start showing profits soon. Even Uber,
+with its massive $62-billion-plus valuation, will test investor’s patience if it does not start
+showing signs of a profit in the next few years. Cracks are starting to show in terms of pre-IPO
+devaluations. Dropbox and Snapchat have seen a nearly one-quarter drop in their pre-IPO valuations,
+while Square’s pre-IPO value has dropped by approximately one-third. Larger investors and venture
+capitalists are sending a message to the unicorns: Outline a solid path to profits and start
+producing them soon, or expect your valuation to be slashed. Diving ahead with an IPO is not
+...
+Question: How are firms like snapchat, uber etc valued so highly while still not making a profit? Do
+venture capitalists not expect some form of repayment within a number of years?
+Answer: Venture capitalists invest in a number of highly scalable high-risk technology ventures
+hoping to make a multi-fold return on their investment in a short amount of time [2]. Highly valued
+companies like Snapchat, Uber, and Xiaomi are able to grow so fast and command high valuations
+because they have the potential to generate significant revenue in the future [2][4]. Venture
+capitalists expect a return on their investment within a number of years, but they also invest in the
+long-term potential of the company [2]. It is important to note that every start-up must eventually
+turn a profit, but some start-ups like Uber have not yet figured out how to do that [3][5].
+
+Ground truth claims:
+1. Firms like Snapchat and Uber need to establish their brand and amass users before introducing
+ads.
+2. Introducing ads too early can deter potential users.
+3. Uber is reinvesting a lot of money to make their service better.
+
+                                      Table 31: ELI5 example 2.
+

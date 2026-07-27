@@ -1,0 +1,1442 @@
+{
+  "run_id": "pilot-hybrid-20260722-001",
+  "created_at": "2026-07-22T14:20:55.674736+00:00",
+  "config": {
+    "retrieval_mode": "hybrid",
+    "top_k": 5,
+    "embedding_model": "local-hashing-v1",
+    "generator": "deterministic-source-cited-v1",
+    "prompt_version": "claim-evidence-audit-v1"
+  },
+  "question_count": 20,
+  "summary": {
+    "claim_citation_pairs": 60,
+    "fully_supported_rate": 0.0,
+    "partially_supported_rate": 0.5333,
+    "unsupported_rate": 0.4667,
+    "contradicted_rate": 0.0
+  },
+  "runs": [
+    {
+      "run_id": "pilot-hybrid-20260722-001",
+      "question_id": "pilot_001",
+      "retrieval_config_hash": "253dee42567fc34a9a7b59f58ef3559c34a451ff8cbb03a411de6bb53308964b",
+      "prompt_hash": "1b77d5a16976ebae4fe58aa48006e63de216dd57ca85a466c3edb02eabbf192b",
+      "model_id": "deterministic-source-cited-v1",
+      "model_version": "local",
+      "temperature": 0,
+      "retrieved_passage_ids": [
+        "c9aa7efd-26a4-5c78-85c8-94fdc7d93e5d:25",
+        "c9aa7efd-26a4-5c78-85c8-94fdc7d93e5d:76",
+        "c9aa7efd-26a4-5c78-85c8-94fdc7d93e5d:36",
+        "c9aa7efd-26a4-5c78-85c8-94fdc7d93e5d:2",
+        "c9aa7efd-26a4-5c78-85c8-94fdc7d93e5d:31"
+      ],
+      "answer": "Jeopardy questions often contain two separate pieces of information, and RAG-Token may perform\nbest because it can generate responses that combine content from several documents. [C1] The T5 model with the closest number of parameters to our\nmodels is T5-large (770M parameters), which achieves a score of 28.9 EM on Natural Questions [52],\nsubstantially below the 44.5 that RAG-Sequence achieves, indicating that hybrid parametric/non-\nparametric models require far fewer trainable parameters for strong open-domain QA performance. [C2] “Who is the President of Peru?”)\nto query our NQ RAG model with each index. [C3]",
+      "insufficient_evidence": false,
+      "latency_ms": 16,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "estimated_cost_usd": 0,
+      "claims": [
+        {
+          "claim_id": "pilot_001_c1",
+          "text": "Jeopardy questions often contain two separate pieces of information, and RAG-Token may perform\nbest because it can generate responses that combine content from several documents. The T5 model with the closest number of parameters to our\nmodels is T5-large (770M parameters), which achieves a score of 28.9 EM on Natural Questions [52],\nsubstantially below the 44.5 that RAG-Sequence achieves, indicating that hybrid parametric/non-\nparametric models require far fewer trainable parameters for strong open-domain QA performance. “Who is the President of Peru?”)\nto query our NQ RAG model with each index.",
+          "citation_ids": [
+            "C1",
+            "C2",
+            "C3"
+          ]
+        }
+      ],
+      "annotations_pending": [
+        {
+          "claim_id": "pilot_001_c1",
+          "claim_text": "Jeopardy questions often contain two separate pieces of information, and RAG-Token may perform\nbest because it can generate responses that combine content from several documents. The T5 model with the closest number of parameters to our\nmodels is T5-large (770M parameters), which achieves a score of 28.9 EM on Natural Questions [52],\nsubstantially below the 44.5 that RAG-Sequence achieves, indicating that hybrid parametric/non-\nparametric models require far fewer trainable parameters for strong open-domain QA performance. “Who is the President of Peru?”)\nto query our NQ RAG model with each index.",
+          "citation_id": "C1",
+          "evidence_span": "Jeopardy questions often contain two separate pieces of information, and RAG-Token may perform\nbest because it can generate responses that combine content from several documents.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "unsupported",
+          "support_rationale": "The citation is real but does not provide enough claim-level overlap.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_001_c1",
+          "claim_text": "Jeopardy questions often contain two separate pieces of information, and RAG-Token may perform\nbest because it can generate responses that combine content from several documents. The T5 model with the closest number of parameters to our\nmodels is T5-large (770M parameters), which achieves a score of 28.9 EM on Natural Questions [52],\nsubstantially below the 44.5 that RAG-Sequence achieves, indicating that hybrid parametric/non-\nparametric models require far fewer trainable parameters for strong open-domain QA performance. “Who is the President of Peru?”)\nto query our NQ RAG model with each index.",
+          "citation_id": "C2",
+          "evidence_span": "The T5 model with the closest number of parameters to our\nmodels is T5-large (770M parameters), which achieves a score of 28.9 EM on Natural Questions [52],\nsubstantially below the 44.5 that RAG-Sequence achieves, indicating that hybrid parametric/non-\nparametric models require far fewer trainable parameters for strong open-domain QA performance.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "partially_supported",
+          "support_rationale": "The evidence overlaps the claim but omits material detail or qualification.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_001_c1",
+          "claim_text": "Jeopardy questions often contain two separate pieces of information, and RAG-Token may perform\nbest because it can generate responses that combine content from several documents. The T5 model with the closest number of parameters to our\nmodels is T5-large (770M parameters), which achieves a score of 28.9 EM on Natural Questions [52],\nsubstantially below the 44.5 that RAG-Sequence achieves, indicating that hybrid parametric/non-\nparametric models require far fewer trainable parameters for strong open-domain QA performance. “Who is the President of Peru?”)\nto query our NQ RAG model with each index.",
+          "citation_id": "C3",
+          "evidence_span": "“Who is the President of Peru?”)\nto query our NQ RAG model with each index.",
+          "source_exists": true,
+          "citation_relevant": "no",
+          "support_label": "unsupported",
+          "support_rationale": "The citation is real but does not provide enough claim-level overlap.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        }
+      ]
+    },
+    {
+      "run_id": "pilot-hybrid-20260722-001",
+      "question_id": "pilot_002",
+      "retrieval_config_hash": "253dee42567fc34a9a7b59f58ef3559c34a451ff8cbb03a411de6bb53308964b",
+      "prompt_hash": "1b77d5a16976ebae4fe58aa48006e63de216dd57ca85a466c3edb02eabbf192b",
+      "model_id": "deterministic-source-cited-v1",
+      "model_version": "local",
+      "temperature": 0,
+      "retrieved_passage_ids": [
+        "72ca23fb-4fe8-58f0-95ba-f4caa06e0396:66",
+        "72ca23fb-4fe8-58f0-95ba-f4caa06e0396:12",
+        "72ca23fb-4fe8-58f0-95ba-f4caa06e0396:16",
+        "72ca23fb-4fe8-58f0-95ba-f4caa06e0396:27",
+        "72ca23fb-4fe8-58f0-95ba-f4caa06e0396:62"
+      ],
+      "answer": "Specifically, we get top 100 passages for each\nat semantic representation, but might lack sufficient    question in a mini-batch and use the method similar\ncapacity to represent salient phrases which appear       to in-batch negative training: all retrieved passages’\nrarely. [C1] At run-time, DPR applies a different encoder EQ (·)    larity) than the irrelevant ones, by learning a better [C2] random passage from the corpus; (2) BM25: top\n                                                       passages returned by BM25 which don’t contain\nEncoders Although in principle the question and        the answer but match most question tokens; (3)\npassage encoders can be implemented by any neu-        Gold: positive passages paired with other questions\nr... [C3]",
+      "insufficient_evidence": false,
+      "latency_ms": 10,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "estimated_cost_usd": 0,
+      "claims": [
+        {
+          "claim_id": "pilot_002_c1",
+          "text": "Specifically, we get top 100 passages for each\nat semantic representation, but might lack sufficient    question in a mini-batch and use the method similar\ncapacity to represent salient phrases which appear       to in-batch negative training: all retrieved passages’\nrarely. At run-time, DPR applies a different encoder EQ (·)    larity) than the irrelevant ones, by learning a better random passage from the corpus; (2) BM25: top\n                                                       passages returned by BM25 which don’t contain\nEncoders Although in principle the question and        the answer but match most question tokens; (3)\npassage encoders can be implemented by any neu-        Gold: positive passages paired with other questions\nr...",
+          "citation_ids": [
+            "C1",
+            "C2",
+            "C3"
+          ]
+        }
+      ],
+      "annotations_pending": [
+        {
+          "claim_id": "pilot_002_c1",
+          "claim_text": "Specifically, we get top 100 passages for each\nat semantic representation, but might lack sufficient    question in a mini-batch and use the method similar\ncapacity to represent salient phrases which appear       to in-batch negative training: all retrieved passages’\nrarely. At run-time, DPR applies a different encoder EQ (·)    larity) than the irrelevant ones, by learning a better random passage from the corpus; (2) BM25: top\n                                                       passages returned by BM25 which don’t contain\nEncoders Although in principle the question and        the answer but match most question tokens; (3)\npassage encoders can be implemented by any neu-        Gold: positive passages paired with other questions\nr...",
+          "citation_id": "C1",
+          "evidence_span": "Specifically, we get top 100 passages for each\nat semantic representation, but might lack sufficient    question in a mini-batch and use the method similar\ncapacity to represent salient phrases which appear       to in-batch negative training: all retrieved passages’\nrarely.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "partially_supported",
+          "support_rationale": "The evidence overlaps the claim but omits material detail or qualification.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_002_c1",
+          "claim_text": "Specifically, we get top 100 passages for each\nat semantic representation, but might lack sufficient    question in a mini-batch and use the method similar\ncapacity to represent salient phrases which appear       to in-batch negative training: all retrieved passages’\nrarely. At run-time, DPR applies a different encoder EQ (·)    larity) than the irrelevant ones, by learning a better random passage from the corpus; (2) BM25: top\n                                                       passages returned by BM25 which don’t contain\nEncoders Although in principle the question and        the answer but match most question tokens; (3)\npassage encoders can be implemented by any neu-        Gold: positive passages paired with other questions\nr...",
+          "citation_id": "C2",
+          "evidence_span": "At run-time, DPR applies a different encoder EQ (·)    larity) than the irrelevant ones, by learning a better",
+          "source_exists": true,
+          "citation_relevant": "no",
+          "support_label": "unsupported",
+          "support_rationale": "The citation is real but does not provide enough claim-level overlap.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_002_c1",
+          "claim_text": "Specifically, we get top 100 passages for each\nat semantic representation, but might lack sufficient    question in a mini-batch and use the method similar\ncapacity to represent salient phrases which appear       to in-batch negative training: all retrieved passages’\nrarely. At run-time, DPR applies a different encoder EQ (·)    larity) than the irrelevant ones, by learning a better random passage from the corpus; (2) BM25: top\n                                                       passages returned by BM25 which don’t contain\nEncoders Although in principle the question and        the answer but match most question tokens; (3)\npassage encoders can be implemented by any neu-        Gold: positive passages paired with other questions\nr...",
+          "citation_id": "C3",
+          "evidence_span": "random passage from the corpus; (2) BM25: top\n                                                       passages returned by BM25 which don’t contain\nEncoders Although in principle the question and        the answer but match most question tokens; (3)\npassage encoders can be implemented by any neu-        Gold: positive passages paired with other questions\nr...",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "partially_supported",
+          "support_rationale": "The evidence overlaps the claim but omits material detail or qualification.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        }
+      ]
+    },
+    {
+      "run_id": "pilot-hybrid-20260722-001",
+      "question_id": "pilot_003",
+      "retrieval_config_hash": "253dee42567fc34a9a7b59f58ef3559c34a451ff8cbb03a411de6bb53308964b",
+      "prompt_hash": "1b77d5a16976ebae4fe58aa48006e63de216dd57ca85a466c3edb02eabbf192b",
+      "model_id": "deterministic-source-cited-v1",
+      "model_version": "local",
+      "temperature": 0,
+      "retrieved_passage_ids": [
+        "14705e29-9bfd-553b-b6c1-ea6569f548ae:2",
+        "14705e29-9bfd-553b-b6c1-ea6569f548ae:9",
+        "14705e29-9bfd-553b-b6c1-ea6569f548ae:15",
+        "14705e29-9bfd-553b-b6c1-ea6569f548ae:17",
+        "14705e29-9bfd-553b-b6c1-ea6569f548ae:23"
+      ],
+      "answer": "Specifically, a lightweight\n                                                retrieval evaluator is designed to assess the\n                                                overall quality of retrieved documents for a                         Politician. [C1] lightweight retrieval evaluator is designed to\nassess the overall quality of retrieved documents       2   Related Work\nfor a query. [C2] SAIL (Luo               from any retriever, a lightweight retrieval evaluator\net al., 2023) is tuned on instructions to insert        is constructed to estimate the relevance score\nretrieved documents before instructions. [C3]",
+      "insufficient_evidence": false,
+      "latency_ms": 63,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "estimated_cost_usd": 0,
+      "claims": [
+        {
+          "claim_id": "pilot_003_c1",
+          "text": "Specifically, a lightweight\n                                                retrieval evaluator is designed to assess the\n                                                overall quality of retrieved documents for a                         Politician. lightweight retrieval evaluator is designed to\nassess the overall quality of retrieved documents       2   Related Work\nfor a query. SAIL (Luo               from any retriever, a lightweight retrieval evaluator\net al., 2023) is tuned on instructions to insert        is constructed to estimate the relevance score\nretrieved documents before instructions.",
+          "citation_ids": [
+            "C1",
+            "C2",
+            "C3"
+          ]
+        }
+      ],
+      "annotations_pending": [
+        {
+          "claim_id": "pilot_003_c1",
+          "claim_text": "Specifically, a lightweight\n                                                retrieval evaluator is designed to assess the\n                                                overall quality of retrieved documents for a                         Politician. lightweight retrieval evaluator is designed to\nassess the overall quality of retrieved documents       2   Related Work\nfor a query. SAIL (Luo               from any retriever, a lightweight retrieval evaluator\net al., 2023) is tuned on instructions to insert        is constructed to estimate the relevance score\nretrieved documents before instructions.",
+          "citation_id": "C1",
+          "evidence_span": "Specifically, a lightweight\n                                                retrieval evaluator is designed to assess the\n                                                overall quality of retrieved documents for a                         Politician.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "unsupported",
+          "support_rationale": "The citation is real but does not provide enough claim-level overlap.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_003_c1",
+          "claim_text": "Specifically, a lightweight\n                                                retrieval evaluator is designed to assess the\n                                                overall quality of retrieved documents for a                         Politician. lightweight retrieval evaluator is designed to\nassess the overall quality of retrieved documents       2   Related Work\nfor a query. SAIL (Luo               from any retriever, a lightweight retrieval evaluator\net al., 2023) is tuned on instructions to insert        is constructed to estimate the relevance score\nretrieved documents before instructions.",
+          "citation_id": "C2",
+          "evidence_span": "lightweight retrieval evaluator is designed to\nassess the overall quality of retrieved documents       2   Related Work\nfor a query.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "partially_supported",
+          "support_rationale": "The evidence overlaps the claim but omits material detail or qualification.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_003_c1",
+          "claim_text": "Specifically, a lightweight\n                                                retrieval evaluator is designed to assess the\n                                                overall quality of retrieved documents for a                         Politician. lightweight retrieval evaluator is designed to\nassess the overall quality of retrieved documents       2   Related Work\nfor a query. SAIL (Luo               from any retriever, a lightweight retrieval evaluator\net al., 2023) is tuned on instructions to insert        is constructed to estimate the relevance score\nretrieved documents before instructions.",
+          "citation_id": "C3",
+          "evidence_span": "SAIL (Luo               from any retriever, a lightweight retrieval evaluator\net al., 2023) is tuned on instructions to insert        is constructed to estimate the relevance score\nretrieved documents before instructions.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "partially_supported",
+          "support_rationale": "The evidence overlaps the claim but omits material detail or qualification.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        }
+      ]
+    },
+    {
+      "run_id": "pilot-hybrid-20260722-001",
+      "question_id": "pilot_004",
+      "retrieval_config_hash": "253dee42567fc34a9a7b59f58ef3559c34a451ff8cbb03a411de6bb53308964b",
+      "prompt_hash": "1b77d5a16976ebae4fe58aa48006e63de216dd57ca85a466c3edb02eabbf192b",
+      "model_id": "deterministic-source-cited-v1",
+      "model_version": "local",
+      "temperature": 0,
+      "retrieved_passage_ids": [
+        "14705e29-9bfd-553b-b6c1-ea6569f548ae:46",
+        "14705e29-9bfd-553b-b6c1-ea6569f548ae:7",
+        "919e9177-5936-5de4-9dec-ceb84f32265b:13",
+        "14705e29-9bfd-553b-b6c1-ea6569f548ae:8",
+        "14705e29-9bfd-553b-b6c1-ea6569f548ae:47"
+      ],
+      "answer": "CRAG              27.2               0.512\n      Self-RAG      26.5∼132.4             0.741\n                                                           6   Conclusion & Limitation\n      Self-CRAG      27.2∼80.2             0.908           This paper studies the problem where RAG-based\n                                                           approaches ar... [C1] However, most conventional RAG ap-              the performance of standard RAG and state-of-the-\nproaches indiscriminately incorporate the retrieved     art Self-RAG, demonstrating its generalizability\ndocuments, regardless of whether these documents        across both short- and long-form generation tasks. [C2] w concurrent works2 on RAG propose new training or prompting\nstrategies to improve widely-adopted RAG approaches. [C3]",
+      "insufficient_evidence": false,
+      "latency_ms": 38,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "estimated_cost_usd": 0,
+      "claims": [
+        {
+          "claim_id": "pilot_004_c1",
+          "text": "CRAG              27.2               0.512\n      Self-RAG      26.5∼132.4             0.741\n                                                           6   Conclusion & Limitation\n      Self-CRAG      27.2∼80.2             0.908           This paper studies the problem where RAG-based\n                                                           approaches ar... However, most conventional RAG ap-              the performance of standard RAG and state-of-the-\nproaches indiscriminately incorporate the retrieved     art Self-RAG, demonstrating its generalizability\ndocuments, regardless of whether these documents        across both short- and long-form generation tasks. w concurrent works2 on RAG propose new training or prompting\nstrategies to improve widely-adopted RAG approaches.",
+          "citation_ids": [
+            "C1",
+            "C2",
+            "C3"
+          ]
+        }
+      ],
+      "annotations_pending": [
+        {
+          "claim_id": "pilot_004_c1",
+          "claim_text": "CRAG              27.2               0.512\n      Self-RAG      26.5∼132.4             0.741\n                                                           6   Conclusion & Limitation\n      Self-CRAG      27.2∼80.2             0.908           This paper studies the problem where RAG-based\n                                                           approaches ar... However, most conventional RAG ap-              the performance of standard RAG and state-of-the-\nproaches indiscriminately incorporate the retrieved     art Self-RAG, demonstrating its generalizability\ndocuments, regardless of whether these documents        across both short- and long-form generation tasks. w concurrent works2 on RAG propose new training or prompting\nstrategies to improve widely-adopted RAG approaches.",
+          "citation_id": "C1",
+          "evidence_span": "CRAG              27.2               0.512\n      Self-RAG      26.5∼132.4             0.741\n                                                           6   Conclusion & Limitation\n      Self-CRAG      27.2∼80.2             0.908           This paper studies the problem where RAG-based\n                                                           approaches ar...",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "unsupported",
+          "support_rationale": "The citation is real but does not provide enough claim-level overlap.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_004_c1",
+          "claim_text": "CRAG              27.2               0.512\n      Self-RAG      26.5∼132.4             0.741\n                                                           6   Conclusion & Limitation\n      Self-CRAG      27.2∼80.2             0.908           This paper studies the problem where RAG-based\n                                                           approaches ar... However, most conventional RAG ap-              the performance of standard RAG and state-of-the-\nproaches indiscriminately incorporate the retrieved     art Self-RAG, demonstrating its generalizability\ndocuments, regardless of whether these documents        across both short- and long-form generation tasks. w concurrent works2 on RAG propose new training or prompting\nstrategies to improve widely-adopted RAG approaches.",
+          "citation_id": "C2",
+          "evidence_span": "However, most conventional RAG ap-              the performance of standard RAG and state-of-the-\nproaches indiscriminately incorporate the retrieved     art Self-RAG, demonstrating its generalizability\ndocuments, regardless of whether these documents        across both short- and long-form generation tasks.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "partially_supported",
+          "support_rationale": "The evidence overlaps the claim but omits material detail or qualification.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_004_c1",
+          "claim_text": "CRAG              27.2               0.512\n      Self-RAG      26.5∼132.4             0.741\n                                                           6   Conclusion & Limitation\n      Self-CRAG      27.2∼80.2             0.908           This paper studies the problem where RAG-based\n                                                           approaches ar... However, most conventional RAG ap-              the performance of standard RAG and state-of-the-\nproaches indiscriminately incorporate the retrieved     art Self-RAG, demonstrating its generalizability\ndocuments, regardless of whether these documents        across both short- and long-form generation tasks. w concurrent works2 on RAG propose new training or prompting\nstrategies to improve widely-adopted RAG approaches.",
+          "citation_id": "C3",
+          "evidence_span": "w concurrent works2 on RAG propose new training or prompting\nstrategies to improve widely-adopted RAG approaches.",
+          "source_exists": true,
+          "citation_relevant": "no",
+          "support_label": "unsupported",
+          "support_rationale": "The citation is real but does not provide enough claim-level overlap.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        }
+      ]
+    },
+    {
+      "run_id": "pilot-hybrid-20260722-001",
+      "question_id": "pilot_005",
+      "retrieval_config_hash": "253dee42567fc34a9a7b59f58ef3559c34a451ff8cbb03a411de6bb53308964b",
+      "prompt_hash": "1b77d5a16976ebae4fe58aa48006e63de216dd57ca85a466c3edb02eabbf192b",
+      "model_id": "deterministic-source-cited-v1",
+      "model_version": "local",
+      "temperature": 0,
+      "retrieved_passage_ids": [
+        "45223624-75c6-5583-8b86-17a1297b6ae2:5",
+        "45223624-75c6-5583-8b86-17a1297b6ae2:66",
+        "45223624-75c6-5583-8b86-17a1297b6ae2:24",
+        "45223624-75c6-5583-8b86-17a1297b6ae2:37",
+        "72ca23fb-4fe8-58f0-95ba-f4caa06e0396:11"
+      ],
+      "answer": "To address this, we design an indexing and retrieval system that uses a tree structure to capture both\n                                         high-level and low-level details about a text. [C1] Figure 4 in the main paper details\nthe retrieval process within RAPTOR’s tree structure for two questions. [C2] As illustrated\nin Figure 4, RAPTOR’s tree-based retrieval allows it to choose nodes from different tree layers,\nmatching the question’s detail level. [C3]",
+      "insufficient_evidence": false,
+      "latency_ms": 22,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "estimated_cost_usd": 0,
+      "claims": [
+        {
+          "claim_id": "pilot_005_c1",
+          "text": "To address this, we design an indexing and retrieval system that uses a tree structure to capture both\n                                         high-level and low-level details about a text. Figure 4 in the main paper details\nthe retrieval process within RAPTOR’s tree structure for two questions. As illustrated\nin Figure 4, RAPTOR’s tree-based retrieval allows it to choose nodes from different tree layers,\nmatching the question’s detail level.",
+          "citation_ids": [
+            "C1",
+            "C2",
+            "C3"
+          ]
+        }
+      ],
+      "annotations_pending": [
+        {
+          "claim_id": "pilot_005_c1",
+          "claim_text": "To address this, we design an indexing and retrieval system that uses a tree structure to capture both\n                                         high-level and low-level details about a text. Figure 4 in the main paper details\nthe retrieval process within RAPTOR’s tree structure for two questions. As illustrated\nin Figure 4, RAPTOR’s tree-based retrieval allows it to choose nodes from different tree layers,\nmatching the question’s detail level.",
+          "citation_id": "C1",
+          "evidence_span": "To address this, we design an indexing and retrieval system that uses a tree structure to capture both\n                                         high-level and low-level details about a text.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "partially_supported",
+          "support_rationale": "The evidence overlaps the claim but omits material detail or qualification.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_005_c1",
+          "claim_text": "To address this, we design an indexing and retrieval system that uses a tree structure to capture both\n                                         high-level and low-level details about a text. Figure 4 in the main paper details\nthe retrieval process within RAPTOR’s tree structure for two questions. As illustrated\nin Figure 4, RAPTOR’s tree-based retrieval allows it to choose nodes from different tree layers,\nmatching the question’s detail level.",
+          "citation_id": "C2",
+          "evidence_span": "Figure 4 in the main paper details\nthe retrieval process within RAPTOR’s tree structure for two questions.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "partially_supported",
+          "support_rationale": "The evidence overlaps the claim but omits material detail or qualification.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_005_c1",
+          "claim_text": "To address this, we design an indexing and retrieval system that uses a tree structure to capture both\n                                         high-level and low-level details about a text. Figure 4 in the main paper details\nthe retrieval process within RAPTOR’s tree structure for two questions. As illustrated\nin Figure 4, RAPTOR’s tree-based retrieval allows it to choose nodes from different tree layers,\nmatching the question’s detail level.",
+          "citation_id": "C3",
+          "evidence_span": "As illustrated\nin Figure 4, RAPTOR’s tree-based retrieval allows it to choose nodes from different tree layers,\nmatching the question’s detail level.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "partially_supported",
+          "support_rationale": "The evidence overlaps the claim but omits material detail or qualification.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        }
+      ]
+    },
+    {
+      "run_id": "pilot-hybrid-20260722-001",
+      "question_id": "pilot_006",
+      "retrieval_config_hash": "253dee42567fc34a9a7b59f58ef3559c34a451ff8cbb03a411de6bb53308964b",
+      "prompt_hash": "1b77d5a16976ebae4fe58aa48006e63de216dd57ca85a466c3edb02eabbf192b",
+      "model_id": "deterministic-source-cited-v1",
+      "model_version": "local",
+      "temperature": 0,
+      "retrieved_passage_ids": [
+        "f09b2c96-0b0f-5113-b628-b7037b1bd14a:50",
+        "f09b2c96-0b0f-5113-b628-b7037b1bd14a:54",
+        "f09b2c96-0b0f-5113-b628-b7037b1bd14a:53",
+        "f09b2c96-0b0f-5113-b628-b7037b1bd14a:55",
+        "f09b2c96-0b0f-5113-b628-b7037b1bd14a:29"
+      ],
+      "answer": "scores do not differ significantly between models,\nContrary to the retrieval recall trend in Figure 4,                                                  ranging 3.7-3.9 for ASQA and 3.5-3.6 for ELI5. [C1] This suggests that an im-          mercial search engines, which are not reproducible,\nprovement on ALCE citation metrics translates to          and their models and training data are closed-\nimprovement on human preferences. [C2] However, they do\nfor R ERANK (which uses the automated citation            not explore retrieval strategies and simply use com-\nrecall for reranking). [C3]",
+      "insufficient_evidence": false,
+      "latency_ms": 30,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "estimated_cost_usd": 0,
+      "claims": [
+        {
+          "claim_id": "pilot_006_c1",
+          "text": "scores do not differ significantly between models,\nContrary to the retrieval recall trend in Figure 4,                                                  ranging 3.7-3.9 for ASQA and 3.5-3.6 for ELI5. This suggests that an im-          mercial search engines, which are not reproducible,\nprovement on ALCE citation metrics translates to          and their models and training data are closed-\nimprovement on human preferences. However, they do\nfor R ERANK (which uses the automated citation            not explore retrieval strategies and simply use com-\nrecall for reranking).",
+          "citation_ids": [
+            "C1",
+            "C2",
+            "C3"
+          ]
+        }
+      ],
+      "annotations_pending": [
+        {
+          "claim_id": "pilot_006_c1",
+          "claim_text": "scores do not differ significantly between models,\nContrary to the retrieval recall trend in Figure 4,                                                  ranging 3.7-3.9 for ASQA and 3.5-3.6 for ELI5. This suggests that an im-          mercial search engines, which are not reproducible,\nprovement on ALCE citation metrics translates to          and their models and training data are closed-\nimprovement on human preferences. However, they do\nfor R ERANK (which uses the automated citation            not explore retrieval strategies and simply use com-\nrecall for reranking).",
+          "citation_id": "C1",
+          "evidence_span": "scores do not differ significantly between models,\nContrary to the retrieval recall trend in Figure 4,                                                  ranging 3.7-3.9 for ASQA and 3.5-3.6 for ELI5.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "partially_supported",
+          "support_rationale": "The evidence overlaps the claim but omits material detail or qualification.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_006_c1",
+          "claim_text": "scores do not differ significantly between models,\nContrary to the retrieval recall trend in Figure 4,                                                  ranging 3.7-3.9 for ASQA and 3.5-3.6 for ELI5. This suggests that an im-          mercial search engines, which are not reproducible,\nprovement on ALCE citation metrics translates to          and their models and training data are closed-\nimprovement on human preferences. However, they do\nfor R ERANK (which uses the automated citation            not explore retrieval strategies and simply use com-\nrecall for reranking).",
+          "citation_id": "C2",
+          "evidence_span": "This suggests that an im-          mercial search engines, which are not reproducible,\nprovement on ALCE citation metrics translates to          and their models and training data are closed-\nimprovement on human preferences.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "partially_supported",
+          "support_rationale": "The evidence overlaps the claim but omits material detail or qualification.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_006_c1",
+          "claim_text": "scores do not differ significantly between models,\nContrary to the retrieval recall trend in Figure 4,                                                  ranging 3.7-3.9 for ASQA and 3.5-3.6 for ELI5. This suggests that an im-          mercial search engines, which are not reproducible,\nprovement on ALCE citation metrics translates to          and their models and training data are closed-\nimprovement on human preferences. However, they do\nfor R ERANK (which uses the automated citation            not explore retrieval strategies and simply use com-\nrecall for reranking).",
+          "citation_id": "C3",
+          "evidence_span": "However, they do\nfor R ERANK (which uses the automated citation            not explore retrieval strategies and simply use com-\nrecall for reranking).",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "unsupported",
+          "support_rationale": "The citation is real but does not provide enough claim-level overlap.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        }
+      ]
+    },
+    {
+      "run_id": "pilot-hybrid-20260722-001",
+      "question_id": "pilot_007",
+      "retrieval_config_hash": "253dee42567fc34a9a7b59f58ef3559c34a451ff8cbb03a411de6bb53308964b",
+      "prompt_hash": "1b77d5a16976ebae4fe58aa48006e63de216dd57ca85a466c3edb02eabbf192b",
+      "model_id": "deterministic-source-cited-v1",
+      "model_version": "local",
+      "temperature": 0,
+      "retrieved_passage_ids": [
+        "c9aa7efd-26a4-5c78-85c8-94fdc7d93e5d:21",
+        "c9aa7efd-26a4-5c78-85c8-94fdc7d93e5d:31",
+        "c9aa7efd-26a4-5c78-85c8-94fdc7d93e5d:22",
+        "c9aa7efd-26a4-5c78-85c8-94fdc7d93e5d:26",
+        "c9aa7efd-26a4-5c78-85c8-94fdc7d93e5d:30"
+      ],
+      "answer": "It is worth noting that RAG’s\nretriever is initialized using DPR’s retriever, which uses retrieval supervision on Natural Questions [C1] Retrieval Ablations A key feature of RAG is learning to retrieve relevant information for the task. [C2] It is worth noting that RAG’s\nretriever is initialized using DPR’s retriever, which uses retrieval supervision on Natural Questions\nand TriviaQA. [C3]",
+      "insufficient_evidence": false,
+      "latency_ms": 11,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "estimated_cost_usd": 0,
+      "claims": [
+        {
+          "claim_id": "pilot_007_c1",
+          "text": "It is worth noting that RAG’s\nretriever is initialized using DPR’s retriever, which uses retrieval supervision on Natural Questions Retrieval Ablations A key feature of RAG is learning to retrieve relevant information for the task. It is worth noting that RAG’s\nretriever is initialized using DPR’s retriever, which uses retrieval supervision on Natural Questions\nand TriviaQA.",
+          "citation_ids": [
+            "C1",
+            "C2",
+            "C3"
+          ]
+        }
+      ],
+      "annotations_pending": [
+        {
+          "claim_id": "pilot_007_c1",
+          "claim_text": "It is worth noting that RAG’s\nretriever is initialized using DPR’s retriever, which uses retrieval supervision on Natural Questions Retrieval Ablations A key feature of RAG is learning to retrieve relevant information for the task. It is worth noting that RAG’s\nretriever is initialized using DPR’s retriever, which uses retrieval supervision on Natural Questions\nand TriviaQA.",
+          "citation_id": "C1",
+          "evidence_span": "It is worth noting that RAG’s\nretriever is initialized using DPR’s retriever, which uses retrieval supervision on Natural Questions",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "partially_supported",
+          "support_rationale": "The evidence overlaps the claim but omits material detail or qualification.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_007_c1",
+          "claim_text": "It is worth noting that RAG’s\nretriever is initialized using DPR’s retriever, which uses retrieval supervision on Natural Questions Retrieval Ablations A key feature of RAG is learning to retrieve relevant information for the task. It is worth noting that RAG’s\nretriever is initialized using DPR’s retriever, which uses retrieval supervision on Natural Questions\nand TriviaQA.",
+          "citation_id": "C2",
+          "evidence_span": "Retrieval Ablations A key feature of RAG is learning to retrieve relevant information for the task.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "partially_supported",
+          "support_rationale": "The evidence overlaps the claim but omits material detail or qualification.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_007_c1",
+          "claim_text": "It is worth noting that RAG’s\nretriever is initialized using DPR’s retriever, which uses retrieval supervision on Natural Questions Retrieval Ablations A key feature of RAG is learning to retrieve relevant information for the task. It is worth noting that RAG’s\nretriever is initialized using DPR’s retriever, which uses retrieval supervision on Natural Questions\nand TriviaQA.",
+          "citation_id": "C3",
+          "evidence_span": "It is worth noting that RAG’s\nretriever is initialized using DPR’s retriever, which uses retrieval supervision on Natural Questions\nand TriviaQA.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "partially_supported",
+          "support_rationale": "The evidence overlaps the claim but omits material detail or qualification.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        }
+      ]
+    },
+    {
+      "run_id": "pilot-hybrid-20260722-001",
+      "question_id": "pilot_008",
+      "retrieval_config_hash": "253dee42567fc34a9a7b59f58ef3559c34a451ff8cbb03a411de6bb53308964b",
+      "prompt_hash": "1b77d5a16976ebae4fe58aa48006e63de216dd57ca85a466c3edb02eabbf192b",
+      "model_id": "deterministic-source-cited-v1",
+      "model_version": "local",
+      "temperature": 0,
+      "retrieved_passage_ids": [
+        "db571063-f4ee-59d3-bad8-a39e509d9447:110",
+        "db571063-f4ee-59d3-bad8-a39e509d9447:65",
+        "db571063-f4ee-59d3-bad8-a39e509d9447:109",
+        "db571063-f4ee-59d3-bad8-a39e509d9447:52",
+        "db571063-f4ee-59d3-bad8-a39e509d9447:112"
+      ],
+      "answer": "ansfer settings, we use the same batch size, temperatures\nand learning rates as the 5-shot task, but use a set of 285 MMLU validation examples (5 per domain) in\norder to determine the total number of training steps and for early stopping. [C1] There being at least one mention of the correct answer choice in 30% of test questions in the\ntop 25 passages.6 The right panel shows that the accuracy on MMLU increases when the correct answer\noption text occurs more frequently in retrieved passages, rising from 55% for questions when the answer\noption does not appear, to 77% for questions mentioned more... [C2] We do not assume access to an in-domain development set for the 5-shot task. [C3]",
+      "insufficient_evidence": false,
+      "latency_ms": 25,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "estimated_cost_usd": 0,
+      "claims": [
+        {
+          "claim_id": "pilot_008_c1",
+          "text": "ansfer settings, we use the same batch size, temperatures\nand learning rates as the 5-shot task, but use a set of 285 MMLU validation examples (5 per domain) in\norder to determine the total number of training steps and for early stopping. There being at least one mention of the correct answer choice in 30% of test questions in the\ntop 25 passages.6 The right panel shows that the accuracy on MMLU increases when the correct answer\noption text occurs more frequently in retrieved passages, rising from 55% for questions when the answer\noption does not appear, to 77% for questions mentioned more... We do not assume access to an in-domain development set for the 5-shot task.",
+          "citation_ids": [
+            "C1",
+            "C2",
+            "C3"
+          ]
+        }
+      ],
+      "annotations_pending": [
+        {
+          "claim_id": "pilot_008_c1",
+          "claim_text": "ansfer settings, we use the same batch size, temperatures\nand learning rates as the 5-shot task, but use a set of 285 MMLU validation examples (5 per domain) in\norder to determine the total number of training steps and for early stopping. There being at least one mention of the correct answer choice in 30% of test questions in the\ntop 25 passages.6 The right panel shows that the accuracy on MMLU increases when the correct answer\noption text occurs more frequently in retrieved passages, rising from 55% for questions when the answer\noption does not appear, to 77% for questions mentioned more... We do not assume access to an in-domain development set for the 5-shot task.",
+          "citation_id": "C1",
+          "evidence_span": "ansfer settings, we use the same batch size, temperatures\nand learning rates as the 5-shot task, but use a set of 285 MMLU validation examples (5 per domain) in\norder to determine the total number of training steps and for early stopping.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "partially_supported",
+          "support_rationale": "The evidence overlaps the claim but omits material detail or qualification.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_008_c1",
+          "claim_text": "ansfer settings, we use the same batch size, temperatures\nand learning rates as the 5-shot task, but use a set of 285 MMLU validation examples (5 per domain) in\norder to determine the total number of training steps and for early stopping. There being at least one mention of the correct answer choice in 30% of test questions in the\ntop 25 passages.6 The right panel shows that the accuracy on MMLU increases when the correct answer\noption text occurs more frequently in retrieved passages, rising from 55% for questions when the answer\noption does not appear, to 77% for questions mentioned more... We do not assume access to an in-domain development set for the 5-shot task.",
+          "citation_id": "C2",
+          "evidence_span": "There being at least one mention of the correct answer choice in 30% of test questions in the\ntop 25 passages.6 The right panel shows that the accuracy on MMLU increases when the correct answer\noption text occurs more frequently in retrieved passages, rising from 55% for questions when the answer\noption does not appear, to 77% for questions mentioned more...",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "partially_supported",
+          "support_rationale": "The evidence overlaps the claim but omits material detail or qualification.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_008_c1",
+          "claim_text": "ansfer settings, we use the same batch size, temperatures\nand learning rates as the 5-shot task, but use a set of 285 MMLU validation examples (5 per domain) in\norder to determine the total number of training steps and for early stopping. There being at least one mention of the correct answer choice in 30% of test questions in the\ntop 25 passages.6 The right panel shows that the accuracy on MMLU increases when the correct answer\noption text occurs more frequently in retrieved passages, rising from 55% for questions when the answer\noption does not appear, to 77% for questions mentioned more... We do not assume access to an in-domain development set for the 5-shot task.",
+          "citation_id": "C3",
+          "evidence_span": "We do not assume access to an in-domain development set for the 5-shot task.",
+          "source_exists": true,
+          "citation_relevant": "no",
+          "support_label": "unsupported",
+          "support_rationale": "The citation is real but does not provide enough claim-level overlap.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        }
+      ]
+    },
+    {
+      "run_id": "pilot-hybrid-20260722-001",
+      "question_id": "pilot_009",
+      "retrieval_config_hash": "253dee42567fc34a9a7b59f58ef3559c34a451ff8cbb03a411de6bb53308964b",
+      "prompt_hash": "1b77d5a16976ebae4fe58aa48006e63de216dd57ca85a466c3edb02eabbf192b",
+      "model_id": "deterministic-source-cited-v1",
+      "model_version": "local",
+      "temperature": 0,
+      "retrieved_passage_ids": [
+        "45223624-75c6-5583-8b86-17a1297b6ae2:37",
+        "45223624-75c6-5583-8b86-17a1297b6ae2:36",
+        "45223624-75c6-5583-8b86-17a1297b6ae2:33",
+        "45223624-75c6-5583-8b86-17a1297b6ae2:13",
+        "45223624-75c6-5583-8b86-17a1297b6ae2:80"
+      ],
+      "answer": "By employing recursive clustering and summarization techniques, RAPTOR creates a\nhierarchical tree structure that is capable of synthesizing information across various sections of the\nretrieval corpora. [C1] By providing both\nthe original text and higher-level summaries for retrieval, RAPTOR can effectively handle a wider [C2] (2021) rely solely on the summary in the top root node of the tree structure, RAPTOR\nbenefits from its intermediate layers and clustering approaches, which allows it to capture a range of\ninformation, from general themes to specific details, contributing to its overall strong performance. [C3]",
+      "insufficient_evidence": false,
+      "latency_ms": 12,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "estimated_cost_usd": 0,
+      "claims": [
+        {
+          "claim_id": "pilot_009_c1",
+          "text": "By employing recursive clustering and summarization techniques, RAPTOR creates a\nhierarchical tree structure that is capable of synthesizing information across various sections of the\nretrieval corpora. By providing both\nthe original text and higher-level summaries for retrieval, RAPTOR can effectively handle a wider (2021) rely solely on the summary in the top root node of the tree structure, RAPTOR\nbenefits from its intermediate layers and clustering approaches, which allows it to capture a range of\ninformation, from general themes to specific details, contributing to its overall strong performance.",
+          "citation_ids": [
+            "C1",
+            "C2",
+            "C3"
+          ]
+        }
+      ],
+      "annotations_pending": [
+        {
+          "claim_id": "pilot_009_c1",
+          "claim_text": "By employing recursive clustering and summarization techniques, RAPTOR creates a\nhierarchical tree structure that is capable of synthesizing information across various sections of the\nretrieval corpora. By providing both\nthe original text and higher-level summaries for retrieval, RAPTOR can effectively handle a wider (2021) rely solely on the summary in the top root node of the tree structure, RAPTOR\nbenefits from its intermediate layers and clustering approaches, which allows it to capture a range of\ninformation, from general themes to specific details, contributing to its overall strong performance.",
+          "citation_id": "C1",
+          "evidence_span": "By employing recursive clustering and summarization techniques, RAPTOR creates a\nhierarchical tree structure that is capable of synthesizing information across various sections of the\nretrieval corpora.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "unsupported",
+          "support_rationale": "The citation is real but does not provide enough claim-level overlap.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_009_c1",
+          "claim_text": "By employing recursive clustering and summarization techniques, RAPTOR creates a\nhierarchical tree structure that is capable of synthesizing information across various sections of the\nretrieval corpora. By providing both\nthe original text and higher-level summaries for retrieval, RAPTOR can effectively handle a wider (2021) rely solely on the summary in the top root node of the tree structure, RAPTOR\nbenefits from its intermediate layers and clustering approaches, which allows it to capture a range of\ninformation, from general themes to specific details, contributing to its overall strong performance.",
+          "citation_id": "C2",
+          "evidence_span": "By providing both\nthe original text and higher-level summaries for retrieval, RAPTOR can effectively handle a wider",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "unsupported",
+          "support_rationale": "The citation is real but does not provide enough claim-level overlap.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_009_c1",
+          "claim_text": "By employing recursive clustering and summarization techniques, RAPTOR creates a\nhierarchical tree structure that is capable of synthesizing information across various sections of the\nretrieval corpora. By providing both\nthe original text and higher-level summaries for retrieval, RAPTOR can effectively handle a wider (2021) rely solely on the summary in the top root node of the tree structure, RAPTOR\nbenefits from its intermediate layers and clustering approaches, which allows it to capture a range of\ninformation, from general themes to specific details, contributing to its overall strong performance.",
+          "citation_id": "C3",
+          "evidence_span": "(2021) rely solely on the summary in the top root node of the tree structure, RAPTOR\nbenefits from its intermediate layers and clustering approaches, which allows it to capture a range of\ninformation, from general themes to specific details, contributing to its overall strong performance.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "partially_supported",
+          "support_rationale": "The evidence overlaps the claim but omits material detail or qualification.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        }
+      ]
+    },
+    {
+      "run_id": "pilot-hybrid-20260722-001",
+      "question_id": "pilot_010",
+      "retrieval_config_hash": "253dee42567fc34a9a7b59f58ef3559c34a451ff8cbb03a411de6bb53308964b",
+      "prompt_hash": "1b77d5a16976ebae4fe58aa48006e63de216dd57ca85a466c3edb02eabbf192b",
+      "model_id": "deterministic-source-cited-v1",
+      "model_version": "local",
+      "temperature": 0,
+      "retrieved_passage_ids": [
+        "c9aa7efd-26a4-5c78-85c8-94fdc7d93e5d:3",
+        "72ca23fb-4fe8-58f0-95ba-f4caa06e0396:36",
+        "72ca23fb-4fe8-58f0-95ba-f4caa06e0396:11",
+        "72ca23fb-4fe8-58f0-95ba-f4caa06e0396:49",
+        "c9aa7efd-26a4-5c78-85c8-94fdc7d93e5d:22"
+      ],
+      "answer": "Hybrid models that combine parametric\n                                         memory with non-parametric (i.e., retrieval-based) memories [20, 26, 48] can address some of these [C1] The main reason that we require a retrieval compo-               Specifically, let Pi ∈ RL×h (1 ≤ i ≤ k) be\nnent for open-domain QA is to reduce the number               a BERT (base, uncased in our experiments) rep- [C2] Our dense passage retriever (DPR) uses a dense\n                                                        encoder EP (·) which maps any text passage to a d-\n2   Background                                          dimensional real-valued vectors and builds an index\n                                                        for all the M passages that we will use... [C3]",
+      "insufficient_evidence": false,
+      "latency_ms": 25,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "estimated_cost_usd": 0,
+      "claims": [
+        {
+          "claim_id": "pilot_010_c1",
+          "text": "Hybrid models that combine parametric\n                                         memory with non-parametric (i.e., retrieval-based) memories [20, 26, 48] can address some of these The main reason that we require a retrieval compo-               Specifically, let Pi ∈ RL×h (1 ≤ i ≤ k) be\nnent for open-domain QA is to reduce the number               a BERT (base, uncased in our experiments) rep- Our dense passage retriever (DPR) uses a dense\n                                                        encoder EP (·) which maps any text passage to a d-\n2   Background                                          dimensional real-valued vectors and builds an index\n                                                        for all the M passages that we will use...",
+          "citation_ids": [
+            "C1",
+            "C2",
+            "C3"
+          ]
+        }
+      ],
+      "annotations_pending": [
+        {
+          "claim_id": "pilot_010_c1",
+          "claim_text": "Hybrid models that combine parametric\n                                         memory with non-parametric (i.e., retrieval-based) memories [20, 26, 48] can address some of these The main reason that we require a retrieval compo-               Specifically, let Pi ∈ RL×h (1 ≤ i ≤ k) be\nnent for open-domain QA is to reduce the number               a BERT (base, uncased in our experiments) rep- Our dense passage retriever (DPR) uses a dense\n                                                        encoder EP (·) which maps any text passage to a d-\n2   Background                                          dimensional real-valued vectors and builds an index\n                                                        for all the M passages that we will use...",
+          "citation_id": "C1",
+          "evidence_span": "Hybrid models that combine parametric\n                                         memory with non-parametric (i.e., retrieval-based) memories [20, 26, 48] can address some of these",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "unsupported",
+          "support_rationale": "The citation is real but does not provide enough claim-level overlap.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_010_c1",
+          "claim_text": "Hybrid models that combine parametric\n                                         memory with non-parametric (i.e., retrieval-based) memories [20, 26, 48] can address some of these The main reason that we require a retrieval compo-               Specifically, let Pi ∈ RL×h (1 ≤ i ≤ k) be\nnent for open-domain QA is to reduce the number               a BERT (base, uncased in our experiments) rep- Our dense passage retriever (DPR) uses a dense\n                                                        encoder EP (·) which maps any text passage to a d-\n2   Background                                          dimensional real-valued vectors and builds an index\n                                                        for all the M passages that we will use...",
+          "citation_id": "C2",
+          "evidence_span": "The main reason that we require a retrieval compo-               Specifically, let Pi ∈ RL×h (1 ≤ i ≤ k) be\nnent for open-domain QA is to reduce the number               a BERT (base, uncased in our experiments) rep-",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "partially_supported",
+          "support_rationale": "The evidence overlaps the claim but omits material detail or qualification.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_010_c1",
+          "claim_text": "Hybrid models that combine parametric\n                                         memory with non-parametric (i.e., retrieval-based) memories [20, 26, 48] can address some of these The main reason that we require a retrieval compo-               Specifically, let Pi ∈ RL×h (1 ≤ i ≤ k) be\nnent for open-domain QA is to reduce the number               a BERT (base, uncased in our experiments) rep- Our dense passage retriever (DPR) uses a dense\n                                                        encoder EP (·) which maps any text passage to a d-\n2   Background                                          dimensional real-valued vectors and builds an index\n                                                        for all the M passages that we will use...",
+          "citation_id": "C3",
+          "evidence_span": "Our dense passage retriever (DPR) uses a dense\n                                                        encoder EP (·) which maps any text passage to a d-\n2   Background                                          dimensional real-valued vectors and builds an index\n                                                        for all the M passages that we will use...",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "partially_supported",
+          "support_rationale": "The evidence overlaps the claim but omits material detail or qualification.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        }
+      ]
+    },
+    {
+      "run_id": "pilot-hybrid-20260722-001",
+      "question_id": "pilot_011",
+      "retrieval_config_hash": "253dee42567fc34a9a7b59f58ef3559c34a451ff8cbb03a411de6bb53308964b",
+      "prompt_hash": "1b77d5a16976ebae4fe58aa48006e63de216dd57ca85a466c3edb02eabbf192b",
+      "model_id": "deterministic-source-cited-v1",
+      "model_version": "local",
+      "temperature": 0,
+      "retrieved_passage_ids": [
+        "919e9177-5936-5de4-9dec-ceb84f32265b:9",
+        "919e9177-5936-5de4-9dec-ceb84f32265b:1",
+        "919e9177-5936-5de4-9dec-ceb84f32265b:19",
+        "919e9177-5936-5de4-9dec-ceb84f32265b:12",
+        "919e9177-5936-5de4-9dec-ceb84f32265b:11"
+      ],
+      "answer": "We train our generator LM on a diverse\n          collection of text interleaved with reflection tokens and retrieved passages. [C1] However, indiscriminately retrieving and incorporating a fixed number\n                                                     of retrieved passages, regardless of whether retrieval is necessary, or passages are\n                                                     relevant, diminishes LM versatility or can lead to unhelpful response generation. [C2] Specifically, we train the generator model M on a curated corpus\nwith interleaving passages retrieved by a retriever R and reflection tokens predicted by a critic model\nC (summarized in Appendix Algorithm 2). [C3]",
+      "insufficient_evidence": false,
+      "latency_ms": 42,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "estimated_cost_usd": 0,
+      "claims": [
+        {
+          "claim_id": "pilot_011_c1",
+          "text": "We train our generator LM on a diverse\n          collection of text interleaved with reflection tokens and retrieved passages. However, indiscriminately retrieving and incorporating a fixed number\n                                                     of retrieved passages, regardless of whether retrieval is necessary, or passages are\n                                                     relevant, diminishes LM versatility or can lead to unhelpful response generation. Specifically, we train the generator model M on a curated corpus\nwith interleaving passages retrieved by a retriever R and reflection tokens predicted by a critic model\nC (summarized in Appendix Algorithm 2).",
+          "citation_ids": [
+            "C1",
+            "C2",
+            "C3"
+          ]
+        }
+      ],
+      "annotations_pending": [
+        {
+          "claim_id": "pilot_011_c1",
+          "claim_text": "We train our generator LM on a diverse\n          collection of text interleaved with reflection tokens and retrieved passages. However, indiscriminately retrieving and incorporating a fixed number\n                                                     of retrieved passages, regardless of whether retrieval is necessary, or passages are\n                                                     relevant, diminishes LM versatility or can lead to unhelpful response generation. Specifically, we train the generator model M on a curated corpus\nwith interleaving passages retrieved by a retriever R and reflection tokens predicted by a critic model\nC (summarized in Appendix Algorithm 2).",
+          "citation_id": "C1",
+          "evidence_span": "We train our generator LM on a diverse\n          collection of text interleaved with reflection tokens and retrieved passages.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "unsupported",
+          "support_rationale": "The citation is real but does not provide enough claim-level overlap.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_011_c1",
+          "claim_text": "We train our generator LM on a diverse\n          collection of text interleaved with reflection tokens and retrieved passages. However, indiscriminately retrieving and incorporating a fixed number\n                                                     of retrieved passages, regardless of whether retrieval is necessary, or passages are\n                                                     relevant, diminishes LM versatility or can lead to unhelpful response generation. Specifically, we train the generator model M on a curated corpus\nwith interleaving passages retrieved by a retriever R and reflection tokens predicted by a critic model\nC (summarized in Appendix Algorithm 2).",
+          "citation_id": "C2",
+          "evidence_span": "However, indiscriminately retrieving and incorporating a fixed number\n                                                     of retrieved passages, regardless of whether retrieval is necessary, or passages are\n                                                     relevant, diminishes LM versatility or can lead to unhelpful response generation.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "partially_supported",
+          "support_rationale": "The evidence overlaps the claim but omits material detail or qualification.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_011_c1",
+          "claim_text": "We train our generator LM on a diverse\n          collection of text interleaved with reflection tokens and retrieved passages. However, indiscriminately retrieving and incorporating a fixed number\n                                                     of retrieved passages, regardless of whether retrieval is necessary, or passages are\n                                                     relevant, diminishes LM versatility or can lead to unhelpful response generation. Specifically, we train the generator model M on a curated corpus\nwith interleaving passages retrieved by a retriever R and reflection tokens predicted by a critic model\nC (summarized in Appendix Algorithm 2).",
+          "citation_id": "C3",
+          "evidence_span": "Specifically, we train the generator model M on a curated corpus\nwith interleaving passages retrieved by a retriever R and reflection tokens predicted by a critic model\nC (summarized in Appendix Algorithm 2).",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "partially_supported",
+          "support_rationale": "The evidence overlaps the claim but omits material detail or qualification.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        }
+      ]
+    },
+    {
+      "run_id": "pilot-hybrid-20260722-001",
+      "question_id": "pilot_012",
+      "retrieval_config_hash": "253dee42567fc34a9a7b59f58ef3559c34a451ff8cbb03a411de6bb53308964b",
+      "prompt_hash": "1b77d5a16976ebae4fe58aa48006e63de216dd57ca85a466c3edb02eabbf192b",
+      "model_id": "deterministic-source-cited-v1",
+      "model_version": "local",
+      "temperature": 0,
+      "retrieved_passage_ids": [
+        "14705e29-9bfd-553b-b6c1-ea6569f548ae:59",
+        "50f26ebd-2cac-542e-9c7b-b3222a3b3b7c:58",
+        "14705e29-9bfd-553b-b6c1-ea6569f548ae:55",
+        "14705e29-9bfd-553b-b6c1-ea6569f548ae:30",
+        "919e9177-5936-5de4-9dec-ceb84f32265b:51"
+      ],
+      "answer": "Retrieval\n  language model training on GPU clusters using               augmentation reduces hallucination in conversation. [C1] Retrieval augmentation\nAlisa Liu and Jiacheng Liu. [C2] A survey on retrieval-augmented\n  hallucination in large language models. [C3]",
+      "insufficient_evidence": false,
+      "latency_ms": 38,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "estimated_cost_usd": 0,
+      "claims": [
+        {
+          "claim_id": "pilot_012_c1",
+          "text": "Retrieval\n  language model training on GPU clusters using               augmentation reduces hallucination in conversation. Retrieval augmentation\nAlisa Liu and Jiacheng Liu. A survey on retrieval-augmented\n  hallucination in large language models.",
+          "citation_ids": [
+            "C1",
+            "C2",
+            "C3"
+          ]
+        }
+      ],
+      "annotations_pending": [
+        {
+          "claim_id": "pilot_012_c1",
+          "claim_text": "Retrieval\n  language model training on GPU clusters using               augmentation reduces hallucination in conversation. Retrieval augmentation\nAlisa Liu and Jiacheng Liu. A survey on retrieval-augmented\n  hallucination in large language models.",
+          "citation_id": "C1",
+          "evidence_span": "Retrieval\n  language model training on GPU clusters using               augmentation reduces hallucination in conversation.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "partially_supported",
+          "support_rationale": "The evidence overlaps the claim but omits material detail or qualification.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_012_c1",
+          "claim_text": "Retrieval\n  language model training on GPU clusters using               augmentation reduces hallucination in conversation. Retrieval augmentation\nAlisa Liu and Jiacheng Liu. A survey on retrieval-augmented\n  hallucination in large language models.",
+          "citation_id": "C2",
+          "evidence_span": "Retrieval augmentation\nAlisa Liu and Jiacheng Liu.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "unsupported",
+          "support_rationale": "The citation is real but does not provide enough claim-level overlap.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_012_c1",
+          "claim_text": "Retrieval\n  language model training on GPU clusters using               augmentation reduces hallucination in conversation. Retrieval augmentation\nAlisa Liu and Jiacheng Liu. A survey on retrieval-augmented\n  hallucination in large language models.",
+          "citation_id": "C3",
+          "evidence_span": "A survey on retrieval-augmented\n  hallucination in large language models.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "partially_supported",
+          "support_rationale": "The evidence overlaps the claim but omits material detail or qualification.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        }
+      ]
+    },
+    {
+      "run_id": "pilot-hybrid-20260722-001",
+      "question_id": "pilot_013",
+      "retrieval_config_hash": "253dee42567fc34a9a7b59f58ef3559c34a451ff8cbb03a411de6bb53308964b",
+      "prompt_hash": "1b77d5a16976ebae4fe58aa48006e63de216dd57ca85a466c3edb02eabbf192b",
+      "model_id": "deterministic-source-cited-v1",
+      "model_version": "local",
+      "temperature": 0,
+      "retrieved_passage_ids": [
+        "f09b2c96-0b0f-5113-b628-b7037b1bd14a:31",
+        "f09b2c96-0b0f-5113-b628-b7037b1bd14a:2",
+        "f09b2c96-0b0f-5113-b628-b7037b1bd14a:56",
+        "f09b2c96-0b0f-5113-b628-b7037b1bd14a:54",
+        "f09b2c96-0b0f-5113-b628-b7037b1bd14a:113"
+      ],
+      "answer": "<Retrieve for question “...”>\n    Question: When did US break away from England? [C1] [1] Decolonization of   [2] Decolonization: …    [3] American Revolu-\n                                             work mainly relies on commercial search en-                            the Americas: … in-     It was oﬀicially adop-   tion: … The Treaty of   …... [C2] What’s even more intriguing is that these research\nhuman evaluation on commercial generative search          proposals extend beyond the ALCE setup (for ex-\nengines to examine their citation qualities. [C3]",
+      "insufficient_evidence": false,
+      "latency_ms": 26,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "estimated_cost_usd": 0,
+      "claims": [
+        {
+          "claim_id": "pilot_013_c1",
+          "text": "<Retrieve for question “...”>\n    Question: When did US break away from England? [1] Decolonization of   [2] Decolonization: …    [3] American Revolu-\n                                             work mainly relies on commercial search en-                            the Americas: … in-     It was oﬀicially adop-   tion: … The Treaty of   …... What’s even more intriguing is that these research\nhuman evaluation on commercial generative search          proposals extend beyond the ALCE setup (for ex-\nengines to examine their citation qualities.",
+          "citation_ids": [
+            "C1",
+            "C2",
+            "C3"
+          ]
+        }
+      ],
+      "annotations_pending": [
+        {
+          "claim_id": "pilot_013_c1",
+          "claim_text": "<Retrieve for question “...”>\n    Question: When did US break away from England? [1] Decolonization of   [2] Decolonization: …    [3] American Revolu-\n                                             work mainly relies on commercial search en-                            the Americas: … in-     It was oﬀicially adop-   tion: … The Treaty of   …... What’s even more intriguing is that these research\nhuman evaluation on commercial generative search          proposals extend beyond the ALCE setup (for ex-\nengines to examine their citation qualities.",
+          "citation_id": "C1",
+          "evidence_span": "<Retrieve for question “...”>\n    Question: When did US break away from England?",
+          "source_exists": true,
+          "citation_relevant": "no",
+          "support_label": "unsupported",
+          "support_rationale": "The citation is real but does not provide enough claim-level overlap.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_013_c1",
+          "claim_text": "<Retrieve for question “...”>\n    Question: When did US break away from England? [1] Decolonization of   [2] Decolonization: …    [3] American Revolu-\n                                             work mainly relies on commercial search en-                            the Americas: … in-     It was oﬀicially adop-   tion: … The Treaty of   …... What’s even more intriguing is that these research\nhuman evaluation on commercial generative search          proposals extend beyond the ALCE setup (for ex-\nengines to examine their citation qualities.",
+          "citation_id": "C2",
+          "evidence_span": "[1] Decolonization of   [2] Decolonization: …    [3] American Revolu-\n                                             work mainly relies on commercial search en-                            the Americas: … in-     It was oﬀicially adop-   tion: … The Treaty of   …...",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "partially_supported",
+          "support_rationale": "The evidence overlaps the claim but omits material detail or qualification.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_013_c1",
+          "claim_text": "<Retrieve for question “...”>\n    Question: When did US break away from England? [1] Decolonization of   [2] Decolonization: …    [3] American Revolu-\n                                             work mainly relies on commercial search en-                            the Americas: … in-     It was oﬀicially adop-   tion: … The Treaty of   …... What’s even more intriguing is that these research\nhuman evaluation on commercial generative search          proposals extend beyond the ALCE setup (for ex-\nengines to examine their citation qualities.",
+          "citation_id": "C3",
+          "evidence_span": "What’s even more intriguing is that these research\nhuman evaluation on commercial generative search          proposals extend beyond the ALCE setup (for ex-\nengines to examine their citation qualities.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "partially_supported",
+          "support_rationale": "The evidence overlaps the claim but omits material detail or qualification.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        }
+      ]
+    },
+    {
+      "run_id": "pilot-hybrid-20260722-001",
+      "question_id": "pilot_014",
+      "retrieval_config_hash": "253dee42567fc34a9a7b59f58ef3559c34a451ff8cbb03a411de6bb53308964b",
+      "prompt_hash": "1b77d5a16976ebae4fe58aa48006e63de216dd57ca85a466c3edb02eabbf192b",
+      "model_id": "deterministic-source-cited-v1",
+      "model_version": "local",
+      "temperature": 0,
+      "retrieved_passage_ids": [
+        "45223624-75c6-5583-8b86-17a1297b6ae2:38",
+        "45223624-75c6-5583-8b86-17a1297b6ae2:29",
+        "45223624-75c6-5583-8b86-17a1297b6ae2:60",
+        "45223624-75c6-5583-8b86-17a1297b6ae2:30",
+        "45223624-75c6-5583-8b86-17a1297b6ae2:33"
+      ],
+      "answer": "6   R EPRODUCIBILITY S TATEMENT\nLanguage Models for QA and Summarization Four language models are used in our RAPTOR\nexperiments: GPT-3 and GPT-4 for QA tasks, and GPT-3.5-turbo for summarization. [C1] 2\n      For the DPR experiments in Tables 1 and 2, we used the dpr-multiset-base model as opposed to\ndpr-single-nq-base which was used in rest of the experiments done earlier. [C2] We determined the window size for this setup based on\nthe average cluster size observed in RAPTOR, which is approximately 6.7 nodes. [C3]",
+      "insufficient_evidence": false,
+      "latency_ms": 15,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "estimated_cost_usd": 0,
+      "claims": [
+        {
+          "claim_id": "pilot_014_c1",
+          "text": "6   R EPRODUCIBILITY S TATEMENT\nLanguage Models for QA and Summarization Four language models are used in our RAPTOR\nexperiments: GPT-3 and GPT-4 for QA tasks, and GPT-3.5-turbo for summarization. 2\n      For the DPR experiments in Tables 1 and 2, we used the dpr-multiset-base model as opposed to\ndpr-single-nq-base which was used in rest of the experiments done earlier. We determined the window size for this setup based on\nthe average cluster size observed in RAPTOR, which is approximately 6.7 nodes.",
+          "citation_ids": [
+            "C1",
+            "C2",
+            "C3"
+          ]
+        }
+      ],
+      "annotations_pending": [
+        {
+          "claim_id": "pilot_014_c1",
+          "claim_text": "6   R EPRODUCIBILITY S TATEMENT\nLanguage Models for QA and Summarization Four language models are used in our RAPTOR\nexperiments: GPT-3 and GPT-4 for QA tasks, and GPT-3.5-turbo for summarization. 2\n      For the DPR experiments in Tables 1 and 2, we used the dpr-multiset-base model as opposed to\ndpr-single-nq-base which was used in rest of the experiments done earlier. We determined the window size for this setup based on\nthe average cluster size observed in RAPTOR, which is approximately 6.7 nodes.",
+          "citation_id": "C1",
+          "evidence_span": "6   R EPRODUCIBILITY S TATEMENT\nLanguage Models for QA and Summarization Four language models are used in our RAPTOR\nexperiments: GPT-3 and GPT-4 for QA tasks, and GPT-3.5-turbo for summarization.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "partially_supported",
+          "support_rationale": "The evidence overlaps the claim but omits material detail or qualification.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_014_c1",
+          "claim_text": "6   R EPRODUCIBILITY S TATEMENT\nLanguage Models for QA and Summarization Four language models are used in our RAPTOR\nexperiments: GPT-3 and GPT-4 for QA tasks, and GPT-3.5-turbo for summarization. 2\n      For the DPR experiments in Tables 1 and 2, we used the dpr-multiset-base model as opposed to\ndpr-single-nq-base which was used in rest of the experiments done earlier. We determined the window size for this setup based on\nthe average cluster size observed in RAPTOR, which is approximately 6.7 nodes.",
+          "citation_id": "C2",
+          "evidence_span": "2\n      For the DPR experiments in Tables 1 and 2, we used the dpr-multiset-base model as opposed to\ndpr-single-nq-base which was used in rest of the experiments done earlier.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "partially_supported",
+          "support_rationale": "The evidence overlaps the claim but omits material detail or qualification.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_014_c1",
+          "claim_text": "6   R EPRODUCIBILITY S TATEMENT\nLanguage Models for QA and Summarization Four language models are used in our RAPTOR\nexperiments: GPT-3 and GPT-4 for QA tasks, and GPT-3.5-turbo for summarization. 2\n      For the DPR experiments in Tables 1 and 2, we used the dpr-multiset-base model as opposed to\ndpr-single-nq-base which was used in rest of the experiments done earlier. We determined the window size for this setup based on\nthe average cluster size observed in RAPTOR, which is approximately 6.7 nodes.",
+          "citation_id": "C3",
+          "evidence_span": "We determined the window size for this setup based on\nthe average cluster size observed in RAPTOR, which is approximately 6.7 nodes.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "unsupported",
+          "support_rationale": "The citation is real but does not provide enough claim-level overlap.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        }
+      ]
+    },
+    {
+      "run_id": "pilot-hybrid-20260722-001",
+      "question_id": "pilot_015",
+      "retrieval_config_hash": "253dee42567fc34a9a7b59f58ef3559c34a451ff8cbb03a411de6bb53308964b",
+      "prompt_hash": "1b77d5a16976ebae4fe58aa48006e63de216dd57ca85a466c3edb02eabbf192b",
+      "model_id": "deterministic-source-cited-v1",
+      "model_version": "local",
+      "temperature": 0,
+      "retrieved_passage_ids": [
+        "594158d0-1fda-55e3-aa57-d19d98d28bfc:7",
+        "594158d0-1fda-55e3-aa57-d19d98d28bfc:27",
+        "594158d0-1fda-55e3-aa57-d19d98d28bfc:24",
+        "594158d0-1fda-55e3-aa57-d19d98d28bfc:25",
+        "594158d0-1fda-55e3-aa57-d19d98d28bfc:3"
+      ],
+      "answer": "For instance, GPTScore (Fu\nopers to easily integrate Ragas into their standard\n                                                        et al., 2023) uses a prompt that specifies the consid-\nworkflow. [C1] described Ragas, our implementation of the three\n      Given an answer and context, assign a\n                                                         considered quality aspects. [C2] For faithfulness, the Ragas prediction are in\nhow often the answer/context preferred by the            general highly accurate. [C3]",
+      "insufficient_evidence": false,
+      "latency_ms": 9,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "estimated_cost_usd": 0,
+      "claims": [
+        {
+          "claim_id": "pilot_015_c1",
+          "text": "For instance, GPTScore (Fu\nopers to easily integrate Ragas into their standard\n                                                        et al., 2023) uses a prompt that specifies the consid-\nworkflow. described Ragas, our implementation of the three\n      Given an answer and context, assign a\n                                                         considered quality aspects. For faithfulness, the Ragas prediction are in\nhow often the answer/context preferred by the            general highly accurate.",
+          "citation_ids": [
+            "C1",
+            "C2",
+            "C3"
+          ]
+        }
+      ],
+      "annotations_pending": [
+        {
+          "claim_id": "pilot_015_c1",
+          "claim_text": "For instance, GPTScore (Fu\nopers to easily integrate Ragas into their standard\n                                                        et al., 2023) uses a prompt that specifies the consid-\nworkflow. described Ragas, our implementation of the three\n      Given an answer and context, assign a\n                                                         considered quality aspects. For faithfulness, the Ragas prediction are in\nhow often the answer/context preferred by the            general highly accurate.",
+          "citation_id": "C1",
+          "evidence_span": "For instance, GPTScore (Fu\nopers to easily integrate Ragas into their standard\n                                                        et al., 2023) uses a prompt that specifies the consid-\nworkflow.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "partially_supported",
+          "support_rationale": "The evidence overlaps the claim but omits material detail or qualification.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_015_c1",
+          "claim_text": "For instance, GPTScore (Fu\nopers to easily integrate Ragas into their standard\n                                                        et al., 2023) uses a prompt that specifies the consid-\nworkflow. described Ragas, our implementation of the three\n      Given an answer and context, assign a\n                                                         considered quality aspects. For faithfulness, the Ragas prediction are in\nhow often the answer/context preferred by the            general highly accurate.",
+          "citation_id": "C2",
+          "evidence_span": "described Ragas, our implementation of the three\n      Given an answer and context, assign a\n                                                         considered quality aspects.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "unsupported",
+          "support_rationale": "The citation is real but does not provide enough claim-level overlap.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_015_c1",
+          "claim_text": "For instance, GPTScore (Fu\nopers to easily integrate Ragas into their standard\n                                                        et al., 2023) uses a prompt that specifies the consid-\nworkflow. described Ragas, our implementation of the three\n      Given an answer and context, assign a\n                                                         considered quality aspects. For faithfulness, the Ragas prediction are in\nhow often the answer/context preferred by the            general highly accurate.",
+          "citation_id": "C3",
+          "evidence_span": "For faithfulness, the Ragas prediction are in\nhow often the answer/context preferred by the            general highly accurate.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "unsupported",
+          "support_rationale": "The citation is real but does not provide enough claim-level overlap.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        }
+      ]
+    },
+    {
+      "run_id": "pilot-hybrid-20260722-001",
+      "question_id": "pilot_016",
+      "retrieval_config_hash": "253dee42567fc34a9a7b59f58ef3559c34a451ff8cbb03a411de6bb53308964b",
+      "prompt_hash": "1b77d5a16976ebae4fe58aa48006e63de216dd57ca85a466c3edb02eabbf192b",
+      "model_id": "deterministic-source-cited-v1",
+      "model_version": "local",
+      "temperature": 0,
+      "retrieved_passage_ids": [
+        "c9aa7efd-26a4-5c78-85c8-94fdc7d93e5d:10",
+        "c9aa7efd-26a4-5c78-85c8-94fdc7d93e5d:25",
+        "c9aa7efd-26a4-5c78-85c8-94fdc7d93e5d:22",
+        "c9aa7efd-26a4-5c78-85c8-94fdc7d93e5d:23",
+        "c9aa7efd-26a4-5c78-85c8-94fdc7d93e5d:29"
+      ],
+      "answer": "In one approach, RAG-Sequence, the model uses the same document\nto predict each target token. [C1] Evaluators indicated that BART was more factual\nthan RAG in only 7.1% of cases, while RAG was more factual in 42.7% of cases, and both RAG and\nBART were factual in a further 17% of cases, clearly demonstrating the effectiveness of RAG on\nthe task over a state-of-the-art generation model. [C2] masking” pre-training [20]. [C3]",
+      "insufficient_evidence": false,
+      "latency_ms": 13,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "estimated_cost_usd": 0,
+      "claims": [
+        {
+          "claim_id": "pilot_016_c1",
+          "text": "In one approach, RAG-Sequence, the model uses the same document\nto predict each target token. Evaluators indicated that BART was more factual\nthan RAG in only 7.1% of cases, while RAG was more factual in 42.7% of cases, and both RAG and\nBART were factual in a further 17% of cases, clearly demonstrating the effectiveness of RAG on\nthe task over a state-of-the-art generation model. masking” pre-training [20].",
+          "citation_ids": [
+            "C1",
+            "C2",
+            "C3"
+          ]
+        }
+      ],
+      "annotations_pending": [
+        {
+          "claim_id": "pilot_016_c1",
+          "claim_text": "In one approach, RAG-Sequence, the model uses the same document\nto predict each target token. Evaluators indicated that BART was more factual\nthan RAG in only 7.1% of cases, while RAG was more factual in 42.7% of cases, and both RAG and\nBART were factual in a further 17% of cases, clearly demonstrating the effectiveness of RAG on\nthe task over a state-of-the-art generation model. masking” pre-training [20].",
+          "citation_id": "C1",
+          "evidence_span": "In one approach, RAG-Sequence, the model uses the same document\nto predict each target token.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "unsupported",
+          "support_rationale": "The citation is real but does not provide enough claim-level overlap.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_016_c1",
+          "claim_text": "In one approach, RAG-Sequence, the model uses the same document\nto predict each target token. Evaluators indicated that BART was more factual\nthan RAG in only 7.1% of cases, while RAG was more factual in 42.7% of cases, and both RAG and\nBART were factual in a further 17% of cases, clearly demonstrating the effectiveness of RAG on\nthe task over a state-of-the-art generation model. masking” pre-training [20].",
+          "citation_id": "C2",
+          "evidence_span": "Evaluators indicated that BART was more factual\nthan RAG in only 7.1% of cases, while RAG was more factual in 42.7% of cases, and both RAG and\nBART were factual in a further 17% of cases, clearly demonstrating the effectiveness of RAG on\nthe task over a state-of-the-art generation model.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "partially_supported",
+          "support_rationale": "The evidence overlaps the claim but omits material detail or qualification.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_016_c1",
+          "claim_text": "In one approach, RAG-Sequence, the model uses the same document\nto predict each target token. Evaluators indicated that BART was more factual\nthan RAG in only 7.1% of cases, while RAG was more factual in 42.7% of cases, and both RAG and\nBART were factual in a further 17% of cases, clearly demonstrating the effectiveness of RAG on\nthe task over a state-of-the-art generation model. masking” pre-training [20].",
+          "citation_id": "C3",
+          "evidence_span": "masking” pre-training [20].",
+          "source_exists": true,
+          "citation_relevant": "no",
+          "support_label": "unsupported",
+          "support_rationale": "The citation is real but does not provide enough claim-level overlap.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        }
+      ]
+    },
+    {
+      "run_id": "pilot-hybrid-20260722-001",
+      "question_id": "pilot_017",
+      "retrieval_config_hash": "253dee42567fc34a9a7b59f58ef3559c34a451ff8cbb03a411de6bb53308964b",
+      "prompt_hash": "1b77d5a16976ebae4fe58aa48006e63de216dd57ca85a466c3edb02eabbf192b",
+      "model_id": "deterministic-source-cited-v1",
+      "model_version": "local",
+      "temperature": 0,
+      "retrieved_passage_ids": [
+        "c9aa7efd-26a4-5c78-85c8-94fdc7d93e5d:73",
+        "db571063-f4ee-59d3-bad8-a39e509d9447:109",
+        "f09b2c96-0b0f-5113-b628-b7037b1bd14a:57",
+        "7f6497a6-80d7-567e-a220-889bc9a86b25:20",
+        "919e9177-5936-5de4-9dec-ceb84f32265b:48"
+      ],
+      "answer": "The\nfirst is to classify the claim as either \"Supported\", \"Refuted\" or \"Not Enough Info\", which is the task\nwe explore in the main paper. [C1] We do not assume access to an in-domain development set for the 5-shot task. [C2] A large annotated\nand thus leads to a lower citation precision score          corpus for learning natural language inference. [C3]",
+      "insufficient_evidence": false,
+      "latency_ms": 154,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "estimated_cost_usd": 0,
+      "claims": [
+        {
+          "claim_id": "pilot_017_c1",
+          "text": "The\nfirst is to classify the claim as either \"Supported\", \"Refuted\" or \"Not Enough Info\", which is the task\nwe explore in the main paper. We do not assume access to an in-domain development set for the 5-shot task. A large annotated\nand thus leads to a lower citation precision score          corpus for learning natural language inference.",
+          "citation_ids": [
+            "C1",
+            "C2",
+            "C3"
+          ]
+        }
+      ],
+      "annotations_pending": [
+        {
+          "claim_id": "pilot_017_c1",
+          "claim_text": "The\nfirst is to classify the claim as either \"Supported\", \"Refuted\" or \"Not Enough Info\", which is the task\nwe explore in the main paper. We do not assume access to an in-domain development set for the 5-shot task. A large annotated\nand thus leads to a lower citation precision score          corpus for learning natural language inference.",
+          "citation_id": "C1",
+          "evidence_span": "The\nfirst is to classify the claim as either \"Supported\", \"Refuted\" or \"Not Enough Info\", which is the task\nwe explore in the main paper.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "partially_supported",
+          "support_rationale": "The evidence overlaps the claim but omits material detail or qualification.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_017_c1",
+          "claim_text": "The\nfirst is to classify the claim as either \"Supported\", \"Refuted\" or \"Not Enough Info\", which is the task\nwe explore in the main paper. We do not assume access to an in-domain development set for the 5-shot task. A large annotated\nand thus leads to a lower citation precision score          corpus for learning natural language inference.",
+          "citation_id": "C2",
+          "evidence_span": "We do not assume access to an in-domain development set for the 5-shot task.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "unsupported",
+          "support_rationale": "The citation is real but does not provide enough claim-level overlap.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_017_c1",
+          "claim_text": "The\nfirst is to classify the claim as either \"Supported\", \"Refuted\" or \"Not Enough Info\", which is the task\nwe explore in the main paper. We do not assume access to an in-domain development set for the 5-shot task. A large annotated\nand thus leads to a lower citation precision score          corpus for learning natural language inference.",
+          "citation_id": "C3",
+          "evidence_span": "A large annotated\nand thus leads to a lower citation precision score          corpus for learning natural language inference.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "unsupported",
+          "support_rationale": "The citation is real but does not provide enough claim-level overlap.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        }
+      ]
+    },
+    {
+      "run_id": "pilot-hybrid-20260722-001",
+      "question_id": "pilot_018",
+      "retrieval_config_hash": "253dee42567fc34a9a7b59f58ef3559c34a451ff8cbb03a411de6bb53308964b",
+      "prompt_hash": "1b77d5a16976ebae4fe58aa48006e63de216dd57ca85a466c3edb02eabbf192b",
+      "model_id": "deterministic-source-cited-v1",
+      "model_version": "local",
+      "temperature": 0,
+      "retrieved_passage_ids": [
+        "14705e29-9bfd-553b-b6c1-ea6569f548ae:44",
+        "14705e29-9bfd-553b-b6c1-ea6569f548ae:26",
+        "14705e29-9bfd-553b-b6c1-ea6569f548ae:28",
+        "14705e29-9bfd-553b-b6c1-ea6569f548ae:30",
+        "14705e29-9bfd-553b-b6c1-ea6569f548ae:7"
+      ],
+      "answer": "A part of accurate retrieval\neach knowledge utilization operation contributed          results were deliberately removed at random to\nto improving the utilization of knowledge. [C1] that the efficacy of CRAG was easily affected by\nIncorrect Besides, a retrieval is assumed               the accuracy of the retrieval evaluator. [C2] proaches and its generalizability across both short-\nThe scale is assumed to include an independent               and long-form generation tasks. [C3]",
+      "insufficient_evidence": false,
+      "latency_ms": 12,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "estimated_cost_usd": 0,
+      "claims": [
+        {
+          "claim_id": "pilot_018_c1",
+          "text": "A part of accurate retrieval\neach knowledge utilization operation contributed          results were deliberately removed at random to\nto improving the utilization of knowledge. that the efficacy of CRAG was easily affected by\nIncorrect Besides, a retrieval is assumed               the accuracy of the retrieval evaluator. proaches and its generalizability across both short-\nThe scale is assumed to include an independent               and long-form generation tasks.",
+          "citation_ids": [
+            "C1",
+            "C2",
+            "C3"
+          ]
+        }
+      ],
+      "annotations_pending": [
+        {
+          "claim_id": "pilot_018_c1",
+          "claim_text": "A part of accurate retrieval\neach knowledge utilization operation contributed          results were deliberately removed at random to\nto improving the utilization of knowledge. that the efficacy of CRAG was easily affected by\nIncorrect Besides, a retrieval is assumed               the accuracy of the retrieval evaluator. proaches and its generalizability across both short-\nThe scale is assumed to include an independent               and long-form generation tasks.",
+          "citation_id": "C1",
+          "evidence_span": "A part of accurate retrieval\neach knowledge utilization operation contributed          results were deliberately removed at random to\nto improving the utilization of knowledge.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "unsupported",
+          "support_rationale": "The citation is real but does not provide enough claim-level overlap.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_018_c1",
+          "claim_text": "A part of accurate retrieval\neach knowledge utilization operation contributed          results were deliberately removed at random to\nto improving the utilization of knowledge. that the efficacy of CRAG was easily affected by\nIncorrect Besides, a retrieval is assumed               the accuracy of the retrieval evaluator. proaches and its generalizability across both short-\nThe scale is assumed to include an independent               and long-form generation tasks.",
+          "citation_id": "C2",
+          "evidence_span": "that the efficacy of CRAG was easily affected by\nIncorrect Besides, a retrieval is assumed               the accuracy of the retrieval evaluator.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "unsupported",
+          "support_rationale": "The citation is real but does not provide enough claim-level overlap.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_018_c1",
+          "claim_text": "A part of accurate retrieval\neach knowledge utilization operation contributed          results were deliberately removed at random to\nto improving the utilization of knowledge. that the efficacy of CRAG was easily affected by\nIncorrect Besides, a retrieval is assumed               the accuracy of the retrieval evaluator. proaches and its generalizability across both short-\nThe scale is assumed to include an independent               and long-form generation tasks.",
+          "citation_id": "C3",
+          "evidence_span": "proaches and its generalizability across both short-\nThe scale is assumed to include an independent               and long-form generation tasks.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "unsupported",
+          "support_rationale": "The citation is real but does not provide enough claim-level overlap.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        }
+      ]
+    },
+    {
+      "run_id": "pilot-hybrid-20260722-001",
+      "question_id": "pilot_019",
+      "retrieval_config_hash": "253dee42567fc34a9a7b59f58ef3559c34a451ff8cbb03a411de6bb53308964b",
+      "prompt_hash": "1b77d5a16976ebae4fe58aa48006e63de216dd57ca85a466c3edb02eabbf192b",
+      "model_id": "deterministic-source-cited-v1",
+      "model_version": "local",
+      "temperature": 0,
+      "retrieved_passage_ids": [
+        "50f26ebd-2cac-542e-9c7b-b3222a3b3b7c:2",
+        "50f26ebd-2cac-542e-9c7b-b3222a3b3b7c:63",
+        "50f26ebd-2cac-542e-9c7b-b3222a3b3b7c:64",
+        "50f26ebd-2cac-542e-9c7b-b3222a3b3b7c:16",
+        "50f26ebd-2cac-542e-9c7b-b3222a3b3b7c:23"
+      ],
+      "answer": "effective hallucination prevention strategies un-     R ESPONSE : Based on the given passages, here’s how to\n                                             der RAG, it is important to create benchmark          prepare for an ultrasound:\n                                             datasets that can measure the extent of halluci-      * For a gender reveal u... [C1] E VIDENT C ONFLICT\nExample 1\nOriginal content: They’ve sent about 500 of the most seriously injured people for treatment in Kathmandu already – the majority\nby road. [C2] Q UESTION ANSWERING\n Answer the following question:\n {question}\n Bear in mind that your response should be strictly based on the following 3 passages: [C3]",
+      "insufficient_evidence": false,
+      "latency_ms": 12,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "estimated_cost_usd": 0,
+      "claims": [
+        {
+          "claim_id": "pilot_019_c1",
+          "text": "effective hallucination prevention strategies un-     R ESPONSE : Based on the given passages, here’s how to\n                                             der RAG, it is important to create benchmark          prepare for an ultrasound:\n                                             datasets that can measure the extent of halluci-      * For a gender reveal u... E VIDENT C ONFLICT\nExample 1\nOriginal content: They’ve sent about 500 of the most seriously injured people for treatment in Kathmandu already – the majority\nby road. Q UESTION ANSWERING\n Answer the following question:\n {question}\n Bear in mind that your response should be strictly based on the following 3 passages:",
+          "citation_ids": [
+            "C1",
+            "C2",
+            "C3"
+          ]
+        }
+      ],
+      "annotations_pending": [
+        {
+          "claim_id": "pilot_019_c1",
+          "claim_text": "effective hallucination prevention strategies un-     R ESPONSE : Based on the given passages, here’s how to\n                                             der RAG, it is important to create benchmark          prepare for an ultrasound:\n                                             datasets that can measure the extent of halluci-      * For a gender reveal u... E VIDENT C ONFLICT\nExample 1\nOriginal content: They’ve sent about 500 of the most seriously injured people for treatment in Kathmandu already – the majority\nby road. Q UESTION ANSWERING\n Answer the following question:\n {question}\n Bear in mind that your response should be strictly based on the following 3 passages:",
+          "citation_id": "C1",
+          "evidence_span": "effective hallucination prevention strategies un-     R ESPONSE : Based on the given passages, here’s how to\n                                             der RAG, it is important to create benchmark          prepare for an ultrasound:\n                                             datasets that can measure the extent of halluci-      * For a gender reveal u...",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "partially_supported",
+          "support_rationale": "The evidence overlaps the claim but omits material detail or qualification.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_019_c1",
+          "claim_text": "effective hallucination prevention strategies un-     R ESPONSE : Based on the given passages, here’s how to\n                                             der RAG, it is important to create benchmark          prepare for an ultrasound:\n                                             datasets that can measure the extent of halluci-      * For a gender reveal u... E VIDENT C ONFLICT\nExample 1\nOriginal content: They’ve sent about 500 of the most seriously injured people for treatment in Kathmandu already – the majority\nby road. Q UESTION ANSWERING\n Answer the following question:\n {question}\n Bear in mind that your response should be strictly based on the following 3 passages:",
+          "citation_id": "C2",
+          "evidence_span": "E VIDENT C ONFLICT\nExample 1\nOriginal content: They’ve sent about 500 of the most seriously injured people for treatment in Kathmandu already – the majority\nby road.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "unsupported",
+          "support_rationale": "The citation is real but does not provide enough claim-level overlap.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_019_c1",
+          "claim_text": "effective hallucination prevention strategies un-     R ESPONSE : Based on the given passages, here’s how to\n                                             der RAG, it is important to create benchmark          prepare for an ultrasound:\n                                             datasets that can measure the extent of halluci-      * For a gender reveal u... E VIDENT C ONFLICT\nExample 1\nOriginal content: They’ve sent about 500 of the most seriously injured people for treatment in Kathmandu already – the majority\nby road. Q UESTION ANSWERING\n Answer the following question:\n {question}\n Bear in mind that your response should be strictly based on the following 3 passages:",
+          "citation_id": "C3",
+          "evidence_span": "Q UESTION ANSWERING\n Answer the following question:\n {question}\n Bear in mind that your response should be strictly based on the following 3 passages:",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "unsupported",
+          "support_rationale": "The citation is real but does not provide enough claim-level overlap.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        }
+      ]
+    },
+    {
+      "run_id": "pilot-hybrid-20260722-001",
+      "question_id": "pilot_020",
+      "retrieval_config_hash": "253dee42567fc34a9a7b59f58ef3559c34a451ff8cbb03a411de6bb53308964b",
+      "prompt_hash": "1b77d5a16976ebae4fe58aa48006e63de216dd57ca85a466c3edb02eabbf192b",
+      "model_id": "deterministic-source-cited-v1",
+      "model_version": "local",
+      "temperature": 0,
+      "retrieved_passage_ids": [
+        "7f6497a6-80d7-567e-a220-889bc9a86b25:23",
+        "f09b2c96-0b0f-5113-b628-b7037b1bd14a:92",
+        "db571063-f4ee-59d3-bad8-a39e509d9447:107",
+        "7f6497a6-80d7-567e-a220-889bc9a86b25:55",
+        "72ca23fb-4fe8-58f0-95ba-f4caa06e0396:33"
+      ],
+      "answer": "First, they             Figure 3: The performance of four off-the-shelf\nallowed us to investigate how our methods scale                  retrievers used for In-Context RALM on the de-\nto models larger than GPT-2. [C1] We show detailed prompts used in our paper in\nFor citation recall, ALCE achieves an accuracy of            Tables 23, 24, 25, 26, 27, 28, and 29. [C2] Empirically, using only the cyclic permutations of the answer\norder provided in the original dataset (of which there are 4) works nearly as well, which is what we report in\nthe main paper, and only increases inference compute by a factor of 4, rather than 24. [C3]",
+      "insufficient_evidence": false,
+      "latency_ms": 167,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "estimated_cost_usd": 0,
+      "claims": [
+        {
+          "claim_id": "pilot_020_c1",
+          "text": "First, they             Figure 3: The performance of four off-the-shelf\nallowed us to investigate how our methods scale                  retrievers used for In-Context RALM on the de-\nto models larger than GPT-2. We show detailed prompts used in our paper in\nFor citation recall, ALCE achieves an accuracy of            Tables 23, 24, 25, 26, 27, 28, and 29. Empirically, using only the cyclic permutations of the answer\norder provided in the original dataset (of which there are 4) works nearly as well, which is what we report in\nthe main paper, and only increases inference compute by a factor of 4, rather than 24.",
+          "citation_ids": [
+            "C1",
+            "C2",
+            "C3"
+          ]
+        }
+      ],
+      "annotations_pending": [
+        {
+          "claim_id": "pilot_020_c1",
+          "claim_text": "First, they             Figure 3: The performance of four off-the-shelf\nallowed us to investigate how our methods scale                  retrievers used for In-Context RALM on the de-\nto models larger than GPT-2. We show detailed prompts used in our paper in\nFor citation recall, ALCE achieves an accuracy of            Tables 23, 24, 25, 26, 27, 28, and 29. Empirically, using only the cyclic permutations of the answer\norder provided in the original dataset (of which there are 4) works nearly as well, which is what we report in\nthe main paper, and only increases inference compute by a factor of 4, rather than 24.",
+          "citation_id": "C1",
+          "evidence_span": "First, they             Figure 3: The performance of four off-the-shelf\nallowed us to investigate how our methods scale                  retrievers used for In-Context RALM on the de-\nto models larger than GPT-2.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "unsupported",
+          "support_rationale": "The citation is real but does not provide enough claim-level overlap.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_020_c1",
+          "claim_text": "First, they             Figure 3: The performance of four off-the-shelf\nallowed us to investigate how our methods scale                  retrievers used for In-Context RALM on the de-\nto models larger than GPT-2. We show detailed prompts used in our paper in\nFor citation recall, ALCE achieves an accuracy of            Tables 23, 24, 25, 26, 27, 28, and 29. Empirically, using only the cyclic permutations of the answer\norder provided in the original dataset (of which there are 4) works nearly as well, which is what we report in\nthe main paper, and only increases inference compute by a factor of 4, rather than 24.",
+          "citation_id": "C2",
+          "evidence_span": "We show detailed prompts used in our paper in\nFor citation recall, ALCE achieves an accuracy of            Tables 23, 24, 25, 26, 27, 28, and 29.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "unsupported",
+          "support_rationale": "The citation is real but does not provide enough claim-level overlap.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        },
+        {
+          "claim_id": "pilot_020_c1",
+          "claim_text": "First, they             Figure 3: The performance of four off-the-shelf\nallowed us to investigate how our methods scale                  retrievers used for In-Context RALM on the de-\nto models larger than GPT-2. We show detailed prompts used in our paper in\nFor citation recall, ALCE achieves an accuracy of            Tables 23, 24, 25, 26, 27, 28, and 29. Empirically, using only the cyclic permutations of the answer\norder provided in the original dataset (of which there are 4) works nearly as well, which is what we report in\nthe main paper, and only increases inference compute by a factor of 4, rather than 24.",
+          "citation_id": "C3",
+          "evidence_span": "Empirically, using only the cyclic permutations of the answer\norder provided in the original dataset (of which there are 4) works nearly as well, which is what we report in\nthe main paper, and only increases inference compute by a factor of 4, rather than 24.",
+          "source_exists": true,
+          "citation_relevant": "yes",
+          "support_label": "partially_supported",
+          "support_rationale": "The evidence overlaps the claim but omits material detail or qualification.",
+          "answer_completeness": null,
+          "refusal_appropriate": false
+        }
+      ]
+    }
+  ],
+  "note": "Deterministic labels are triage outputs, not human ground truth. Review and adjudicate annotations before reporting results."
+}

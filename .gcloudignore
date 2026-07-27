@@ -1,0 +1,23 @@
+# Keep Cloud Build source uploads small and free of local credentials or evaluation data.
+.gcloudignore
+.git/
+.github/
+.DS_Store
+
+.env
+.env.*
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+*.db
+postgres_data/
+data/audit/
+results/
+tests/
+
+# Runtime source-deploy inputs intentionally retained:
+# Dockerfile, pyproject.toml, README.md, src/, and data/demo/.

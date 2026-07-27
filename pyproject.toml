@@ -20,9 +20,21 @@ dev = [
   "pytest>=8.0",
   "ruff>=0.4",
 ]
+cloud = [
+  "google-genai>=1.0,<3",
+]
+auth = [
+  "PyJWT[crypto]>=2.8,<3",
+]
+mcp = [
+  "mcp>=1.0,<2",
+]
 
 [project.scripts]
 diw = "diw.cli:main"
+diw-mcp = "diw.mcp_server:main"
+diw-annotate = "diw.annotation_app:main"
+diw-vertex-smoke = "diw.vertex_smoke:main"
 
 [tool.ruff]
 line-length = 100

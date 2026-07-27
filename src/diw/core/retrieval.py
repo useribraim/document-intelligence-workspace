@@ -6,7 +6,7 @@ import re
 from sqlalchemy import bindparam, select, text
 from sqlalchemy.orm import Session
 
-from diw.core.embeddings import EmbeddingProvider, cosine_similarity
+from diw.core.embeddings import EmbeddingProvider, cosine_similarity, embed_query
 from diw.db.models import Chunk, ChunkEmbedding, DocumentVersion
 
 
@@ -68,12 +68,15 @@ def retrieve_chunks(
     *,
     top_k: int = 5,
     mode: str = "hybrid",
+    reranker: str = "weighted",
     document_ids: set[str] | None = None,
 ) -> list[RetrievalResult]:
     if top_k <= 0:
         raise ValueError("top_k must be positive")
     if mode not in {"lexical", "vector", "hybrid"}:
         raise ValueError("mode must be one of: lexical, vector, hybrid")
+    if reranker not in {"weighted", "rrf"}:
+        raise ValueError("reranker must be one of: weighted, rrf")
     if document_ids is not None and not document_ids:
         return []
 
@@ -88,10 +91,11 @@ def retrieve_chunks(
             provider,
             top_k=top_k,
             mode=mode,
+            reranker=reranker,
             document_ids=document_ids,
         )
 
-    query_vector = provider.embed(query)
+    query_vector = embed_query(provider, query)
     statement = (
         select(Chunk, ChunkEmbedding, DocumentVersion)
         .join(ChunkEmbedding, ChunkEmbedding.chunk_id == Chunk.id)
@@ -129,7 +133,7 @@ def retrieve_chunks(
             )
         )
 
-    return sorted(results, key=lambda result: result.score, reverse=True)[:top_k]
+    return _rank_results(results, top_k=top_k, mode=mode, reranker=reranker)
 
 
 def _retrieve_chunks_postgres_pgvector(
@@ -139,9 +143,10 @@ def _retrieve_chunks_postgres_pgvector(
     *,
     top_k: int,
     mode: str,
+    reranker: str,
     document_ids: set[str] | None,
 ) -> list[RetrievalResult]:
-    query_vector = provider.embed(query)
+    query_vector = embed_query(provider, query)
     candidate_limit = top_k if mode == "vector" else max(top_k * 8, 20)
     document_filter = ""
     if document_ids is not None:
@@ -209,7 +214,54 @@ def _retrieve_chunks_postgres_pgvector(
             )
         )
 
-    return sorted(results, key=lambda result: result.score, reverse=True)[:top_k]
+    return _rank_results(results, top_k=top_k, mode=mode, reranker=reranker)
+
+
+def _rank_results(
+    results: list[RetrievalResult],
+    *,
+    top_k: int,
+    mode: str,
+    reranker: str,
+) -> list[RetrievalResult]:
+    if mode != "hybrid" or reranker == "weighted":
+        return sorted(
+            results,
+            key=lambda result: (-result.score, result.chunk_id),
+        )[:top_k]
+
+    lexical_order = sorted(
+        results,
+        key=lambda result: (-result.lexical_score, result.chunk_id),
+    )
+    vector_order = sorted(
+        results,
+        key=lambda result: (-result.vector_score, result.chunk_id),
+    )
+    lexical_ranks = {result.chunk_id: rank for rank, result in enumerate(lexical_order, start=1)}
+    vector_ranks = {result.chunk_id: rank for rank, result in enumerate(vector_order, start=1)}
+    rrf_k = 60
+    maximum_rrf_score = 2 / (rrf_k + 1)
+    fused: list[RetrievalResult] = []
+    for result in results:
+        raw_score = (1 / (rrf_k + lexical_ranks[result.chunk_id])) + (
+            1 / (rrf_k + vector_ranks[result.chunk_id])
+        )
+        score = raw_score / maximum_rrf_score
+        fused.append(
+            RetrievalResult(
+                chunk_id=result.chunk_id,
+                document_id=result.document_id,
+                version_id=result.version_id,
+                chunk_index=result.chunk_index,
+                heading_path=result.heading_path,
+                text=result.text,
+                lexical_score=result.lexical_score,
+                vector_score=result.vector_score,
+                score=round(score, 8),
+            )
+        )
+    return sorted(fused, key=lambda result: (-result.score, result.chunk_id))[:top_k]
 
 
 @dataclass(frozen=True)

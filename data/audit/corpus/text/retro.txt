@@ -1,0 +1,945 @@
+                                                                In-Context Retrieval-Augmented Language Models
+
+                                                             Ori Ram∗ Yoav Levine∗ Itay Dalmedigos Dor Muhlgay
+                                                               Amnon Shashua Kevin Leyton-Brown Yoav Shoham
+                                                                                  AI21 Labs
+                                                        {orir,yoavl,itayd,dorm,amnons,kevinlb,yoavs}@ai21.com
+
+
+
+                                                                     Abstract                                            No Retrieval   In-Context RALM (BM25)
+                                                                                                                          In-Context RALM (Predictive Reranking)
+                                                    Retrieval-Augmented Language Modeling                         30.0
+                                                    (RALM) methods, which condition a lan-
+                                                    guage model (LM) on relevant documents                        25.0
+
+
+
+
+arXiv:2302.00083v3 [cs.CL] 1 Aug 2023
+                                                                                                     Perplexity
+                                                    from a grounding corpus during generation,
+                                                    were shown to significantly improve lan-                      20.0
+
+                                                    guage modeling performance. In addition,
+                                                                                                                  15.0
+                                                    they can mitigate the problem of factually
+                                                    inaccurate text generation and provide natu-
+                                                                                                                  10.0
+                                                    ral source attribution mechanism. Existing                              GPT-2 345M (M)        GPT-2 1.5B (XL)
+                                                    RALM approaches focus on modifying the
+                                                    LM architecture in order to facilitate the in-
+                                                                                                     Figure 1: Our framework, dubbed In-Context
+                                                    corporation of external information, signifi-
+                                                    cantly complicating deployment. This paper       RALM, provides large language modeling gains on
+                                                    considers a simple alternative, which we dub     the test set of WikiText-103, without modifying the
+                                                    In-Context RALM: leaving the LM architec-        LM. Adapting the use of a BM25 retriever (Robert-
+                                                    ture unchanged and prepending grounding          son and Zaragoza, 2009) to the LM task (§5) yields
+                                                    documents to the input, without any further      significant gains, and choosing the grounding doc-
+                                                    training of the LM. We show that In-Context      uments via our new class of Predictive Rerankers
+                                                    RALM that builds on off-the-shelf general
+                                                                                                     (§6) provides a further boost. See Table 1 for the
+                                                    purpose retrievers provides surprisingly large
+                                                    LM gains across model sizes and diverse cor-
+                                                                                                     full results on five diverse corpora.
+                                                    pora. We also demonstrate that the document
+                                                    retrieval and ranking mechanism can be spe-
+                                                    cialized to the RALM setting to further boost    source attribution, and must be trained in order
+                                                    performance. We conclude that In-Context         to incorporate up-to-date information that was not
+                                                    RALM has considerable potential to increase      seen during training. More importantly, they tend
+                                                    the prevalence of LM grounding, particularly
+                                                                                                     to produce factual inaccuracies and errors (Lin
+                                                    in settings where a pretrained LM must be
+                                                    used without modification or even via API        et al., 2022; Maynez et al., 2020; Huang et al.,
+                                                    access.1                                         2020). This problem is present in any LM gen-
+                                                                                                     eration scenario, and is exacerbated when gener-
+                                                                                                     ation is made in uncommon domains or private
+                                        1       Introduction                                         data. A promising approach for addressing the
+                                        Recent advances in language modeling (LM) have               above is Retrieval-Augmented Language Modeling
+                                        dramatically increased the usefulness of machine-            (RALM), grounding the LM during generation by
+                                        generated text across a wide range of use-cases              conditioning on relevant documents retrieved from
+                                        and domains (Brown et al., 2020). However, the               an external knowledge source. RALM systems in-
+                                        mainstream paradigm of generating text with LMs              clude two high level components: (i) document se-
+                                        bears inherent limitations in access to external             lection, selecting the set of documents upon which
+                                        knowledge. First, LMs are not coupled with any               to condition; and (ii) document reading, determin-
+                                                ∗
+                                                                                                     ing how to incorporate the selected documents into
+                                            Equal contribution.
+                                            1                                                        the LM generation process.
+                                           Our code is available at https://github.com/
+                                        AI21Labs/in-context-ralm                                              Leading RALM systems introduced recently
+                                             FIFA World Cup 2026 will
+                            Retriever        expand to 48 teams.
+  World Cup 2022 was the                                                      Language               48 in the 2026
+  last with 32 teams,                        World Cup 2022 was the                                   tournament.
+  before the increase to                     last with 32 teams, before         Model
+                                             the increase to
+
+
+
+ Figure 2: An example of In-Context RALM: we simply prepend the retrieved document before the input prefix.
+
+
+tend to be focused on altering the language model             ument ranking to the LM task, a relatively under-
+architecture (Khandelwal et al., 2020; Borgeaud               explored RALM degree of freedom. Our adapta-
+et al., 2022; Zhong et al., 2022; Levine et al., 2022c;       tion methods range from using a small LM to per-
+Li et al., 2022). Notably, Borgeaud et al. (2022) in-         form zero-shot ranking of the retrieved documents,
+troduced RETRO, featuring document reading via                up to training a dedicated bidirectional reranker
+nontrivial modifications that require further train-          by employing self-supervision from the LM signal.
+ing to the LM architecture, while using an off-the-           These methods lead to further gains in the LM task
+shelf frozen BERT retriever for document selec-               corresponding to an additional size increase of 2×
+tion. Although the paper’s experimental findings              in the LM architecture. As a concrete example of
+showed impressive performance gains, the need for             the gains, a 345M parameter GPT-2 enhanced by
+changes in architecture and dedicated retraining              In-Context RALM outperforms a 762M parame-
+has hindered the wide adoption of such models.                ter GPT-2 when employing an off-the-shelf BM25
+   In this paper, we show that a very simple doc-             retriever (Robertson and Zaragoza, 2009), and out-
+ument reading mechanism can have a large im-                  performs a 1.5B parameter GPT-2 when employing
+pact, and that substantial gains can also be made             our trained LM-oriented reranker (see Figure 1).
+by adapting the document selection mechanism to               For large model sizes, our method is even more
+the task of language modeling. Thus, we show that             effective: In-Context RALM with an off-the-shelf
+many of the benefits of RALM can be achieved                  retriever improved the performance of a 6.7B pa-
+while working with off-the-shelf LMs, even via                rameter OPT model to match that of a 66B param-
+API access. Specifically, we consider a simple but            eter parameter OPT model (see Figure 4).
+powerful RALM framework, dubbed In-Context                       In Section 7 we demonstrate the applicability
+RALM (presented in Section 3), which employs a                of In-Context RALM to downstream open-domain
+zero-effort document reading mechanism: we sim-               questions answering (ODQA) tasks.
+ply prepend the selected documents to the LM’s                   In a concurrent work, Shi et al. (2023) also sug-
+input text (Figure 2).                                        gest to augment off-the-shelf LMs with retrieved
+   Section 4 describes our experimental setup. To             texts by prepending them to the input. Their re-
+show the wide applicability of our framework, we              sults are based on training a dedicated retriever for
+performed LM experiments on a suite of five di-               language modeling. In contrast, we focus on the
+verse corpora: WikiText-103 (Merity et al., 2016),            gains achievable in using off-the-shelf retrievers
+RealNews (Zellers et al., 2019), and three datasets           for this task. We show strong gains of this simpler
+from The Pile (Gao et al., 2021): ArXiv, Stack                setting by investigating: (1) which off-the-shelf
+Exchange and FreeLaw. We use open-source LMs                  retriever is best suited for language modeling, (2)
+ranging from 110M to 66B parameters (from the                 the frequency of retrieval operations, and (3) the
+GPT-2, GPT-Neo, OPT and LLaMA model fami-                     optimal query length. In addition, we boost the off-
+lies).                                                        the-shelf retrieval performance by introducing two
+   In Section 5 we evaluate the application of off-           reranking methods that demonstrate further gains
+the-shelf retrievers to our framework. In this                in perplexity.
+minimal-effort setting, we found that In-Context                 We believe that In-Context RALM can play two
+RALM led to LM performance gains equivalent to                important roles in making RALM systems more
+increasing the LM’s number of parameters by 2–                powerful and more prevalent. First, given its simple
+3× across all of the text corpora we examined. In             reading mechanism, In-Context RALM can serve
+Section 6 we investigate methods for adapting doc-            as a clean probe for developing document retrieval
+methods that are specialized for the LM task. These       for open-domain question answering. The work
+in turn can be used to improve both In-Context            closest to this paper—with a focus on the language
+RALM and other more elaborate RALM methods                modeling task—is RETRO (Borgeaud et al., 2022),
+that currently leverage general purpose retrievers.       which modifies an autoregressive LM to attend to
+Second, due to its compatibility with off-the-shelf       relevant documents via chunked cross-attention,
+LMs, In-Context RALM can help drive wider de-             thus introducing new parameters to the model. Our
+ployment of RALM systems.                                 In-Context RALM differs from prior work in this
+                                                          family of models in two key aspects:
+2   Related Work
+                                                              • We use off-the-shelf LMs for document read-
+RALM approaches can be roughly divided into two                 ing without any further training of the LM.
+families of models: (i) nearest-neighbor language
+models (also called kNN-LM), and (ii) retrieve                • We focus on how to choose documents for
+and read models. Our work belongs to the second                 improved LM performance.
+family, but is distinct in that it involves no further
+training of the LM.                                       3     Our Framework
+                                                          3.1    In-Context RALM
+Nearest Neighbor Language Models The kNN-
+LM approach was first introduced in Khandel-              Language models define probability distributions
+wal et al. (2020). The authors suggest a simple           over sequences of tokens. Given such a sequence
+inference-time model that interpolates between two        x1 , ..., xn , the standard way to model its probabil-
+next-token distributions: one induced by the LM           Qnis via next-token prediction: p(x1 , ..., xn ) =
+                                                          ity
+itself, and one induced by the k neighbors from the          i=1 p(xi |x<i ), where x<i := x1 , ..., xi−1 is the
+retrieval corpus that are closest to the query token in   sequence of tokens preceding xi , also referred to
+the LM embedding space. Zhong et al. (2022) sug-          as its prefix. This autoregressive model is usu-
+gest a framework for training these models. While         ally implemented via a learned transformer net-
+they showed significant gains from kNN-LM, the            work (Vaswani et al., 2017) parameterized by the
+approach requires storing the representations for         set of parameters θ:
+each token in the corpus, an expensive requirement                                       n
+                                                                                         Y
+even for a small corpus like Wikipedia. Although                    p(x1 , ..., xn ) =         pθ (xi |x<i ),   (1)
+numerous approaches have been suggested for al-                                          i=1
+leviating this issue (He et al., 2021; Alon et al.,
+2022), scaling any of them to large corpora remains       where the conditional probabilities are modeled
+an open challenge.                                        by employing a causal self-attention mask (Rad-
+                                                          ford et al., 2018). Notably, leading LMs such
+Retrieve and Read Models This family of                   as GPT-2 (Radford et al., 2019), GPT-3 (Brown
+RALMs creates a clear division between document           et al., 2020), OPT (Zhang et al., 2022) or Jurassic-
+selection and document reading components. All            1 (Lieber et al., 2021) follow this simple parame-
+prior work involves training the LM. We begin by          terization.
+describing works that use this approach for tack-            Retrieval augmented language models (RALMs)
+ling downstream tasks, and then mention works ori-        add an operation that retrieves one or more docu-
+ented towards RALM. Lewis et al. (2020) and Izac-         ments from an external corpus C, and condition the
+ard and Grave (2021) fine tuned encoder–decoder           above LM predictions on these documents. Specifi-
+architectures for downstream knowledge-intensive          cally, for predicting xi , the retrieval operation from
+tasks. Izacard et al. (2022b) explored different          C depends on its prefix: RC (x<i ), so the most
+ways of pretraining such models, while Levine             general
+                                                          Qn        RALM decomposition is: p(x1 , ..., xn ) =
+et al. (2022c) pretrained an autoregressive LM on            i=1  p(x i |x<i , RC (x<i )). In order to condition
+clusters of nearest neighbors in sentence embed-          the LM generation on the retrieved document, pre-
+ding space. Levine et al. (2022a) showed competi-         vious RALM approaches used specialized architec-
+tive open domain question-answering performance           tures or algorithms (see §2). Inspired by the suc-
+by prompt-tuning a frozen LM as a reader. Guu             cess of In-Context Learning (Brown et al., 2020;
+et al. (2020) pretrained REALM, a retrieval aug-          Dong et al., 2023), In-Context RALM refers to the
+mented bidirectional, masked LM, later fine-tuned         following specific, simple method of concatenating
+the retrieved documents2 within the Transformer’s              Retrieval Query Length While the retrieval
+input prior to the prefix (see Figure 2), which does           query above in principle depends on all prefix to-
+not involve altering the LM weights θ:                         kens x≤s·j , the information at the very end of the
+                                                               prefix is typically the most relevant to the generated
+           p(x1 , ..., xn ) =
+              n
+                                                               tokens. If the retrieval query is too long then this in-
+             Y                                          (2)    formation can be diluted. To avoid this, we restrict
+                   pθ (xi | [RC (x<i ); x<i ]) ,
+                i=1
+                                                               the retrieval query at stride j to the last ℓ tokens
+                                                               of the prefix, i.e., we use qjs,ℓ := xs·j−ℓ+1 , ..., xs·j .
+where [a; b] denotes the concatenation of strings a
+                                                               We refer to ℓ as the retrieval query length. Note that
+and b.
+                                                               prior RALM work couples the retrieval stride s and
+   Since common Transformer-based LM imple-
+                                                               the retrieval query length ℓ (Borgeaud et al., 2022).
+mentations support limited length input sequences,
+                                                               In §5, we show that enforcing s = ℓ degrades LM
+when the concatenation of the document and the
+                                                               performance. Integrating these hyper-parameters
+input sequence exceed this limit we remove to-
+                                                               into the In-Context RALM formulation gives
+kens from the beginning of x until the overall input
+length equals that allowed by the model. Because                   p(x1 , ..., xn ) =
+our retrieved documents are passages of limited                       s −1 Y
+                                                                     nY        s           h                      i
+length, we always have enough context left from x                                pθ xs·j+i | RC (qjs,ℓ ); x<(s·j+i) .
+(see §4.3).                                                           j=0 i=1
+                                                                                                                      (4)
+3.2    RALM Design Choices
+                                                               4     Experimental Details
+We detail below two practical design choices often
+made in RALM systems. In §5, we investigate the                We now describe our experimental setup, including
+effect of these in the setting of In-Context RALM.             all models we use and their implementation details.
+
+Retrieval Stride While in the above formulation                4.1     Datasets
+a retrieval operation can occur at each generation             We evaluated the effectiveness of In-Context
+step, we might want to perform retrieval only once             RALM across five diverse language modeling
+every s > 1 tokens due to the cost of calling the              datasets and two common open-domain question
+retriever, and the need to replace the documents in            answering datasets.
+the LM prefix during generation. We refer to s as
+the retrieval stride. This gives rise to the follow-           Language Modeling The first LM dataset is
+ing In-Context RALM formulation (which reduces                 WikiText-103 (Merity et al., 2016), which has been
+back to Eq. (2) for s = 1):                                    extensively used to evaluate RALMs (Khandelwal
+                                                               et al., 2020; He et al., 2021; Borgeaud et al., 2022;
+ p(x1 , ..., xn ) =                                            Alon et al., 2022; Zhong et al., 2022). Second, we
+      ns
+       Y −1 Y
+            s                                                  chose three datasets spanning diverse subjects from
+                                                 
+                pθ xs·j+i | RC (x≤s·j ); x<(s·j+i) ,           The Pile (Gao et al., 2021): ArXiv, Stack Exchange
+      j=0 i=1                                                  and FreeLaw. Finally, we also investigated Real-
+                                                        (3)    News (Zellers et al., 2019), since The Pile lacks a
+where ns = n/s is the number of retrieval strides.             corpus focused only on news (which is by nature a
+   Notably, in this framework the runtime costs of             knowledge-intensive domain).
+each retrieval operation is composed of (a) apply-             Open-Domain Question Answering In order
+ing the retriever itself, and (b) recomputing the              to evaluate In-Context RALM on downstream
+embeddings of the prefix. In §5.2 we show that us-             tasks as well, we use the Natural Questions (NQ;
+ing smaller retrieval strides, i.e., retrieving as often       Kwiatkowski et al. 2019) and TriviaQA (Joshi et al.,
+as possible, is superior to using larger ones (though          2017) open-domain question answering datasets.
+In-Context RALM with larger strides already pro-
+vides large gains over vanilla LM). Thus, choosing             4.2     Models
+the retrieval stride is ultimately a tradeoff between          Language Models We performed our experi-
+runtime and performance.                                       ments using the four models of GPT-2 (110M–
+   2
+     We always use a single document, but it is conceptually   1.5B; Radford et al. 2019), three models of GPT-
+simple to support multiple documents as well.                  Neo and GPT-J (1.3B–6B; Black et al. 2021; Wang
+and Komatsuzaki 2021), eight models of OPT                                    No Retrieval   BERT   Contriever   Spider   BM25
+(125M–66B; Zhang et al. 2022) and three mod-                                  40
+els of LLaMA (7B–33B; Touvron et al. 2023). All
+models are open source and publicly available.3
+                                                                              30
+   We elected to study these particular models for
+
+                                                                 Perplexity
+the following reasons. The first four (GPT-2) mod-
+els were trained on WebText (Radford et al., 2019),                           20
+with Wikipedia documents excluded from their
+training datasets. We were thus able to evaluate our
+                                                                              10
+method’s “zero-shot” performance when retrieving                                        GPT-2 117M (S)      GPT-2 1.5B (XL)
+from a novel corpus (for WikiText-103). The rest of
+the models brought two further benefits. First, they             Figure 3: The performance of four off-the-shelf
+allowed us to investigate how our methods scale                  retrievers used for In-Context RALM on the de-
+to models larger than GPT-2. Second, the fact that               velopment set of WikiText-103. All RALMs are
+Wikipedia was part of their training data allowed us             run with s = 4 (i.e., retrieval is applied every four
+to investigate the usefulness of In-Context RALM                 tokens). For each RALM, we report the result of
+for corpora seen during training. The helpfulness                the best query length ℓ (see Figures 6, 9, 10).
+of such retrieval has been demonstrated for previ-
+ous RALM methods (Khandelwal et al., 2020) and
+has also been justified theoretically by Levine et al.           Retrieval Corpora For WikiText-103 and
+(2022c).                                                         ODQA datasets, we used the Wikipedia corpus
+   We ran all models with a maximum sequence                     from Dec. 20, 2018, standardized by Karpukhin
+length of 1,024, even though GPT-Neo, OPT and                    et al. (2020) using the preprocessing from Chen
+LLaMA models support a sequence length of                        et al. (2017). To avoid contamination, we found
+2,048.4                                                          and removed all 120 articles of the development
+                                                                 and test set of WikiText-103 from the corpus. For
+Retrievers We experimented with both sparse                      the remaining datasets, we used their training
+(word-based) and dense (neural) retrievers. We                   data as the retrieval corpus. Similar to Karpukhin
+used BM25 (Robertson and Zaragoza, 2009) as our                  et al. (2020), our retrieval corpora consist of
+sparse model. For dense models, we experimented                  non-overlapping passages of 100 words (which
+with (i) a frozen BERT-base (Devlin et al., 2019)                translate to less than 150 tokens for the vast
+followed by mean pooling, similar to Borgeaud                    majority of passages). Thus, we truncate our
+et al. (2022); and (ii) the Contriever (Izacard et al.,          retrieved passages at 256 tokens when input to the
+2022a) and Spider (Ram et al., 2022) models,                     models, but they are usually much smaller.
+which are dense retrievers that were trained in un-
+supervised manners.                                              Retrieval For sparse retrieval, we used the Py-
+                                                                 serini library (Lin et al., 2021). For dense retrieval,
+Reranking When training rerankers (Sec-                          we applied exact search using FAISS (Johnson
+tion 6.2), we initialized from RoBERTa-base (Liu                 et al., 2021).
+et al., 2019).
+                                                                 5             The Effectiveness of In-Context RALM
+4.3   Implementation Details                                                   with Off-the-Shelf Retrievers
+
+We implemented our code base using the Trans-                    We now empirically show that despite its simple
+formers library (Wolf et al., 2020). We based                    document reading mechanism, In-Context RALM
+our dense retrieval code on the DPR repository                   leads to substantial LM gains across our diverse
+(Karpukhin et al., 2020).                                        evaluation suite. We begin in this section by inves-
+                                                                 tigating the effectiveness of off-the-shelf retrievers
+    3
+      All models are available for use use via https://          for In-Context RALM; we go on in §6 to show
+huggingface.co/                                                  that further LM gains can be made by tailoring
+    4
+      In preliminary experiments, we observed similar improve-
+ments from In-Context RALM when using a sequence length
+                                                                 document ranking functions to the LM task.
+of 2,048. We used a sequence length of 1,024 in order to            The experiments in this section provided us
+facilitate a direct comparison between all models.               with a recommended configuration for applying In-
+                                             WikiText-103        RealNews     ArXiv      Stack Exch.   FreeLaw
+Model        Retrieval   Reranking
+                                                word ppl         token ppl   token ppl    token ppl    token ppl
+             –           –                        37.5             21.3        12.0         12.8          13.0
+             BM25 §5     –                        29.6             16.1        10.9         11.3           9.6
+GPT-2 S      BM25        Zero-shot §6.1           28.6             15.5        10.1         10.6           8.8
+             BM25        Predictive §6.2          26.8                –           –            –             –
+             –           –                        26.3             15.7         9.3          8.8           9.6
+             BM25 §5     –                        21.5             12.4         8.6          8.1           7.4
+GPT-2 M      BM25        Zero-shot §6.1           20.8             12.0         8.0          7.7           6.9
+             BM25        Predictive §6.2          19.7                –           –            –             –
+             –           –                        22.0             13.6         8.4          8.5           8.7
+             BM25 §5     –                        18.1             10.9         7.8          7.8           6.8
+GPT-2 L      BM25        Zero-shot §6.1           17.6             10.6         7.3          7.4           6.4
+             BM25        Predictive §6.2          16.6                –           –            –             –
+             –           –                        20.0             12.4         7.8          8.0           8.0
+             BM25 §5     –                        16.6             10.1         7.2          7.4           6.4
+GPT-2 XL     BM25        Zero-shot §6.1           16.1              9.8         6.8          7.1           6.0
+             BM25        Predictive §6.2          15.4                –           –            –             –
+
+Table 1: Perplexity on the test set of WikiText-103, RealNews and three datasets from the Pile. For
+each LM, we report: (a) its performance without retrieval, (b) its performance when fed the top-scored
+passage by BM25 (§5), and (c) its performance when applied on the top-scored passage of each of our two
+suggested rerankers (§6). All models share the same vocabulary, thus token-level perplexity (token ppl)
+numbers are comparable. For WikiText we follow prior work and report word-level perplexity (word ppl).
+
+
+                                  WikiText-103             RealNews.
+    Model            Retrieval
+                                     word ppl
+                                                           5.1     BM25 Outperforms Off-the-Shelf Neural
+                     -                 9.9                         Retrievers in Language Modeling
+    LLaMA-7B         BM25, §5          8.8
+                                                           We experimented with different off-the-shelf gen-
+                     -                 8.5                 eral purpose retrievers, and found that the sparse
+    LLaMA-13B        BM25, §5          7.6
+                                                           (lexical) BM25 retriever (Robertson and Zaragoza,
+                     -                 6.3                 2009) outperformed three popular dense (neu-
+    LLaMA-33B        BM25, §5          6.1                 ral) retrievers: the self-supervised retrievers Con-
+                                                           triever (Izacard et al., 2022a) and Spider (Ram et al.,
+Table 2: The performance of models from the                2022), as well as a retriever based on the average
+LLaMA family, measured by word-level perplexity            pooling of BERT embeddings that was used in
+on the test set of WikiText-103.                           the RETRO system (Borgeaud et al., 2022). We
+                                                           conducted a minimal hyper-parameter search on
+                                                           the query length ℓ for each of the retrievers, and
+Context RALM: applying a sparse BM25 retriever             found that ℓ = 32 was optimal for BM25 (Fig-
+that receives ℓ = 32 query tokens and is applied           ure 6), and ℓ = 64 worked best for dense retrievers
+as frequently as possible. Practically, we retrieve        (Figures 9, 10).
+every s = 4 tokens (ℓ and s are defined in §3).               Figure 3 compares the performance gains of In-
+Table 1 shows for the GPT-2 models that across             Context RALM with these four general-purpose re-
+all the examined corpora, employing In-Context             trievers. The BM25 retriever clearly outperformed
+RALM with an off-the-shelf retriever improved              all dense retrievers. This outcome is consistent
+LM perplexity to a sufficient extent that it matched       with prior work showing that BM25 outperforms
+that of a 2–3× larger model. Figure 4 and Tables 2         neural retrievers across a wide array of tasks, when
+and 5 show that this trend holds across model sizes        applied in zero-shot settings (Thakur et al., 2021).
+up to 66B parameters, for both WikiText-103 and            This result renders In-Context RALM even more
+                                              No Retrieval   In-Context RALM (BM25)
+               40.0
+
+
+
+               30.0
+
+
+
+
+  Perplexity
+               20.0
+
+
+
+               10.0
+
+
+
+                      OPT-125M   OPT-350M   OPT-1.3B     OPT-2.7B       OPT-6.7B      OPT-13B   OPT-30B   OPT-66B
+
+                                                              WikiText-103
+
+
+                                              No Retrieval   In-Context RALM (BM25)
+               18.0
+
+
+
+
+               13.0
+
+
+
+
+  Perplexity    8.0
+
+
+
+
+                3.0
+                      OPT-125M   OPT-350M   OPT-1.3B     OPT-2.7B       OPT-6.7B      OPT-13B   OPT-30B   OPT-66B
+
+                                                               RealNews
+
+
+Figure 4: Results of OPT models (Zhang et al., 2022) on the test set of WikiText-103 (word-level
+perplexity) and the development set of RealNews (token-level perplexity). In-Context RALM models use
+a BM25 retriever with s = 4 (i.e., the retriever is called every four tokens) and ℓ = 32 (i.e., the retriever
+query is comprised of the last 32 tokens of the prefix). In-Context RALM with an off-the-shelf retriever
+improved the performance of a 6.7B parameter OPT model to match that of a 66B parameter OPT model.
+
+
+appealing since applying a BM25 retriever is sig-                   5.3 A Contextualization vs. Recency Tradeoff
+nificantly cheaper than the neural alternatives.                        in Query Length
+                                                                    We also investigated the effect of varying ℓ, the
+                                                                    length of the retrieval query for BM25. Figure 6
+                                                                    reveals an interesting tradeoff and a sweet spot
+5.2            Frequent Retrieval Improves Language                 around a query length of 32 tokens. Similar ex-
+               Modeling                                             periments for dense retrievers are given in App. A.
+                                                                    We conjecture that when the retriever query is too
+                                                                    short, it does not include enough of the input con-
+We investigated the effect of varying the retrieval                 text, decreasing the retrieved document’s relevance.
+stride s (i.e., the number of tokens between consec-                Conversely, excessively growing the retriever query
+utive retrieval operations). Figure 5 shows that LM                 deemphasizes the tokens at the very end of the pre-
+performance improved as the retrieval operation                     fix, diluting the query’s relevance to the LM task.
+became more frequent. This supports the intuition
+that retrieved documents become more relevant the                   6   Improving In-Context RALM with
+closer the retrieval query becomes to the gener-                        LM-Oriented Reranking
+ated tokens. Of course, each retrieval operation
+imposes a runtime cost. To balance performance                      Since In-Context RALM uses a fixed document
+and runtime, we used s = 4 in our experiments.                      reading component by definition, it is natural to
+For comparison, RETRO employed a retrieval fre-                     ask whether performance can be improved by spe-
+quency of s = 64 (Borgeaud et al., 2022), which                     cializing its document retrieval mechanism to the
+leads to large degradation in perplexity. Intuitively,              LM task. Indeed, there is considerable scope for
+retrieving with high frequency (low retrieval stride)               improvement: the previous section considered con-
+allows to ground the LM in higher resolution.                       ditioning the model only on the first document re-
+             GPT-2 117M (S)    GPT-2 345M (M)     GPT-2 762M (L)     GPT-2 1.5B (XL)                GPT-2 117M (S)    GPT-2 345M (M)       GPT-2 762M (L)   GPT-2 1.5B (XL)
+
+              40.0
+
+                                                                                                     40.0
+
+              30.0
+
+
+
+Perplexity
+                                                                                                     30.0
+
+
+              20.0                                                                     Perplexity
+                                                                                                     20.0
+
+
+              10.0
+                       64          32    16        8          4      2         1                     10.0
+
+                                          Retrieval Stride ( 𝑠)                                                 No Retrieval           BM25 (Top-1)    Oracle: BM25 (Top-16)
+
+
+
+Figure 5: An analysis of perplexity as a function                                      Figure 7: Potential for gains from reranking: per-
+of s, the retrieval stride, i.e., the number of tokens                                 plexity improvement (on the development set of
+between consecutive retrieval operations, on the                                       WikiText-103) from an oracle that takes the best
+development set of WikiText-103. Throughout the                                        of the top-16 documents retrieved by BM25 rather
+paper, we use s = 4 to balance perplexity and                                          than the first.
+runtime.
+
+                                                                                       this motivation by using two rerankers. Specifi-
+             GPT-2 117M (S)    GPT-2 345M (M)     GPT-2 762M (L)     GPT-2 1.5B (XL)
+
+              35.0
+                                                                                       cally, in §6.1 we show performance gains across
+                                                                                       our evaluation suite obtained by using an LM to
+              30.0
+                                                                                       perform zero-shot reranking of the top-k BM25
+              25.0                                                                     retrieved documents (results in third row for each
+Perplexity    20.0                                                                     of the models in Table 1). Then, in §6.2 we show
+                                                                                       that training a specialized bidirectional reranker
+              15.0
+                                                                                       of the top-k BM25 retrieved documents in a self-
+              10.0
+                              16                   32                    64            supervised manner via the LM signal can provide
+                                                                                       further LM gains (results in forth row for each of
+                                        Retrieval Query Length (ℓ)
+                                                                                       the models in Table 1).
+Figure 6: An analysis of perplexity as a function
+                                                                                       6.1               LMs as Zero-Shot Rerankers
+of the number of tokens in the query ℓ for BM25
+on the development set of WikiText-103. In the                                         First, we used off-the-shelf language models as
+appendix, we show similar trade-offs for dense                                         document rerankers for the In-Context RALM set-
+retrievers within WikiText-103. Throughout the                                         ting. Formally, for a query q consisting of the
+paper, we use a query length of ℓ = 32 tokens.                                         last ℓ tokens in the prefix of the LM input x, let
+                                                                                       {d1 , ..., dk } be the top-k documents returned by
+                                                                                       BM25. For retrieval iteration j, let the text for
+trieved by the BM25 retriever. This permits very                                       generation be y := xs·j+1 , ..., xs·j+s . Ideally, we
+limited semantic understanding of the query, since                                     would like to find the document di∗ that maximizes
+BM25 is based only on the bag of words signal.                                         the probability of the text for generation, i.e.,
+Moreover, it offers no way to accord different de-
+grees of importance to different retrieval query to-                                                          i∗ = arg max pθ (y| [di ; x≤s·j ]).                        (5)
+kens, such as recognizing that later query tokens                                                                              i∈[k]
+are more relevant to the generated text.
+   In this section, we focus on choosing which doc-                                    However, at test time we do not have access to
+ument to present to the model, by reranking the                                        the tokens of y. Instead, we used the last pre-
+top-k documents returned by the BM25 retriever.5                                       fix tokens (which are available at test time), de-
+We use Figure 7 as motivation: it shows the large                                      noted by y ′ , for reranking. Formally, let s′ be
+potential for improvement among the top-16 docu-                                       a hyper-parameter that determines the number of
+ments returned by the BM25 retriever. We act upon                                      the prefix tokens by which to rerank. We define
+                                                                                       y ′ := xs·j−s′ +1 , ..., xs·j (i.e., the stride of length s′
+             5
+                 In both §6.1 and §6.2 we use k = 16.                                  that precedes y) and choose the document dî such
+                                             Reranking            WikiText-103     RealNews
+                         Model
+                                             Model                  word ppl        token ppl
+                                             GPT-2 110M (S)           20.8               12.1
+                         GPT-2 345M (M)
+                                             GPT-2 345M (M)           20.8               12.0
+                                             GPT-2 110M (S)           17.7               10.7
+                         GPT-2 762M (L)
+                                             GPT-2 762M (L)           17.6               10.6
+                                             GPT-2 110M (S)           16.2                9.9
+                         GPT-2 1.5B (XL)
+                                             GPT-2 1.5B (XL)          16.1                9.8
+
+Table 3: Perplexity for zero-shot reranking (§6.1) where the reranking models is smaller than the LM, or
+the LM itself. Reranking is performed on the top 16 documents retrieved by BM25. Using a GPT-2 110M
+(S) instead of a larger language model as a reranker leads to only a minor degradation.
+
+
+that                                                          Table 3 shows that a small LM (GPT-2 117M)
+                                                            can be used to rerank the documents for all larger
+       î = arg max pϕ (y ′ | di ; x≤(s·j−s′ ) ).
+                                             
+                                                     (6)    GPT-2 models, with roughly the same performance
+                 i∈[k]
+                                                            as having each LM perform reranking for itself,
+The main motivation is that since BM25 is a lexical         supporting the applicability of this method for LMs
+retriever, we want to incorporate a semantic signal         that are only accessible via an API.
+induced by the LM. Also, this reranking shares con-
+ceptual similarities with the reranking framework           6.2   Training LM-dedicated Rerankers
+of Sachan et al. (2022) for open-domain question            Next, we trained a reranker to choose one of the
+answering, where y ′ (i.e., the last prefix tokens) can     top-k documents retrieved by BM25. We refer to
+be thought of as their “question”.                          this approach as Predictive Reranking, since the
+   Note that our zero-shot reranking does not re-           reranker learns to choose which document will help
+quire that the LM used for reranking is the same            in “predicting” the upcoming text. For this process,
+model as the LM used for generation (i.e., the LM           we assume availability of training data from the
+in Eq. (6), parameterized by ϕ, does not need to be         target corpus. Our reranker is a classifier that gets
+the LM in Eq. (2), parameterized by θ). This ob-            a prefix x≤s·j and a document di (for i ∈ [k]), and
+servation unlocks the possibility of reranking with         produces a scalar f (x≤s·j , di ) that should resemble
+smaller (and thus faster) models, which is impor-           the relevance of di for the continuation of x≤s·j .
+tant for two main reasons: (i) Reranking k docu-               We then normalize these relevance scores:
+ments requires k forward passes; and (ii) it allows
+our methods to be used in cases where the actual                                         exp(f (x≤s·j , di ))
+                                                             prank (di |x≤s·j ) = Pk                               , (7)
+LM’s log probabilities are not available (for exam-
+                                                                                     i′ =1 exp(f (x≤s·j , di′ ))
+ple, when the LM is accessed through an API).6
+                                                            and choose the document dî such that
+Results A minimal hyper-parameter search on
+the development set of WikiText-103 revealed that
+                                                                       î = arg max prank (di |x≤s·j ).              (8)
+the optimal query length is s′ = 16,7 so we proceed                              i∈[k]
+with this value going forward. Table 1 shows the
+results of letting the LM perform zero-shot rerank-         Collecting Training Examples To train our pre-
+ing on the top-16 documents retrieved by BM25               dictive reranker, we collected training examples
+(third row for each of the models). It is evident           as follows. Let x≤s·j be a prefix we sample from
+that reranking yielded consistently better results          the training data, and y := xs·j+1 , ..., xs·j+s be the
+than simply taking the first result returned by the         text for generation upcoming in its next stride. We
+retriever.                                                  run BM25 on the query qjs,ℓ derived from x≤s·j
+   6
+     Note we do not require that the two models share the
+                                                            (see §3.2) and get k documents {d1 , ..., dk }. For
+same vocabulary.                                            each document di , we then run the LM to compute
+   7
+     We experimented with s′ ∈ {4, 8, 16, 32}.              pθ (y| [di ; x≤s·j ]) similar to Eq. (4).
+             TriviaQA: LLaMa-7B        TriviaQA: LLaMa-13B               Model          Retrieval     NQ     TriviaQA
+                   NQ: LLaMa-7B        NQ: LLaMa-13B
+                                                                                        -             10.3      47.5
+      80.0                                                               LLaMA-7B
+                                                                                        DPR           28.0      56.0
+      60.0
+                                                                                        -             12.0      54.8
+                                                                         LLaMA-13B
+      40.0
+                                                                                        DPR           31.0      60.1
+EM
+                                                                                        -             13.7      58.3
+      20.0                                                               LLaMA-33B
+                                                                                        DPR           32.3      62.7
+       0.0
+                0           1           2             3      4
+                                                                     Table 4: Zero-shot results of In-Context RALM on
+                                Number of documents                  the test set of Natural Questions and TriviaQA mea-
+                                                                     sured by exact match. In the open-book setting, we
+Figure 8: Zero-shot performance of In-Context                        include the top two documents returned by DPR.
+RALM on the development set of Natural Ques-
+tions and TriviaQA, when varying the number of
+documents (retrieved by DPR) shown in-context.                       7    In-Context RALM for Open-Domain
+                                                                          Question Answering
+Training Our reranker was a fine-tuned
+                                                                     So far, we evaluated our framework on language
+RoBERTa-base (Liu et al., 2019) that trained for
+                                                                     modeling benchmarks. To test its efficacy in addi-
+10,000 steps with a peak learning rate of 10−5 and
+                                                                     tional scenarios, and specifically downstream tasks,
+a batch size of 32. Overall, we created 300,000
+                                                                     we now turn to evaluate In-Context RALM on open-
+examples from the training set of WikiText-103 as
+                                                                     domain question answering (ODQA; Chen et al.
+explained above. The loss function we use to train
+                                                                     2017). This experiment is intended to verify, in
+the reranker follows previous work (Guu et al.,
+                                                                     a controlled environment, that LMs can leverage
+2020; Lewis et al., 2020):
+                                                                     retrieved documents without further training and
+                                                                     without any training examples. Specifically, we
+             k
+             X                                                       use the LLaMA family (Touvron et al., 2023) with
+     − log         prank (di |x≤s·j ) · pθ (y| [di ; x≤s·j ]). (9)
+             i=1
+                                                                     and without In-Context RALM (often referred to
+                                                                     in ODQA literature as open-book and closed-book
+Note that unlike those works, we train only the                      settings, respectively). In contrast to most prior
+reranker (prank ), keeping the LM weights θ frozen.                  work on ODQA (e.g., Izacard and Grave 2021; Fa-
+                                                                     jcik et al. 2021; Izacard et al. 2022b; Levine et al.
+Results Table 1 shows the result of our predictive                   2022b), our “reader” (i.e., the model that gets the
+reranker, trained on WikiText-103. Specifically, we                  question along with its corresponding retrieved doc-
+trained it with data produced by GPT-2 110M (S),                     uments, and returns the answer) is simply a frozen
+and tested its effectiveness for all GPT-2 models.                   large LM: not pretrained, fine-tuned or prompted
+We observed significant gains obtained from Predic-                  to be retrieval-augmented. For the closed-book set-
+tive Reranking. For example, the perplexity of GPT-                  ting, we utilize the prompt of Touvron et al. (2023).
+2 110M (S) improved from 29.6 to 26.8, and that of                   For the open-book setting, we extend this prompt
+GPT-2 1.5B (XL) improved from 16.6 to 15.4. This                     to include retrieved documents (see App. C). We
+trend held for the other two models as well. Overall,                use DPR (Karpukhin et al., 2020) as our retriever.
+these results demonstrate that training a reranker
+with domain-specific data was more effective than                    Varying the Number of Documents To inves-
+zero-shot reranking (Section 6.1). Note that these                   tigate the the effect of the number of documents
+results—while impressive—still leave room for fur-                   shown to the model, we performed a minimal anal-
+ther improvements, compared to the top-16 BM25                       ysis on the development set of NQ and TriviaQA.
+oracle results (see Figure 7). Moreover, the oracle                  Figure 8 demonstrates that showing documents in-
+results themselves can be improved by retrieving                     context significantly improves the model’s perfor-
+k > 16 documents via a BM25 retriever, or by                         mance. In addition, most of the gain can be ob-
+training stronger retrievers dedicated to the RALM                   tained by using only two documents (or even a
+task. We leave this direction for future work.                       single one in some cases).
+Results Table 4 gives the results of In-Context          community to use and improve over. We hope it
+RALM on the test set of Natural Questions and            will drive further research of RALM, which will
+TriviaQA. Motivated by our previous findings,            enable its wider adoption.
+we used two retrieved documents. It is evident
+that showing the model relevant documents sig-           Acknowledgements
+nificantly boosted its performance. For example,
+                                                         We would like to thank the reviewers and the Ac-
+adding retrieved documents improved LLaMA-
+                                                         tion Editor for their valuable feedback.
+13B in the zero-shot setting by more than 18 points
+on NQ (from 12.0% to 31.0%) and more than 5
+points on TriviaQA (from 54.8% to 60.1%).                References
+8   Discussion                                           Uri Alon, Frank Xu, Junxian He, Sudipta Sengupta,
+                                                           Dan Roth, and Graham Neubig. 2022. Neuro-
+Retrieval from external sources has become a com-          symbolic language modeling with automaton-
+mon practice in knowledge-intensive tasks (such            augmented retrieval. In ICML.
+as factual question answering, fact checking, and
+more; Petroni et al. 2021). In parallel, recent break-   Sid Black, Leo Gao, Phil Wang, Connor Leahy,
+throughs in LM generation capabilities has led to          and Stella Biderman. 2021. GPT-Neo: Large
+LMs that can generate useful long texts. How-              Scale Autoregressive Language Modeling with
+ever, factual inaccuracies remain a common way in          Mesh-Tensorflow.
+which machine-generated text can fall short, and
+lack of direct provenance makes it hard to trust         Sebastian Borgeaud, Arthur Mensch, Jordan Hoff-
+machine generated text. This makes language mod-           mann, Trevor Cai, Eliza Rutherford, Katie Mil-
+eling both a promising and an urgent new applica-          lican, George Bm Van Den Driessche, Jean-
+tion area for knowledge grounding, and motivates           Baptiste Lespiau, Bogdan Damoc, Aidan Clark,
+promoting RALM approaches. Prior research has              Diego De Las Casas, Aurelia Guy, Jacob Menick,
+already investigated RALM, of course, but it is            Roman Ring, Tom Hennigan, Saffron Huang,
+not yet widely deployed. One likely reason is that         Loren Maggiore, Chris Jones, Albin Cassirer,
+existing approaches rely upon fine-tuning the LM,          Andy Brock, Michela Paganini, Geoffrey Irv-
+which is typically difficult and costly, and is even       ing, Oriol Vinyals, Simon Osindero, Karen Si-
+impossible for LMs accessible only via an API.             monyan, Jack Rae, Erich Elsen, and Laurent
+   This paper presented the framework of In-               Sifre. 2022. Improving language models by re-
+Context RALM, enabling frozen, off-the-shelf LMs           trieving from trillions of tokens. In ICML.
+to benefit from retrieval. We demonstrated that          Tom B. Brown, Benjamin Mann, Nick Ryder,
+substantial performance gains can be achieved by           Melanie Subbiah, Jared Kaplan, Prafulla Dhari-
+using general purpose retrievers, and showed that          wal, Arvind Neelakantan, Pranav Shyam, Girish
+additional gains can be achieved by tailoring the          Sastry, Amanda Askell, Sandhini Agarwal, Ariel
+document selection to the LM setting. A recent             Herbert-Voss, Gretchen Krueger, Tom Henighan,
+work by Muhlgay et al. (2023) demonstrates that            Rewon Child, Aditya Ramesh, Daniel Ziegler,
+In-Context RALM is indeed able to improve the              Jeffrey Wu, Clemens Winter, Christopher Hesse,
+factuality of large LMs.                                   Mark Chen, Eric Sigler, Mateusz Litwin, Scott
+   Several directions for further improvement re-          Gray, Benjamin Chess, Jack Clark, Christopher
+main for future work. First, this paper considers          Berner, Sam McCandlish, Alec Radford, Ilya
+only the case of prepending a single external docu-        Sutskever, and Dario Amodei. 2020. Language
+ment to the context; adding more documents could           models are few-shot learners. In Advances in
+drive further gains (for example, using the frame-         Neural Information Processing Systems.
+work of Ratner et al. 2022). Second, we retrieved
+documents every fixed interval of s tokens, but see      Danqi Chen, Adam Fisch, Jason Weston, and An-
+potential for large latency and cost gains by retriev-     toine Bordes. 2017. Reading Wikipedia to an-
+ing more sparsely, such as only when a specialized         swer open-domain questions. In Proceedings
+model predicts that retrieval is needed.                   of the 55th Annual Meeting of the Association
+   We release the code used in this work, for the          for Computational Linguistics (Volume 1: Long
+  Papers), pages 1870–1879, Vancouver, Canada.        Joulin, and Edouard Grave. 2022a. Unsu-
+  Association for Computational Linguistics.          pervised dense information retrieval with con-
+                                                      trastive learning. Transactions on Machine
+Jacob Devlin, Ming-Wei Chang, Kenton Lee, and         Learning Research.
+  Kristina Toutanova. 2019. BERT: Pre-training
+  of deep bidirectional transformers for language   Gautier Izacard and Edouard Grave. 2021. Lever-
+  understanding. In Proceedings of the 2019 Con-      aging passage retrieval with generative models
+  ference of the North American Chapter of the        for open domain question answering. In Pro-
+  Association for Computational Linguistics: Hu-      ceedings of the 16th Conference of the European
+  man Language Technologies, Volume 1 (Long           Chapter of the Association for Computational
+  and Short Papers), pages 4171–4186, Minneapo-       Linguistics: Main Volume, pages 874–880, On-
+  lis, Minnesota. Association for Computational       line. Association for Computational Linguistics.
+  Linguistics.
+                                                    Gautier Izacard, Patrick Lewis, Maria Lomeli, Lu-
+Qingxiu Dong, Lei Li, Damai Dai, Ce Zheng, Zhiy-      cas Hosseini, Fabio Petroni, Timo Schick, Jane
+  ong Wu, Baobao Chang, Xu Sun, Jingjing Xu,          Dwivedi-Yu, Armand Joulin, Sebastian Riedel,
+  Lei Li, and Zhifang Sui. 2023. A survey on          and Edouard Grave. 2022b. Atlas: Few-shot
+  in-context learning.                                learning with retrieval augmented language mod-
+                                                      els.
+Martin Fajcik, Martin Docekal, Karel Ondrej, and
+ Pavel Smrz. 2021. R2-D2: A modular baseline        Jeff Johnson, Matthijs Douze, and Hervé Jégou.
+ for open-domain question answering. In Find-         2021. Billion-scale similarity search with GPUs.
+ ings of the Association for Computational Lin-       IEEE Transactions on Big Data, 7(3):535–547.
+ guistics: EMNLP 2021, pages 854–870, Punta
+                                                    Mandar Joshi, Eunsol Choi, Daniel Weld, and Luke
+ Cana, Dominican Republic. Association for
+                                                     Zettlemoyer. 2017. TriviaQA: A large scale
+ Computational Linguistics.
+                                                     distantly supervised challenge dataset for read-
+Leo Gao, Stella Biderman, Sid Black, Laurence        ing comprehension. In Proceedings of the 55th
+  Golding, Travis Hoppe, Charles Foster, Jason       Annual Meeting of the Association for Compu-
+  Phang, Horace He, Anish Thite, Noa Nabeshima,      tational Linguistics (Volume 1: Long Papers),
+  Shawn Presser, and Connor Leahy. 2021. The         pages 1601–1611, Vancouver, Canada. Associa-
+  pile: An 800gb dataset of diverse text for lan-    tion for Computational Linguistics.
+  guage modeling.
+                                                    Vladimir Karpukhin, Barlas Oguz, Sewon Min,
+Kelvin Guu, Kenton Lee, Zora Tung, Panupong           Patrick Lewis, Ledell Wu, Sergey Edunov, Danqi
+  Pasupat, and Ming-Wei Chang. 2020. REALM:           Chen, and Wen-tau Yih. 2020. Dense passage re-
+  Retrieval-augmented language model pre-             trieval for open-domain question answering. In
+  training. In ICML.                                  Proceedings of the 2020 Conference on Empir-
+                                                      ical Methods in Natural Language Processing
+Junxian He, Graham Neubig, and Taylor Berg-           (EMNLP), pages 6769–6781, Online. Associa-
+  Kirkpatrick. 2021. Efficient nearest neighbor       tion for Computational Linguistics.
+  language models. In Proceedings of the 2021
+  Conference on Empirical Methods in Natural        Urvashi Khandelwal, Omer Levy, Dan Juraf-
+  Language Processing, pages 5703–5714, Online        sky, Luke Zettlemoyer, and Mike Lewis. 2020.
+  and Punta Cana, Dominican Republic. Associa-        Generalization through memorization: Nearest
+  tion for Computational Linguistics.                 neighbor language models. In International
+                                                      Conference on Learning Representations.
+Minlie Huang, Xiaoyan Zhu, and Jianfeng Gao.
+ 2020. Challenges in building intelligent open-     Tom Kwiatkowski, Jennimaria Palomaki, Olivia
+ domain dialog systems. ACM Trans. Inf. Syst.,        Redfield, Michael Collins, Ankur Parikh, Chris
+ 38(3).                                               Alberti, Danielle Epstein, Illia Polosukhin, Jacob
+                                                      Devlin, Kenton Lee, Kristina Toutanova, Llion
+Gautier Izacard, Mathilde Caron, Lucas Hosseini,      Jones, Matthew Kelcey, Ming-Wei Chang, An-
+  Sebastian Riedel, Piotr Bojanowski, Armand          drew M. Dai, Jakob Uszkoreit, Quoc Le, and
+  Slav Petrov. 2019. Natural questions: A bench-     Stephanie Lin, Jacob Hilton, and Owain Evans.
+  mark for question answering research. Trans-         2022. TruthfulQA: Measuring how models
+  actions of the Association for Computational         mimic human falsehoods. In Proceedings of the
+  Linguistics, 7:452–466.                              60th Annual Meeting of the Association for Com-
+                                                       putational Linguistics (Volume 1: Long Papers),
+Yoav Levine, Itay Dalmedigos, Ori Ram, Yoel
+                                                       pages 3214–3252, Dublin, Ireland. Association
+  Zeldes, Daniel Jannai, Dor Muhlgay, Yoni Osin,
+                                                       for Computational Linguistics.
+  Opher Lieber, Barak Lenz, Shai Shalev-Shwartz,
+  Amnon Shashua, Kevin Leyton-Brown, and             Yinhan Liu, Myle Ott, Naman Goyal, Jingfei Du,
+  Yoav Shoham. 2022a. Standing on the shoul-           Mandar Joshi, Danqi Chen, Omer Levy, Mike
+  ders of giant frozen language models.                Lewis, Luke Zettlemoyer, and Veselin Stoyanov.
+Yoav Levine, Ori Ram, Daniel Jannai, Barak Lenz,       2019. RoBERTa: A robustly optimized bert
+  Shai Shalev-Shwartz, Amnon Shashua, Kevin            pretraining approach.
+  Leyton-Brown, and Yoav Shoham. 2022b. Huge
+                                                     Joshua Maynez, Shashi Narayan, Bernd Bohnet,
+  frozen language models as readers for open-
+                                                       and Ryan McDonald. 2020. On faithfulness and
+  domain question answering. In ICML 2022
+                                                       factuality in abstractive summarization. In Pro-
+  Workshop on Knowledge Retrieval and Lan-
+                                                       ceedings of the 58th Annual Meeting of the As-
+  guage Models.
+                                                       sociation for Computational Linguistics, pages
+Yoav Levine, Noam Wies, Daniel Jannai, Dan             1906–1919, Online. Association for Computa-
+  Navon, Yedid Hoshen, and Amnon Shashua.              tional Linguistics.
+  2022c. The inductive bias of in-context learn-
+  ing: Rethinking pretraining example design. In     Stephen Merity, Caiming Xiong, James Bradbury,
+  International Conference on Learning Represen-       and Richard Socher. 2016. Pointer sentinel mix-
+  tations.                                             ture models.
+
+Patrick Lewis, Ethan Perez, Aleksandra Piktus,       Dor Muhlgay, Ori Ram, Inbal Magar, Yoav Levine,
+  Fabio Petroni, Vladimir Karpukhin, Naman             Nir Ratner, Yonatan Belinkov, Omri Abend,
+  Goyal, Heinrich Küttler, Mike Lewis, Wen-tau         Kevin Leyton-Brown, Amnon Shashua, and
+  Yih, Tim Rocktäschel, Sebastian Riedel, and         Yoav Shoham. 2023. Generating benchmarks
+  Douwe Kiela. 2020. Retrieval-augmented gen-          for factuality evaluation of language models.
+  eration for knowledge-intensive nlp tasks. In
+  Advances in Neural Information Processing Sys-     Fabio Petroni, Aleksandra Piktus, Angela Fan,
+  tems, pages 9459–9474.                               Patrick Lewis, Majid Yazdani, Nicola De Cao,
+                                                       James Thorne, Yacine Jernite, Vladimir
+Zonglin Li, Ruiqi Guo, and Sanjiv Kumar. 2022.
+                                                       Karpukhin, Jean Maillard, Vassilis Plachouras,
+  Decoupled context processing for context aug-
+                                                       Tim Rocktäschel, and Sebastian Riedel. 2021.
+  mented language modeling. In Advances in Neu-
+                                                       KILT: a benchmark for knowledge intensive lan-
+  ral Information Processing Systems.
+                                                       guage tasks. In Proceedings of the 2021 Con-
+Opher Lieber, Or Sharir, Barak Lenz, and Yoav          ference of the North American Chapter of the
+  Shoham. 2021. Jurassic-1: Technical details and      Association for Computational Linguistics: Hu-
+  evaluation.                                          man Language Technologies, pages 2523–2544,
+                                                       Online. Association for Computational Linguis-
+Jimmy Lin, Xueguang Ma, Sheng-Chieh Lin,               tics.
+  Jheng-Hong Yang, Ronak Pradeep, and Rodrigo
+  Nogueira. 2021. Pyserini: A python toolkit for     Alec Radford, Karthik Narasimhan, Tim Salimans,
+  reproducible information retrieval research with     and Ilya Sutskever. 2018. Improving language
+  sparse and dense representations. In Proceed-        understanding by generative pre-training.
+  ings of the 44th International ACM SIGIR Con-
+  ference on Research and Development in Infor-      Alec Radford, Jeff Wu, Rewon Child, David Luan,
+  mation Retrieval, SIGIR ’21, page 2356–2362,         Dario Amodei, and Ilya Sutskever. 2019. Lan-
+  New York, NY, USA. Association for Comput-           guage models are unsupervised multitask learn-
+  ing Machinery.                                       ers.
+Ori Ram, Gal Shachaf, Omer Levy, Jonathan Be-            Ł ukasz Kaiser, and Illia Polosukhin. 2017. At-
+  rant, and Amir Globerson. 2022. Learning to re-        tention is all you need. In Advances in Neural
+  trieve passages without supervision. In Proceed-       Information Processing Systems 30, pages 5998–
+  ings of the 2022 Conference of the North Amer-         6008.
+  ican Chapter of the Association for Computa-
+  tional Linguistics: Human Language Technolo-       Ben Wang and Aran Komatsuzaki. 2021. GPT-J-
+  gies, pages 2687–2700, Seattle, United States.       6B: A 6 Billion Parameter Autoregressive Lan-
+  Association for Computational Linguistics.           guage Model.
+
+Nir Ratner, Yoav Levine, Yonatan Belinkov,           Thomas Wolf, Lysandre Debut, Victor Sanh, Julien
+  Ori Ram, Omri Abend, Ehud Karpas, Am-                Chaumond, Clement Delangue, Anthony Moi,
+  non Shashua, Kevin Leyton-Brown, and Yoav            Pierric Cistac, Tim Rault, Remi Louf, Morgan
+  Shoham. 2022. Parallel context windows im-           Funtowicz, Joe Davison, Sam Shleifer, Patrick
+  prove in-context learning of large language mod-     von Platen, Clara Ma, Yacine Jernite, Julien Plu,
+  els.                                                 Canwen Xu, Teven Le Scao, Sylvain Gugger,
+                                                       Mariama Drame, Quentin Lhoest, and Alexan-
+Stephen Robertson and Hugo Zaragoza. 2009. The         der Rush. 2020. Transformers: State-of-the-art
+  probabilistic relevance framework: BM25 and          natural language processing. In Proceedings of
+  beyond. Found. Trends Inf. Retr., 3(4):333–389.      the 2020 Conference on Empirical Methods in
+                                                       Natural Language Processing: System Demon-
+Devendra Sachan, Mike Lewis, Mandar Joshi, Ar-         strations, pages 38–45, Online. Association for
+  men Aghajanyan, Wen-tau Yih, Joelle Pineau,          Computational Linguistics.
+  and Luke Zettlemoyer. 2022. Improving passage
+  retrieval with zero-shot question generation. In   Rowan Zellers, Ari Holtzman, Hannah Rashkin,
+  Proceedings of the 2022 Conference on Empir-         Yonatan Bisk, Ali Farhadi, Franziska Roesner,
+  ical Methods in Natural Language Processing,         and Yejin Choi. 2019. Defending against neural
+  pages 3781–3797, Abu Dhabi, United Arab Emi-         fake news. In Advances in Neural Information
+  rates. Association for Computational Linguis-        Processing Systems, volume 32. Curran Asso-
+  tics.                                                ciates, Inc.
+
+Weijia Shi, Sewon Min, Michihiro Yasunaga, Min-      Susan Zhang, Stephen Roller, Naman Goyal, Mikel
+ joon Seo, Rich James, Mike Lewis, Luke Zettle-        Artetxe, Moya Chen, Shuohui Chen, Christopher
+ moyer, and Wen tau Yih. 2023. REPLUG:                 Dewan, Mona Diab, Xian Li, Xi Victoria Lin,
+ Retrieval-augmented black-box language mod-           Todor Mihaylov, Myle Ott, Sam Shleifer, Kurt
+ els.                                                  Shuster, Daniel Simig, Punit Singh Koura, An-
+                                                       jali Sridhar, Tianlu Wang, and Luke Zettlemoyer.
+Nandan Thakur, Nils Reimers, Andreas Rücklé,           2022. OPT: Open pre-trained transformer lan-
+  Abhishek Srivastava, and Iryna Gurevych. 2021.       guage models.
+  BEIR: A heterogeneous benchmark for zero-shot
+  evaluation of information retrieval models. In     Zexuan Zhong, Tao Lei, and Danqi Chen. 2022.
+  Proceedings of the Neural Information Process-       Training language models with memory augmen-
+  ing Systems Track on Datasets and Benchmarks,        tation. In Proceedings of the 2022 Conference
+  volume 1.                                            on Empirical Methods in Natural Language Pro-
+                                                       cessing, pages 5657–5673, Abu Dhabi, United
+Hugo Touvron, Thibaut Lavril, Gautier Izacard,         Arab Emirates. Association for Computational
+ Xavier Martinet, Marie-Anne Lachaux, Timo-            Linguistics.
+  thée Lacroix, Baptiste Rozière, Naman Goyal,
+  Eric Hambro, Faisal Azhar, Aurelien Rodriguez,     A     Query Length Ablations
+ Armand Joulin, Edouard Grave, and Guillaume
+  Lample. 2023. LLaMA: Open and efficient foun-      Figure 9 and Figure 10 show ablations on the opti-
+  dation language models.                            mal query length ℓ for off-the-shelf dense retrievers
+                                                     (BERT and Contriever respectively). We omit the
+Ashish Vaswani, Noam Shazeer, Niki Parmar,           results of Spider as they are almost identical to
+  Jakob Uszkoreit, Llion Jones, Aidan Gomez,         those of Contriever. Consistently, using ℓ = 64
+(tokens) is optimal. This is in contrast to similar
+experiments we conducted for BM25 (cf. Figure 6),                                                           Wiki-103        RealNews
+where ℓ = 32 is optimal.                              Model                            Retrieval
+                                                                                                            word ppl         token ppl
+B   GPT-Neo Results                                                                    -                      17.5               12.3
+                                                      GPT-Neo 1.3B                     BM25, §5               14.6                9.9
+Table 5 gives the results of applying In-Context
+RALM to the models from the GPT-Neo model                                              -                      15.1               11.0
+                                                      GPT-Neo 2.7B                     BM25, §5               12.8                9.0
+family on WikiText-103 and RealNews.
+                                                                                       -                      11.6                 9.2
+C   Open-Domain Question Answering                    GPT-J 6B                         BM25, §5               10.0                 7.7
+    Experiments: Further Details
+Closed-Book Setting For the closed-book set-          Table 5: The performance of models from the GPT-
+ting, we adopt the prompt of Touvron et al. (2023):   Neo family, measured by word-level perplexity on
+                                                      the test set of WikiText-103 and token-level per-
+     Answer these questions:                          plexity on the development set of RealNews.
+     Q: Who got the first nobel
+     prize in physics?
+     A:
+Open-Book Setting For the open-book setting,                       GPT-2 117M (S)   GPT-2 345M (M)    GPT-2 762M (L)      GPT-2 1.5B (XL)
+
+we extend the above prompt as follows:                              45.0
+
+     Nobel Prize
+                                                                    35.0
+
+
+                                                      Perplexity
+     A group including 42
+     Swedish writers, artists,                                      25.0
+
+     and literary critics
+     protested against this                                         15.0
+                                                                               16         32           64           128          256
+     decision, having expected
+                                                                                            Retrieval Query Length (ℓ)
+     Leo Tolstoy to be awarded.
+     Some, including Burton
+     Feldman, have criticised                         Figure 9: An analysis of perplexity as a function
+     this prize because they...                       of the number of tokens in the query for an off-
+                                                      the-shelf BERT retriever on the development set of
+     Nobel Prize in Physiology                        WikiText-103.
+     or Medicine
+
+     In the last half century
+     there has been an                                             GPT-2 117M (S)   GPT-2 345M (M)    GPT-2 762M (L)      GPT-2 1.5B (XL)
+
+     increasing tendency
+                                                                    40.0
+     for scientists to work
+     as teams, resulting in
+                                                      Perplexity
+                                                                    30.0
+     controversial exclusions.
+     Alfred Nobel was born                                          20.0
+     on 21 October 1833 in
+     Stockholm, Sweden, into                                        10.0
+                                                                               16         32           64           128          256
+     a family of engineers...
+                                                                                            Retrieval Query Length (ℓ)
+
+     Based on these texts,
+     answer these questions:                          Figure 10: An analysis of perplexity as a function
+     Q: Who got the first nobel                       of the number of tokens in the query for Contriever
+     prize in physics?                                on the development set of WikiText-103.
+     A:
+

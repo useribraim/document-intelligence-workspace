@@ -1,0 +1,513 @@
+                                              Ragas: Automated Evaluation of Retrieval Augmented Generation
+                                                     Shahul Es† , Jithin James† , Luis Espinosa-Anke∗♢ , Steven Schockaert∗
+                                                                               †
+                                                                                 Exploding Gradients
+                                                                 ∗
+                                                                   CardiffNLP, Cardiff University, United Kingdom
+                                                                           ♢
+                                                                             AMPLYFI, United Kingdom
+                                                             shahules786@gmail.com,jamesjithin97@gmail.com
+                                                              {espinosa-ankel,schockaerts1}@cardiff.ac.uk
+
+
+                                                               Abstract                         struggle to memorise knowledge that is only rarely
+                                                                                                mentioned in the training corpus (Kandpal et al.,
+                                             We introduce Ragas (Retrieval Augmented            2022; Mallen et al., 2023). The standard solution
+                                             Generation Assessment), a framework for
+                                                                                                to these issues is to rely on Retrieval Augmented
+
+
+
+
+arXiv:2309.15217v2 [cs.CL] 28 Apr 2025
+                                             reference-free evaluation of Retrieval Aug-
+                                             mented Generation (RAG) pipelines. RAG             Generation (RAG) (Lee et al., 2019; Lewis et al.,
+                                             systems are composed of a retrieval and an         2020; Guu et al., 2020). Answering a question
+                                             LLM based generation module, and provide           then essentially involves retrieving relevant pas-
+                                             LLMs with knowledge from a reference textual       sages from a corpus and feeding these passages,
+                                             database, which enables them to act as a natu-     along with the original question, to the LM. While
+                                             ral language layer between a user and textual      initial approaches relied on specialised LMs for
+                                             databases, reducing the risk of hallucinations.
+                                                                                                retrieval-augmented language modelling (Khandel-
+                                             Evaluating RAG architectures is, however, chal-
+                                             lenging because there are several dimensions to
+                                                                                                wal et al., 2020; Borgeaud et al., 2022), recent work
+                                             consider: the ability of the retrieval system to   has suggested that simply adding retrieved docu-
+                                             identify relevant and focused context passages,    ments to the input of a standard LM can also work
+                                             the ability of the LLM to exploit such passages    well (Khattab et al., 2022; Ram et al., 2023; Shi
+                                             in a faithful way, or the quality of the genera-   et al., 2023), thus making it possible to use retrieval-
+                                             tion itself. With Ragas, we put forward a suite    augmented strategies in combination with LLMs
+                                             of metrics which can be used to evaluate these     that are only available through APIs.
+                                             different dimensions without having to rely on
+                                                                                                   While the usefulness of retrieval-augmented
+                                             ground truth human annotations. We posit that
+                                             such a framework can crucially contribute to       strategies is clear, their implementation requires
+                                             faster evaluation cycles of RAG architectures,     a significant amount of tuning, as the overall per-
+                                             which is especially important given the fast       formance will be affected by the retrieval model,
+                                             adoption of LLMs.                                  the considered corpus, the LM, or the prompt for-
+                                                                                                mulation, among others. Automated evaluation of
+                                         1   Introduction                                       retrieval-augmented systems is thus paramount. In
+                                         Language Models (LMs) capture a vast amount            practice, RAG systems are often evaluated in terms
+                                         of knowledge about the world, which allows them        of the language modelling task itself, i.e. by mea-
+                                         to answer questions without accessing any exter-       suring perplexity on some reference corpus. How-
+                                         nal sources. This idea of LMs as repositories of       ever, such evaluations are not always predictive
+                                         knowledge emerged shortly after the introduction       of downstream performance (Wang et al., 2023c).
+                                         of BERT (Devlin et al., 2019) and became more          Moreover, this evaluation strategy relies on the LM
+                                         firmly established with the introduction of ever       probabilities, which are not accessible for some
+                                         larger LMs (Roberts et al., 2020). While the most      closed models (e.g. ChatGPT and GPT-4). Ques-
+                                         recent Large Language Models (LLMs) capture            tion answering is another common evaluation task,
+                                         enough knowledge to rival human performance            but usually only datasets with short extractive an-
+                                         across a wide variety of question answering bench-     swers are considered, which may not be represen-
+                                         marks (Bubeck et al., 2023), the idea of using         tative of how the system will be used.
+                                         LLMs as knowledge bases still has two fundamen-           To address these issues, in this paper we present
+                                         tal limitations. First, LLMs are not able to answer    Ragas1 , a framework for the automated assessment
+                                         questions about events that have happened after           1
+                                                                                                     Ragas is available at        https://github.com/
+                                         they were trained. Second, even the largest models     explodinggradients/ragas.
+of retrieval augmented generation systems. We fo-       factual answers are more stable: when an answer is
+cus on settings where reference answers may not be      factual, we can expect that different samples will
+available, and where we want to estimate different      tend to be semantically similar, whereas this is less
+proxies for correctness, in addition to the useful-     likely to be the case for hallucinated answers.
+ness of the retrieved passages. The Ragas frame-
+                                                        Automated evaluation of text generation systems
+work provides an integration with both llama-index
+                                                        LLMs have also been leveraged to automatically
+and Langchain, the most widely used frameworks
+                                                        evaluate other aspects of generated text fragments,
+for building RAG solutions, thus enabling devel-
+                                                        beyond factuality. For instance, GPTScore (Fu
+opers to easily integrate Ragas into their standard
+                                                        et al., 2023) uses a prompt that specifies the consid-
+workflow.
+                                                        ered aspect (e.g. fluency) and then scores passages
+                                                        based on the average probability of the generated
+2   Related Work
+                                                        tokens, according to a given autoregressive LM.
+Estimating faithfulness using LLMs The prob-            This idea of using prompts was previously also
+lem of detecting hallucinations in LLM generated        considered by Yuan et al. (2021), although they
+responses has been extensively studied (Ji et al.,      used a smaller fine-tuned LM (i.e. BART) and did
+2023). Several authors have suggested the idea          not observe a clear benefit from using prompts. An-
+of predicting factuality using a few-shot prompt-       other approach directly asks ChatGPT to evaluate
+ing strategy (Zhang et al., 2023). Recent analy-        a particular aspect of the given answer by provid-
+ses, however, suggest that existing models struggle     ing a score between 0 and 100, or by providing a
+with detecting hallucination when using standard        rating on a 5-star scale (Wang et al., 2023a). Re-
+prompting strategies (Li et al., 2023; Azaria and       markably, strong results can be obtained in this
+Mitchell, 2023). Other approaches rely on linking       way, although it comes with the limitation of being
+the generated responses to facts from an external       sensitive to the design of the prompt. Rather than
+knowledge base (Min et al., 2023), but this is not      scoring individual answers, some authors have also
+always possible.                                        focused on using an LLM to select the best answer
+   Yet another strategy is to inspect the probabili-    among a number of candidates (Wang et al., 2023b),
+ties assigned to individual tokens, where we would      typically to compare the performance of different
+expect the model to be less confident in halluci-       LLMs. However, care is needed with this approach,
+nated answers than in factual ones. For instance,       as the order in which the answers is presented can
+BARTScore (Yuan et al., 2021) estimates factuality      influence the result (Wang et al., 2023b).
+by looking at the conditional probability of the gen-      In terms of how ground truth answers or, more
+erated text given the input. Kadavath et al. (2022)     generally, generations, have been typically used
+use a variation of this idea. Starting from the ob-     in the literature, most approaches have relied on
+servation that LLMs provide well-calibrated proba-      the availability of one or more reference answers.
+bilities when answering multiple-choice questions,      For instance, BERTScore (Zhang et al., 2020)
+they essentially convert the problem of validating      and MoverScore (Zhao et al., 2019) use contex-
+model generated answers into a multiple-choice          tualised embeddings, produced by a pre-trained
+question which asks whether the answer is true or       BERT model, to compare the similarity between
+false. Rather than looking at the output probabil-      the generated answer and the reference answers.
+ities, Azaria and Mitchell (2023) propose to train      BARTScore (Yuan et al., 2021) similarly uses refer-
+a supervised classifier on the weights from one of      ence answers to compute aspects such as precision
+the hidden layers of the LLM, to predict whether a      (estimated as the probability of generating the gen-
+given statement is true or not. While the approach      erated answer given the reference) and recall (esti-
+performs well, the need to access the hidden states     mated as the probability of generating the reference
+of the model makes it unsuitable for systems that       given the generated answer).
+access LLMs through an API.
+                                                        3   Evaluation Strategies
+   For models that do not provide access to token
+probabilities, such as ChatGPT and GPT-4, differ-       We consider a standard RAG setting, where given a
+ent methods are needed. SelfCheckGPT (Manakul           question q, the system first retrieves some context
+et al., 2023) addresses this problem by instead sam-    c(q) and then uses the retrieved context to generate
+pling multiple answers. Their core idea is that         an answer as (q). When building a RAG system,
+we usually do not have access to human-annotated                 in S, the LLM determines if si can be inferred from
+datasets or reference answers. We therefore fo-                  c(q) using a verification function v(si , c(q)). This
+cus on metrics that are fully self-contained and                 verification step is carried out using the following
+reference-free. We focus in particular three quality             prompt:
+aspects, which we argue are of central importance.
+                                                                      Consider the given context and following
+First, Faithfulness refers to the idea that the an-
+                                                                      statements, then determine whether they
+swer should be grounded in the given context. This
+                                                                      are supported by the information present
+is important to avoid hallucinations, and to ensure
+                                                                      in the context. Provide a brief explana-
+that the retrieved context can act as a justification
+                                                                      tion for each statement before arriving
+for the generated answer. Indeed, RAG systems are
+                                                                      at the verdict (Yes/No). Provide a final
+often used in applications where the factual con-
+                                                                      verdict for each statement in order at the
+sistency of the generated text w.r.t. the grounded
+                                                                      end in the given format. Do not deviate
+sources is highly important, e.g. in domains such as
+                                                                      from the specified format.
+law, where information is constantly evolving. Sec-
+                                                                      statement: [statement 1]
+ond, Answer Relevance refers to the idea that the
+                                                                      ...
+generated answer should address the actual ques-
+                                                                      statement: [statement n]
+tion that was provided. Finally, Context Relevance
+refers to the idea that the retrieved context should             The final faithfulness score, F , is then computed
+be focused, containing as little irrelevant informa-             as F = |V   |
+                                                                           |S| , where |V | is the number of statements
+tion as possible. This is important given the cost               that were supported according to the LLM and |S|
+associated with feeding long context passages to                 is the total number of statements.
+LLMs. Moreover, when context passages are too
+long, LLMs are often less effective in exploiting                Answer relevance We say that the answer as (q)
+that context, especially for information that is pro-            is relevant if it directly addresses the question in
+vided in the middle of the context passage (Liu                  an appropriate way. In particular, our assessment
+et al., 2023).                                                   of answer relevance does not take into account fac-
+   We now explain how these three quality aspects                tuality, but penalises cases where the answer is
+can be measured in a fully automated way, by                     incomplete or where it contains redundant informa-
+prompting an LLM. In our implementation and                      tion. To estimate answer relevance, for the given
+experiments, all prompts are evaluated using the                 answer as (q), we prompt the LLM to generate n
+gpt-3.5-turbo-16k model, which is available                      potential questions qi based on as (q), as follows:
+through the OpenAI API2 .                                             Generate a question for the given answer.
+Faithfulness We say that the answer as (q) is                         answer: [answer]
+faithful to the context c(q) if the claims that are              We then obtain embeddings for all questions us-
+made in the answer can be inferred from the con-                 ing the text-embedding-ada-002 model, avail-
+text. To estimate faithfulness, we first use an LLM              able from the OpenAI API. For each qi , we cal-
+to extract a set of statements, S(as (q)). The aim               culate the similarity sim(q, qi ) with the original
+of this step is to decompose longer sentences into               question q, as the cosine between the correspond-
+shorter and more focused assertions. We use the                  ing embeddings. The answer relevance score, AR,
+following prompt for this step3 :                                for question q is then computed as:
+       Given a question and answer, create one                                            n
+       or more statements from each sentence                                           1X
+                                                                               AR =       sim(q, qi )               (1)
+       in the given answer.                                                            n
+                                                                                         i=1
+       question: [question]
+                                                                    This metric evaluates how closely the generated
+       answer: [answer]
+                                                                 answer aligns with the initial question or instruc-
+where [question] and [answer] refer to the                       tion.
+given question and answer. For each statement si
+                                                                 Context relevance The context c(q) is consid-
+   2
+      https://platform.openai.com                                ered relevant to the extent that it exclusively con-
+    3
+      To help clarify the task, we include a demonstration as
+part of the prompt. This demonstration is not explicitly shown   tains information that is needed to answer the ques-
+in the listing of the prompts throughout this paper.             tion. In particular, this metric aims to penalise the
+inclusion of redundant information. To estimate                       links.
+context relevance, given a question q and its con-                    4. The question should be of moderate
+text c(q), the LLM extracts a subset of sentences,                    difficulty.
+Sext , from c(q) that are crucial to answer q, using                  5. The question must be reasonable and
+the following prompt:                                                 must be understood and responded to by
+                                                                      humans.
+      Please extract relevant sentences from                          6. Do not use phrases that ’provided con-
+      the provided context that can potentially                       text’, etc in the question
+      help answer the following question. If no                       context:
+      relevant sentences are found, or if you
+      believe the question cannot be answered                    We also used ChatGPT to answer the generated
+      from the given context, return the phrase                  question, when given the corresponding introduc-
+      "Insufficient Information". While extract-                 tory section as context, using the following prompt:
+      ing candidate sentences you’re not al-
+                                                                      Answer the question using the informa-
+      lowed to make any changes to sentences
+                                                                      tion from the given context.
+      from given context.
+                                                                      question: [question]
+The context relevance score is then computed as:                      context: [context]
+
+               number of extracted sentences                     All questions were annotated along the three con-
+    CR =                                                  (2)    sidered quality dimensions by two annotators. Both
+             total number of sentences in c(q)
+                                                                 annotators were fluent in English and were given
+4    The WikiEval Dataset                                        clear instructions about the meaning of the three
+                                                                 considered quality dimensions. For faithfulness
+To evaluate the proposed framework, we ideally
+                                                                 and context relevance, the two annotators agreed in
+need examples of question-context-answer triples
+                                                                 around 95% of cases. For answer relevance, they
+which are annotated with human judgments. We
+                                                                 agreed in around 90% of the cases. Disagreements
+can then verify to what extent our metrics agree
+                                                                 were resolved after a discussion between the anno-
+with human assessments of faithfulness, answer
+                                                                 tators.
+relevance and context relevance. Since we are not
+aware of any publicly available datasets that could              Faithfulness To obtain human judgements about
+be used for this purpose, we created a new dataset,              faithfulness, we first used ChatGPT to answer the
+which we refer to as WikiEval4 . To construct the                question without access to any additional context.
+dataset, we first selected 50 Wikipedia pages cov-               We then asked the annotators to judge which of the
+ering events that have happened since the start of               two answers was the most faithful (i.e. the standard
+20225 . In selecting these pages, we prioritised                 one or the one generated without context), given
+those with recent edits. For each of the 50 pages,               the question and corresponding Wikipedia page.
+we then asked ChatGPT to suggest a question that
+                                                                 Answer relevance We first used ChatGPT to
+can be answered based on the introductory section
+                                                                 obtain candidate answers with lower answer rel-
+of the page, using the following prompt:
+                                                                 evance, using the following prompt:
+      Your task is to formulate a question from
+                                                                      Answer the given question in an incom-
+      given context satisfying the rules given
+                                                                      plete manner.
+      below:
+                                                                      question: [question]
+      1. The question should be fully answered
+      from the given context.                                    We then asked human annotators to compare this
+      2. The question should be framed from                      answer, and indicate which of the two answers had
+      a part that contains non-trivial informa-                  the highest answer relevance.
+      tion.
+      3. The answer should not contain any                       Context relevance To measure this aspect, we
+                                                                 first added additional sentences to the context by
+   4
+     https://huggingface.co/datasets/                            scraping back-links to the corresponding Wikipedia
+explodinggradients/WikiEval
+   5
+     That is, beyond the reported training cutoff of the model   page. In this way, we were able to add information
+we used in our experiments.                                      to the context that was related but less relevant for
+                  Faith. Ans. Rel. Cont. Rel.            context. In this case, the prompt again includes
+                                                         a definition of the considered quality metric. For
+    Ragas          0.95       0.78          0.70         instance, for evaluating answer relevance, we used
+    GPT Score      0.72       0.52          0.63         the following prompt:
+    GPT Ranking    0.54       0.40          0.52
+                                                              Answer Relevancy measures the degree
+Table 1: Agreement with human annotators in pairwise          to which a response directly addresses
+comparisons of faithfulness, answer relevance and con-
+                                                              and is appropriate for a given question.
+text relevance, using the WikEval dataset (accuracy).
+                                                              It penalizes the present of redundant in-
+                                                              formation or incomplete answers given a
+                                                              question. Given an question and answer,
+answering the question. For the few pages with-               rank each answer based on Answer Rele-
+out any back-links, we instead used ChatGPT to                vancy.
+complete the given context.                                   question: [question]
+                                                              answer 1: [answer 1]
+5     Experiments
+                                                              answer 2: [answer 2]
+Table 1 analyses the agreement between the met-
+rics proposed in Section 3 and the human assess-            The results in Table 1 show that our proposed
+ments from the proposed WikiEval dataset. Each           metrics are much closer aligned with the human
+WikiEval instance requires the model to compare          judgements than the predictions from the two base-
+two answers or two context fragments. We count           lines. For faithfulness, the Ragas prediction are in
+how often the answer/context preferred by the            general highly accurate. For answer relevance, the
+model (i.e. with highest estimated faithfulness, an-     agreement is lower, but this is largely due to the
+swer relevance, or context relevance) coincides          fact that the differences between the two candidate
+with the answer/context preferred by the human           answers are often very subtle. We found context
+annotators. We report the results in terms of ac-        relevance to be the hardest quality dimension to
+curacy (i.e. the fraction of instances on which the      evaluate. In particular, we observed that ChatGPT
+model agrees with the annotators).                       often struggles with the task of selecting the sen-
+   To put the results in context, we compare our         tences from the context that are crucial, especially
+proposed metrics (shown as Ragas in Table 1) with        for longer contexts.
+two baseline methods. For the first method, shown
+                                                         6   Conclusions
+as GPT Score, we ask ChatGPT to assign a score
+between 0 and 10 for the three quality dimensions.       We have highlighted the need for automated
+To this end, we use a prompt that describes the          reference-free evaluation of RAG systems. In par-
+meaning of the quality metric and then asks to           ticular, we have argued the need for an evaluation
+score the given answer/context in line with that         framework that can assess faithfulness (i.e. is the
+definition. For instance, for evaluating faithfulness,   answer grounded in the retrieved context), answer
+we used the following prompt:                            relevance (i.e. does the answer address the ques-
+                                                         tion) and context relevance (i.e. is the retrieved
+      Faithfulness measures the information
+                                                         context sufficiently focused). To support the devel-
+      consistency of the answer against the
+                                                         opment of such a framework, we have introduced
+      given context. Any claims that are made
+                                                         WikiEval, a dataset which human judgements of
+      in the answer that cannot be deduced
+                                                         these three different aspects. Finally, we have also
+      from context should be penalized.
+                                                         described Ragas, our implementation of the three
+      Given an answer and context, assign a
+                                                         considered quality aspects. This framework is easy
+      score for faithfulness in the range 0-10.
+                                                         to use and can provide deverlopers of RAG sys-
+      context: [context]
+                                                         tems with valuable insights, even in the absence
+      answer: [answer]
+                                                         of any ground truth. Our evaluation on WikiEval
+Ties, where the same score is assigned by the LLM        has shown that the predictions from Ragas are
+to both answer candidates, were broken randomly.         closely aligned with human predictions, especially
+The second baseline, shown as GPT Ranking, in-           for faithfulness and answer relevance.
+stead asks ChatGPT to select the preferred answer/-
+References                                                     Kaplan. 2022. Language models (mostly) know what
+                                                               they know. CoRR, abs/2207.05221.
+Amos Azaria and Tom M. Mitchell. 2023. The inter-
+ nal state of an LLM knows when its lying. CoRR,             Nikhil Kandpal, Haikang Deng, Adam Roberts, Eric
+ abs/2304.13734.                                               Wallace, and Colin Raffel. 2022. Large language
+                                                               models struggle to learn long-tail knowledge. CoRR,
+Sebastian Borgeaud, Arthur Mensch, Jordan Hoffmann,            abs/2211.08411.
+  Trevor Cai, Eliza Rutherford, Katie Millican, George
+  van den Driessche, Jean-Baptiste Lespiau, Bogdan           Urvashi Khandelwal, Omer Levy, Dan Jurafsky, Luke
+  Damoc, Aidan Clark, Diego de Las Casas, Aurelia              Zettlemoyer, and Mike Lewis. 2020. Generalization
+  Guy, Jacob Menick, Roman Ring, Tom Hennigan,                 through memorization: Nearest neighbor language
+  Saffron Huang, Loren Maggiore, Chris Jones, Albin            models. In 8th International Conference on Learning
+  Cassirer, Andy Brock, Michela Paganini, Geoffrey             Representations, ICLR 2020, Addis Ababa, Ethiopia,
+  Irving, Oriol Vinyals, Simon Osindero, Karen Si-             April 26-30, 2020. OpenReview.net.
+  monyan, Jack W. Rae, Erich Elsen, and Laurent Sifre.
+                                                             Omar Khattab, Keshav Santhanam, Xiang Lisa Li,
+  2022. Improving language models by retrieving from
+                                                              David Hall, Percy Liang, Christopher Potts, and
+  trillions of tokens. In International Conference on
+                                                              Matei Zaharia. 2022. Demonstrate-search-predict:
+  Machine Learning, ICML 2022, 17-23 July 2022, Bal-
+                                                              Composing retrieval and language models for
+  timore, Maryland, USA, volume 162 of Proceedings
+                                                              knowledge-intensive NLP. CoRR, abs/2212.14024.
+  of Machine Learning Research, pages 2206–2240.
+  PMLR.                                                      Kenton Lee, Ming-Wei Chang, and Kristina Toutanova.
+                                                               2019. Latent retrieval for weakly supervised open do-
+Sébastien Bubeck, Varun Chandrasekaran, Ronen El-              main question answering. In Proceedings of the 57th
+  dan, Johannes Gehrke, Eric Horvitz, Ece Kamar,               Annual Meeting of the Association for Computational
+  Peter Lee, Yin Tat Lee, Yuanzhi Li, Scott Lund-              Linguistics, pages 6086–6096.
+  berg, et al. 2023. Sparks of artificial general intelli-
+  gence: Early experiments with gpt-4. arXiv preprint        Patrick S. H. Lewis, Ethan Perez, Aleksandra Pik-
+  arXiv:2303.12712.                                            tus, Fabio Petroni, Vladimir Karpukhin, Naman
+                                                               Goyal, Heinrich Küttler, Mike Lewis, Wen-tau Yih,
+Jacob Devlin, Ming-Wei Chang, Kenton Lee, and                  Tim Rocktäschel, Sebastian Riedel, and Douwe
+   Kristina Toutanova. 2019. BERT: Pre-training of             Kiela. 2020. Retrieval-augmented generation for
+   deep bidirectional transformers for language under-         knowledge-intensive NLP tasks. In Advances in Neu-
+   standing. In Proceedings of the 2019 Conference of          ral Information Processing Systems 33: Annual Con-
+   the North American Chapter of the Association for           ference on Neural Information Processing Systems
+  Computational Linguistics: Human Language Tech-              2020, NeurIPS 2020, December 6-12, 2020, virtual.
+   nologies, Volume 1 (Long and Short Papers), pages
+  4171–4186, Minneapolis, Minnesota. Association for         Junyi Li, Xiaoxue Cheng, Wayne Xin Zhao, Jian-Yun
+   Computational Linguistics.                                  Nie, and Ji-Rong Wen. 2023. Halueval: A large-
+                                                               scale hallucination evaluation benchmark for large
+Jinlan Fu, See-Kiong Ng, Zhengbao Jiang, and Pengfei           language models. CoRR, abs/2305.11747.
+   Liu. 2023. Gptscore: Evaluate as you desire. CoRR,
+   abs/2302.04166.                                           Nelson F. Liu, Kevin Lin, John Hewitt, Ashwin Paran-
+                                                               jape, Michele Bevilacqua, Fabio Petroni, and Percy
+Kelvin Guu, Kenton Lee, Zora Tung, Panupong Pasu-              Liang. 2023. Lost in the middle: How language
+  pat, and Mingwei Chang. 2020. Retrieval augmented            models use long contexts.
+  language model pre-training. In International confer-      Alex Mallen, Akari Asai, Victor Zhong, Rajarshi Das,
+  ence on machine learning, pages 3929–3938. PMLR.             Daniel Khashabi, and Hannaneh Hajishirzi. 2023.
+                                                               When not to trust language models: Investigating
+Ziwei Ji, Nayeon Lee, Rita Frieske, Tiezheng Yu, Dan
+                                                               effectiveness of parametric and non-parametric mem-
+  Su, Yan Xu, Etsuko Ishii, Ye Jin Bang, Andrea
+                                                               ories. In Proceedings of the 61st Annual Meeting of
+  Madotto, and Pascale Fung. 2023. Survey of halluci-
+                                                               the Association for Computational Linguistics (Vol-
+  nation in natural language generation. ACM Comput-
+                                                               ume 1: Long Papers), pages 9802–9822, Toronto,
+  ing Surveys, 55(12):1–38.
+                                                               Canada. Association for Computational Linguistics.
+Saurav Kadavath, Tom Conerly, Amanda Askell, Tom             Potsawee Manakul, Adian Liusie, and Mark J. F. Gales.
+  Henighan, Dawn Drain, Ethan Perez, Nicholas                  2023. Selfcheckgpt: Zero-resource black-box hal-
+  Schiefer, Zac Hatfield-Dodds, Nova DasSarma, Eli             lucination detection for generative large language
+  Tran-Johnson, Scott Johnston, Sheer El Showk, Andy           models. CoRR, abs/2303.08896.
+  Jones, Nelson Elhage, Tristan Hume, Anna Chen,
+  Yuntao Bai, Sam Bowman, Stanislav Fort, Deep               Sewon Min, Kalpesh Krishna, Xinxi Lyu, Mike
+  Ganguli, Danny Hernandez, Josh Jacobson, Jack-               Lewis, Wen-tau Yih, Pang Wei Koh, Mohit Iyyer,
+  son Kernion, Shauna Kravec, Liane Lovitt, Ka-                Luke Zettlemoyer, and Hannaneh Hajishirzi. 2023.
+  mal Ndousse, Catherine Olsson, Sam Ringer, Dario             Factscore: Fine-grained atomic evaluation of fac-
+  Amodei, Tom Brown, Jack Clark, Nicholas Joseph,              tual precision in long form text generation. CoRR,
+  Ben Mann, Sam McCandlish, Chris Olah, and Jared              abs/2305.14251.
+Ori Ram, Yoav Levine, Itay Dalmedigos, Dor Muhlgay,       A   Examples from WikiEval
+  Amnon Shashua, Kevin Leyton-Brown, and Yoav
+  Shoham. 2023. In-context retrieval-augmented lan-       Tables 2, 3 and 4 show examples from the WikiEval
+  guage models. CoRR, abs/2302.00083.                     dataset, focusing in particular on answers with high
+                                                          and low faithfulness (Table 2), high and low answer
+Adam Roberts, Colin Raffel, and Noam Shazeer. 2020.       relevance (Table 3), and high and low context rele-
+  How much knowledge can you pack into the param-
+  eters of a language model? In Proceedings of the        vance (Table 4).
+  2020 Conference on Empirical Methods in Natural
+  Language Processing (EMNLP), pages 5418–5426,
+  Online. Association for Computational Linguistics.
+
+Weijia Shi, Sewon Min, Michihiro Yasunaga, Minjoon
+  Seo, Rich James, Mike Lewis, Luke Zettlemoyer, and
+ Wen-tau Yih. 2023. REPLUG: retrieval-augmented
+  black-box language models. CoRR, abs/2301.12652.
+
+Jiaan Wang, Yunlong Liang, Fandong Meng, Haoxi-
+   ang Shi, Zhixu Li, Jinan Xu, Jianfeng Qu, and Jie
+   Zhou. 2023a. Is chatgpt a good NLG evaluator? A
+   preliminary study. CoRR, abs/2303.04048.
+
+Peiyi Wang, Lei Li, Liang Chen, Dawei Zhu, Binghuai
+  Lin, Yunbo Cao, Qi Liu, Tianyu Liu, and Zhifang Sui.
+  2023b. Large language models are not fair evaluators.
+  CoRR, abs/2305.17926.
+
+Shufan Wang, Yixiao Song, Andrew Drozdov, Aparna
+  Garimella, Varun Manjunatha, and Mohit Iyyer.
+  2023c. KNN-LM does not improve open-ended text
+  generation. CoRR, abs/2305.14625.
+
+Weizhe Yuan, Graham Neubig, and Pengfei Liu. 2021.
+ Bartscore: Evaluating generated text as text genera-
+ tion. In Advances in Neural Information Processing
+ Systems 34: Annual Conference on Neural Informa-
+ tion Processing Systems 2021, NeurIPS 2021, De-
+ cember 6-14, 2021, virtual, pages 27263–27277.
+
+Tianhua Zhang, Hongyin Luo, Yung-Sung Chuang, Wei
+   Fang, Luc Gaitskell, Thomas Hartvigsen, Xixin Wu,
+   Danny Fox, Helen Meng, and James R. Glass. 2023.
+   Interpretable unified language checking. CoRR,
+   abs/2304.03728.
+
+Tianyi Zhang, Varsha Kishore, Felix Wu, Kilian Q.
+  Weinberger, and Yoav Artzi. 2020. Bertscore: Evalu-
+  ating text generation with BERT. In 8th International
+  Conference on Learning Representations, ICLR 2020,
+  Addis Ababa, Ethiopia, April 26-30, 2020. OpenRe-
+  view.net.
+
+Wei Zhao, Maxime Peyrard, Fei Liu, Yang Gao, Chris-
+  tian M. Meyer, and Steffen Eger. 2019. MoverScore:
+ Text generation evaluating with contextualized em-
+  beddings and earth mover distance. In Proceedings
+  of the 2019 Conference on Empirical Methods in
+ Natural Language Processing and the 9th Interna-
+  tional Joint Conference on Natural Language Pro-
+  cessing (EMNLP-IJCNLP), pages 563–578, Hong
+  Kong, China. Association for Computational Lin-
+  guistics.
+Question                    Context                                                     Answer
+Who directed the film Op-   Oppenheimer is a 2023 biographical thriller film written    High Faithfulness: Christopher
+penheimer and who stars     and directed by Christopher Nolan. Based on the 2005        Nolan directed the film Oppen-
+as J. Robert Oppenheimer    biography American Prometheus by Kai Bird and Mar-          heimer. Cillian Murphy stars as J.
+in the film?                tin J. Sherwin, the film chronicles the life of J. Robert   Robert Oppenheimer in the film.
+                            Oppenheimer, a theoretical physicist who was pivotal in     Low Faithfulness:         James
+                            developing the first nuclear weapons as part of the Man-    Cameron directed the film Op-
+                            hattan Project, and thereby ushering in the Atomic Age.     penheimer. Tom Cruise stars as J.
+                            Cillian Murphy stars as Oppenheimer, with Emily Blunt       Robert Oppenheimer in the film.
+                            as Oppenheimer’s wife Katherine "Kitty" Oppenheimer.
+
+             Table 2: Example from WikiEval, showing answers with high and low faithfulness.
+
+
+
+
+Question                    Answer
+When is the scheduled       High answer relevance: The PSLV-C56 mission is scheduled to be launched on Sunday, 30
+launch date and time for    July 2023 at 06:30 IST / 01:00 UTC. It will be launched from the Satish Dhawan Space
+the PSLV-C56 mission,       Centre, Sriharikota, Andhra Pradesh, India.
+and where will it be        Low answer relevance: The scheduled launch date and time for the PSLV-C56 mission have
+launched from?              not been provided.The PSLV-C56 mission is an important space mission for India. It aims to
+                            launch a satellite into orbit to study weather patterns.
+
+           Table 3: Example from WikiEval, showing answers with high and low answer relevance.
+
+
+
+
+Question                    Context
+When was the Chimnabai      High context relevance: The Chimnabai Clock Tower, also known as the Raopura Tower, is
+Clock Tower completed,      a clock tower situated in the Raopura area of Vadodara, Gujarat, India. It was completed
+and who was it named af-    in 1896 and named in memory of Chimnabai I (1864–1885), a queen and the first wife of
+ter?                        Sayajirao Gaekwad III of Baroda State.
+                            Low context relevance: The Chimnabai Clock Tower, also known as the Raopura Tower, is
+                            a clock tower situated in the Raopura area of Vadodara, Gujarat, India. It was completed
+                            in 1896 and named in memory of Chimnabai I (1864–1885), a queen and the first wife of
+                            Sayajirao Gaekwad III of Baroda State. It was built in Indo-Saracenic architecture style.
+                            History. Chimnabai Clock Tower was built in 1896. The tower was named after Chimnabai
+                            I (1864–1885), a queen and the first wife of Sayajirao Gaekwad III of Baroda State. It was
+                            inaugurated by Mir Kamaluddin Hussainkhan, the last Nawab of Baroda. During the rule of
+                            Gaekwad, it was a stoppage for horse drawn trams. The clock tower was erected at the cost
+                            of 25,000 (equivalent to 9.2 million or USD 120,000 in 2023).
+
+           Table 4: Example from WikiEval, showing answers with high and low context relevance.
+

@@ -233,6 +233,7 @@ def _execute_tool_call(
             embedding_provider,
             top_k=args.top_k,
             mode=args.mode,
+            reranker="weighted",
             document_ids=document_ids,
         )
         return (
