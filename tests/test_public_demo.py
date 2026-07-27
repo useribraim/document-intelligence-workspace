@@ -51,7 +51,7 @@ class PublicDemoTests(unittest.TestCase):
             with TestClient(app) as client:
                 landing = client.get("/")
                 self.assertEqual(landing.status_code, 200)
-                self.assertIn("Try the read-only demo", landing.text)
+                self.assertIn('href="/demo"', landing.text)
                 self.assertIn("Google sign-in", landing.text)
 
                 demo = client.get("/demo")
