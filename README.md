@@ -10,8 +10,6 @@ performance.
 [Evaluation](docs/evaluation.md) ·
 [Validation matrix](docs/validation-matrix.md)
 
-![Read-only cited-answer demo](docs/assets/cited-demo.jpg)
-
 The public demo is deliberately narrow: it requires no account, uses bundled synthetic paper
 excerpts, performs no writes, and shows the retrieved quote and execution trace behind every
 answer. Google sign-in and tenant-aware application routes are separate from this public surface.

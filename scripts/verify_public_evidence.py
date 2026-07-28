@@ -53,9 +53,6 @@ def main() -> int:
         for tool in mcp["discovered_tools"]
     )
 
-    screenshot = ROOT / "docs/assets/cited-demo.jpg"
-    assert screenshot.read_bytes().startswith(b"\xff\xd8\xff")
-
     public_text = "\n".join(
         path.read_text(encoding="utf-8", errors="ignore")
         for directory in (ROOT / "README.md", ROOT / "docs", EVIDENCE)
