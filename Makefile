@@ -1,6 +1,6 @@
 PYTHON := .venv/bin/python
 
-.PHONY: test lint verify serve corpus-manifest calibration-build calibration-check \
+.PHONY: test lint verify serve corpus-manifest corpus-boundary calibration-build calibration-check \
 	validate-mcp-stdio vertex-smoke annotate-primary annotate-independent \
 	annotation-agreement
 
@@ -13,13 +13,16 @@ lint:
 corpus-manifest:
 	$(PYTHON) -m diw.cli corpus-verify --allow-missing
 
+corpus-boundary:
+	$(PYTHON) scripts/verify_audit_corpus_boundary.py
+
 calibration-build:
 	$(PYTHON) scripts/build_calibration_v2.py
 
 calibration-check:
 	$(PYTHON) scripts/build_calibration_v2.py --check
 
-verify: lint test corpus-manifest
+verify: lint test corpus-manifest corpus-boundary
 	$(PYTHON) scripts/verify_public_evidence.py
 	$(PYTHON) scripts/analyze_retrieval_uncertainty.py --trace results/evidence/retrieval-comparison.trace.json
 	$(PYTHON) scripts/build_calibration_v2.py --check

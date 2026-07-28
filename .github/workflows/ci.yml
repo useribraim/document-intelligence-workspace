@@ -39,6 +39,7 @@ jobs:
           python scripts/verify_public_evidence.py
           python scripts/build_calibration_v2.py --check
           python -m diw.cli corpus-verify --allow-missing
+          python scripts/verify_audit_corpus_boundary.py
 
       - name: Build package
         run: python -m build

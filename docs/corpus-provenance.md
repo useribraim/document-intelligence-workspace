@@ -44,3 +44,7 @@ The strict command fails if any file is missing or its hash differs. CI uses
 `corpus-verify --allow-missing` to validate manifest structure and any present local files without
 requiring the current source tree to contain the corpus. This does not remedy the historical files
 described above.
+
+CI also runs `scripts/verify_audit_corpus_boundary.py`. It rejects a future tracked raw-text file
+under `data/audit/corpus/text/`, while allowing a reproducer's ignored local corpus. It is a
+working-tree guard, not a substitute for rewriting existing Git history.
