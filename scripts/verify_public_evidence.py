@@ -53,9 +53,16 @@ def main() -> int:
         for tool in mcp["discovered_tools"]
     )
 
+    public_paths = [
+        ROOT / "README.md",
+        ROOT / "docs",
+        EVIDENCE,
+        ROOT / "src/diw/web_views.py",
+        ROOT / "src/diw/web_concepts.py",
+    ]
     public_text = "\n".join(
         path.read_text(encoding="utf-8", errors="ignore")
-        for directory in (ROOT / "README.md", ROOT / "docs", EVIDENCE)
+        for directory in public_paths
         for path in (
             [directory]
             if directory.is_file()
@@ -66,8 +73,12 @@ def main() -> int:
     forbidden_patterns = (
         r"\b[A-Za-z0-9._%+-]+@gmail\.com\b",
         r"\bgen-lang-client-\d+\b",
+        r"bundled research-paper corpus",
+        r"\bfully_supported_rate\b",
     )
     assert not any(re.search(pattern, public_text) for pattern in forbidden_patterns)
+    assert "inconclusive pilot" in public_text
+    assert "automated diagnostics" in public_text.lower()
 
     print("public evidence: valid, redacted, and internally consistent")
     return 0

@@ -55,7 +55,7 @@ validation, and audit interfaces.
 | Area | Recorded result |
 |---|---|
 | Retrieval | A 23-gold-question pilot observed higher point estimates for semantic embeddings plus RRF, but paired 95% bootstrap intervals for Recall@5 and MRR include zero; no superiority claim is made. |
-| Citation safety | Supported answers require exact source-aligned quotes; unsupported answers return no citations. |
+| Citation safety | Cited answers require exact source-aligned quotes; an evidence-gate insufficiency response returns no citations. |
 | Cloud runtime | A scale-to-zero Cloud Run service exposes the public demo while protected routes reject missing or unscoped identity. |
 | Vertex AI | A Cloud Run Job completed real `gemini-embedding-001` and `gemini-2.5-flash` calls with model, token, evidence, citation, refusal, and run provenance. |
 | Google ADK | A ReAct-style coordinator delegated to retrieval and citation-verification `AgentTool` specialists on Vertex AI; one recorded run used 7 model calls, 13.82 s, 69.14 output tokens/s, and an estimated $0.002634. |
