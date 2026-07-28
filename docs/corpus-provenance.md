@@ -4,8 +4,10 @@ The frozen retrieval evaluation references ten public arXiv paper versions. The 
 their canonical URLs, displayed licence URLs, expected local text paths, and SHA-256 hashes in
 [`corpus_manifest.jsonl`](../data/audit/corpus_manifest.jsonl).
 
-Full paper text is not included. “Available without a paywall” is not treated as permission to
-redistribute a paper under this project's MIT licence.
+Full paper text is not included in the current source tree. Earlier Git history contains removed
+corpus files, so the public repository cannot yet be described as non-redistributing; it requires
+a history rewrite before that claim is accurate. “Available without a paywall” is not treated as
+permission to redistribute a paper under this project's MIT licence.
 
 The V2 calibration packet contains only short, canonicalized excerpts tied to recorded chunk
 identifiers. They let independent reviewers judge the displayed claim-citation relationship
@@ -40,4 +42,5 @@ python -m diw.cli corpus-verify
 
 The strict command fails if any file is missing or its hash differs. CI uses
 `corpus-verify --allow-missing` to validate manifest structure and any present local files without
-requiring the repository to redistribute the corpus.
+requiring the current source tree to contain the corpus. This does not remedy the historical files
+described above.

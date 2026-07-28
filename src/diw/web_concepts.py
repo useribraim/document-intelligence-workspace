@@ -243,9 +243,10 @@ CONCEPTS: dict[str, dict] = {
                 "favourable inputs."
             ),
             (
-                "Paper text is not redistributed here. The manifest records canonical "
-                "versions, licences, and SHA-256 hashes, so a locally obtained corpus "
-                "can be checked against the frozen one."
+                "The current source tree excludes paper text. Historical Git revisions still "
+                "require a separate purge before a non-redistribution claim is accurate. The "
+                "manifest records canonical versions, licences, and SHA-256 hashes, so a "
+                "locally obtained corpus can be checked against the frozen one."
             ),
         ],
     },

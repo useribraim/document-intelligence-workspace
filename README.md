@@ -145,9 +145,10 @@ The current V2 bank deliberately reuses each evidence span across controlled var
 for rubric development, but it is not an independent 140-item human-evaluation sample and must not
 be used for naive confidence intervals or headline accuracy claims.
 
-Raw paper text is not redistributed in this repository. The corpus manifest records canonical
-versions, licence URLs, local paths, and SHA-256 hashes so a legally obtained local corpus can be
-verified:
+The current source tree excludes raw paper text. However, earlier Git history contains the removed
+files, so this public repository must not be described as non-redistributing until that history is
+rewritten. The corpus manifest records canonical versions, licence URLs, local paths, and SHA-256
+hashes so a legally obtained local corpus can be verified:
 
 ```bash
 python -m diw.cli corpus-verify
@@ -200,4 +201,5 @@ docs/                  architecture, operations, evaluation, and limitations
 ## License
 
 Project code is available under the [MIT License](LICENSE). Third-party research papers are not
-covered by that licence and are not redistributed here.
+covered by that licence. The current tree excludes them, but the repository history requires a
+separate purge before this project can make a non-redistribution claim.

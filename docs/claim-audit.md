@@ -13,8 +13,9 @@ support the exact sentence-level claim attached to it?
 - Gold chunk identifiers for the 23 retrieval-scored questions.
 - A versioned human rubric in [`annotation-rubric.md`](annotation-rubric.md).
 
-Raw paper text is not redistributed. See [`corpus-provenance.md`](corpus-provenance.md) for the
-licence boundary and local hash-verification process.
+Raw paper text is excluded from the current source tree, but earlier Git history contains removed
+corpus files. See [`corpus-provenance.md`](corpus-provenance.md) for the licence boundary,
+required history remediation, and local hash-verification process.
 
 ## Recorded retrieval experiment
 
