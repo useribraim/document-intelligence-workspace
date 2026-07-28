@@ -319,7 +319,10 @@ class CliTests(unittest.TestCase):
 
             repaired = json.loads(repaired_path.read_text(encoding="utf-8"))
             self.assertEqual(repaired["parent_run_id"], "baseline")
-            self.assertEqual(repaired["summary"]["fully_supported_rate"], 1.0)
+            self.assertEqual(
+                repaired["summary"]["automated_overlap_fully_supported_rate"],
+                1.0,
+            )
             self.assertEqual(repaired["summary"]["repair_incremental_cost_usd"], 0.0)
 
     def test_retrieval_trace_reports_rank_changes_from_saved_runs(self):

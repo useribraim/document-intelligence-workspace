@@ -35,7 +35,10 @@ class ClaimAuditTests(unittest.TestCase):
         claims = extract_atomic_claims(answer, question_id="q_002")
         assessments = assess_claims(claims, answer.citations, [evidence])
         self.assertEqual(assessments[0].support_label, "unsupported")
-        self.assertEqual(summarise_claim_audit(assessments)["unsupported_rate"], 1.0)
+        self.assertEqual(
+            summarise_claim_audit(assessments)["automated_overlap_unsupported_rate"],
+            1.0,
+        )
 
     def test_cohen_kappa_handles_perfect_and_nonmatching_labels(self):
         self.assertEqual(cohen_kappa(["fully_supported", "unsupported"], ["fully_supported", "unsupported"]), 1.0)

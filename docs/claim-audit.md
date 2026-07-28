@@ -3,6 +3,11 @@
 The claim audit tests a narrower question than general answer quality: does each cited source span
 support the exact sentence-level claim attached to it?
 
+The automated gate uses token overlap and exact-span checks. Its `automated_overlap_*` fields are
+debugging diagnostics for an extractive gate, not human support labels, citation-validity metrics,
+or evidence that a generated answer is correct. They are intentionally excluded from experiment
+comparison reports.
+
 ## Frozen definition
 
 - Ten versioned research papers recorded in

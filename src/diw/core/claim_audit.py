@@ -124,9 +124,25 @@ def assess_claims(
 
 
 def summarise_claim_audit(assessments: list[ClaimCitationAssessment]) -> dict[str, float | int]:
+    """Summarise deterministic token-overlap labels without calling them human support.
+
+    The underlying labels remain useful to the conservative evidence gate, but an
+    extractive generator can score highly simply by copying its selected span.  These
+    fields are therefore diagnostics for that gate, not citation-validity or answer-
+    quality metrics and must not be compared as human-evaluation results.
+    """
     total = len(assessments)
     counts = Counter(item.support_label for item in assessments)
-    return {"claim_citation_pairs": total, **{f"{label}_rate": round(counts[label] / total, 4) if total else 0.0 for label in ("fully_supported", "partially_supported", "unsupported", "contradicted")}}
+    labels = ("fully_supported", "partially_supported", "unsupported", "contradicted")
+    return {
+        "claim_citation_pairs": total,
+        **{
+            f"automated_overlap_{label}_rate": (
+                round(counts[label] / total, 4) if total else 0.0
+            )
+            for label in labels
+        },
+    }
 
 
 def apply_claim_verification_gate(
