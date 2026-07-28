@@ -56,7 +56,9 @@ class PublicDemoTests(unittest.TestCase):
 
                 demo = client.get("/demo")
                 self.assertEqual(demo.status_code, 200)
-                self.assertIn("Public and read-only", demo.text)
+                self.assertIn("six bundled synthetic ML-paper excerpts", demo.text)
+                self.assertIn("not the ten-paper frozen evaluation corpus", demo.text)
+                self.assertIn("Public, read-only, and synthetic", demo.text)
 
                 evidence = client.get("/evidence")
                 self.assertEqual(evidence.status_code, 200)

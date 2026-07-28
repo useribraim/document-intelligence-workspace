@@ -510,7 +510,7 @@ def _public_landing_html() -> str:
           <p>{r(prose["pipe1"])}</p>
           <p>{r(prose["pipe2"])}</p>
           <p>{r(prose["pipe3"])}</p>
-          <p class="meta"><a href="/demo">Run this pipeline on the bundled corpus &rarr;</a></p>
+          <p class="meta"><a href="/demo">Run this pipeline on bundled synthetic excerpts &rarr;</a></p>
 
           <h2 id="measured"><span class="num">3</span>What was measured</h2>
           <p>{r(prose["meas1"])}</p>
@@ -592,9 +592,12 @@ def _public_demo_html() -> str:
         "corpus does not cover to see [[insufficient-evidence|the refusal path]]."
     )
     body = f"""
-          <p class="kicker">Public and read-only</p>
-          <h1>Ask the bundled research-paper corpus</h1>
+          <p class="kicker">Public, read-only, and synthetic</p>
+          <h1>Ask six bundled synthetic ML-paper excerpts</h1>
           <p class="lede">{intro}</p>
+          <p class="meta">This preview is not the ten-paper frozen evaluation corpus. It exists
+          to make the read-only retrieval, citation, and trace surfaces inspectable without an
+          account or an external model request.</p>
           <p class="meta">{hint}</p>
 
           <h2 id="ask"><span class="num">1</span>Ask the corpus</h2>
