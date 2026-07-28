@@ -21,6 +21,7 @@ calibration-check:
 
 verify: lint test corpus-manifest
 	$(PYTHON) scripts/verify_public_evidence.py
+	$(PYTHON) scripts/analyze_retrieval_uncertainty.py --trace results/evidence/retrieval-comparison.trace.json
 	$(PYTHON) scripts/build_calibration_v2.py --check
 	bash -n scripts/deploy_cloud_run.sh
 	bash -n scripts/run_vertex_cloud_smoke.sh

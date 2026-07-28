@@ -5,13 +5,13 @@ against a live external system.
 
 | Capability | Status | Validated scope | Evidence |
 |---|---|---|---|
-| Retrieval comparison | Measured | Semantic embeddings plus RRF increased Recall@5 from 0.261 to 0.283 and MRR from 0.194 to 0.302 on the frozen 40-question set. RRF alone did not produce the improvement. | [`retrieval-comparison.md`](../results/evidence/retrieval-comparison.md) |
+| Retrieval comparison | Measured; inconclusive | The combined semantic-plus-RRF arm had higher point estimates on 23 gold-scored questions, but paired 95% bootstrap intervals for Recall@5 and MRR include zero. | [`retrieval-comparison.md`](../results/evidence/retrieval-comparison.md) and [`retrieval-uncertainty.md`](../results/evidence/retrieval-uncertainty.md) |
 | Cloud Run | Live-validated | The bounded FastAPI service exposes public read-only routes and rejects missing or unscoped identity on protected routes. | Public `/`, `/demo`, `/evidence`, `/signin`, `/startup`, and `/health`; external route checks in [`deployment-evidence.md`](deployment-evidence.md) |
 | Google OAuth/OIDC | Live-validated | The deployed verifier accepted a Google ID token for the configured audience and resolved tenant membership server-side. | Redacted validation record in [`deployment-evidence.md`](deployment-evidence.md) |
 | Vertex AI | Live-validated | A Cloud Run Job used `gemini-embedding-001` and `gemini-2.5-flash`, recorded token/model provenance and retrieved chunks, validated an exact citation, and refused an unsupported query. | [`vertex-cloud-run-smoke.json`](../results/evidence/vertex-cloud-run-smoke.json) and [validation notes](integrations/vertex-ai-validation.md) |
 | Google ADK | Live-validated | A ReAct-style coordinator used two real ADK `AgentTool` specialists for hierarchical retrieval and citation-verification delegation on Vertex AI, with per-call token, latency, throughput, and estimated-cost records. | [`adk-cloud-run-smoke.json`](../results/evidence/adk-cloud-run-smoke.json) and [validation notes](integrations/adk-validation.md) |
 | MCP | Client-validated | An external MCP client discovered both read-only stdio tools, invoked evidence and record lookup, and confirmed that cross-tenant access and tenant-argument injection fail safely. | [`mcp-stdio-validation.json`](../results/evidence/mcp-stdio-validation.json) and [validation notes](integrations/mcp-stdio-validation.md) |
-| Human calibration | Instrument ready; labels incomplete | A reproducible 140-question instrument has 28 cases in each of five strata and two blank, aligned packets with 112 claim-citation pairs each. No human accuracy, agreement, or Cohen's kappa is published. | [Calibration manifest](../data/audit/calibration/v2_manifest.json) and [runbook](human-calibration-runbook.md) |
+| Human calibration | Controlled bank only; labels incomplete | V2 has 28 source seeds expressed as five controlled variants each. It is useful for rubric development but is not an independent 140-item sample. No human accuracy, agreement, or Cohen's kappa is published. | [Calibration manifest](../data/audit/calibration/v2_manifest.json) and [runbook](human-calibration-runbook.md) |
 
 ## Interpretation boundaries
 
@@ -29,5 +29,5 @@ against a live external system.
 - Do not imply a remote MCP deployment or MCP write tools: the validation uses an official
   external SDK client talking to a separate local stdio process.
 - Do not invent or round an agreement statistic before the aligned labels exist.
-- Keep the negative result: RRF by itself degraded the hashing baseline; the measured improvement
-  came from the combined semantic-embedding plus RRF configuration.
+- Do not claim that the observed combined configuration improved retrieval or attribute an effect
+  to RRF or embeddings until a complete factorial, held-out evaluation reports uncertainty.

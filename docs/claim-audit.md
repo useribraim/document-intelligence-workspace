@@ -24,8 +24,10 @@ The curated comparison evaluates:
 2. `text-embedding-3-small` embeddings with reciprocal-rank fusion.
 
 Recall@5, MRR, gold-citation recall, latency, per-question top-k identifiers, and gold ranks are in
-[`results/evidence/`](../results/evidence/). The result applies to the combined semantic-plus-RRF
-configuration; a separate control found no improvement from RRF alone.
+[`results/evidence/`](../results/evidence/). The observed combined semantic-plus-RRF point estimates
+are statistically inconclusive on the 23 gold-scored questions; see
+[`retrieval-uncertainty.md`](../results/evidence/retrieval-uncertainty.md). They must not be
+attributed to either intervention in isolation.
 
 ## Support diagnostics
 

@@ -456,9 +456,9 @@ def _public_landing_html() -> str:
         "what2": "The demo corpus is bundled and synthetic. It is not the persistent "
         "workflow, and nothing written here should be read as a claim that it is.",
         "pipe1": "A question is tokenised and scored against every [[chunk|chunk]] in the "
-        "corpus by two independent methods: a [[lexical-score|lexical score]] over shared "
-        "tokens, and an [[embedding|embedding]] score over vector [[cosine-similarity|similarity]]. "
-        "Neither is trusted alone.",
+        "corpus by two signals: a [[lexical-score|lexical score]] over shared tokens, and a "
+        "local hash-vector [[cosine-similarity|similarity]] score. The public hash vector is "
+        "not semantic; the separate retrieval pilot used a real embedding model.",
         "pipe2": "The two rankings are merged by [[rrf|reciprocal rank fusion]], which "
         "discards raw scores and keeps only positions. The top chunks become candidate "
         "evidence.",
@@ -470,24 +470,22 @@ def _public_landing_html() -> str:
         "[[insufficient-evidence|insufficient evidence]] instead of answering.",
         "meas1": "Both arms below ran over the same [[frozen-set|frozen set]]: 40 "
         "questions across ten papers, 23 of them carrying gold evidence annotations.",
-        "meas2": "[[mrr|MRR]] rose far more than [[recall-at-5|Recall@5]]. Read together, "
-        "the semantic arm was not finding much more gold evidence — it was ranking the "
-        "gold it already found considerably higher. [[gold-citation-recall|Gold citation "
-        "recall]] more than doubled.",
-        "meas3": "The negative result is kept deliberately: [[rrf|RRF]] applied to the "
-        "hashing baseline alone <em>degraded</em> it. The improvement belongs to the "
-        "combined configuration, and reporting it any other way would overstate what the "
-        "run shows.",
+        "meas2": "The combined arm had higher point estimates, especially for [[mrr|MRR]], "
+        "but a paired bootstrap over the 23 gold-scored questions produced intervals that "
+        "include zero for both MRR and [[recall-at-5|Recall@5]]. This is an inconclusive "
+        "pilot, not a retrieval-superiority result.",
+        "meas3": "The repository preserves the point estimates, the per-question trace, and "
+        "the uncertainty analysis. It does not attribute an effect to RRF or semantic "
+        "embeddings in isolation because the complete factorial comparison is not published.",
         "unk1": "No human-calibrated accuracy figure and no "
         "[[inter-annotator-agreement|agreement]] statistic appears anywhere on this site, "
         "because the labels behind them do not exist yet. A calibration instrument is "
-        "ready — 140 questions yielding 112 aligned "
-        "[[claim-citation-pair|claim-citation pairs]] per annotator — and both label sets "
-        "are blank.",
-        "unk2": "Closing that gap requires two people labelling independently under a "
-        "frozen rubric, then reporting raw agreement and [[cohens-kappa|Cohen's kappa]] "
-        "exactly as measured, before adjudication. A low value would be published as "
-        "readily as a high one.",
+        "ready — 28 evidence seeds expressed as five controlled variants, yielding 112 aligned "
+        "[[claim-citation-pair|claim-citation pairs]] per annotator — and both label sets are "
+        "blank. It is a rubric-development bank, not an independent 140-item study.",
+        "unk2": "Closing that gap requires a new independent-item study, two people labelling "
+        "under a frozen rubric, and raw agreement plus [[cohens-kappa|Cohen's kappa]] reported "
+        "before adjudication. A low value would be published as readily as a high one.",
         "bound1": "[[citation-validation|Citation validation]] is a string check. It "
         "proves a quote is real; it cannot tell you whether the quote supports the claim. "
         "That judgement needs a human [[support-label|support label]], and automated "
@@ -736,14 +734,15 @@ def _public_evidence_html() -> str:
         "[[rrf|reciprocal rank fusion]]."
     )
     note = r(
-        "This supports a claim about the combined configuration only. [[rrf|RRF]] applied "
-        "to the hashing baseline alone degraded it, and that negative result is part of "
-        "the finding."
+        "The combined configuration produced higher point estimates, but paired bootstrap "
+        "intervals for Recall@5 and MRR include zero. It is an observed, inconclusive pilot; "
+        "not evidence that either component improved retrieval."
     )
     open_1 = r(
-        "Human calibration is incomplete. The instrument holds 140 questions and 112 "
-        "aligned [[claim-citation-pair|claim-citation pairs]] per annotator; both label "
-        "sets are blank. Until two independent people complete them, no "
+        "Human calibration is incomplete. The current bank holds 28 source seeds expressed as "
+        "five variants and 112 aligned [[claim-citation-pair|claim-citation pairs]] per annotator; "
+        "both label sets are blank. It must not be treated as 112 independent units. Until a new "
+        "independent study is complete, no "
         "[[inter-annotator-agreement|agreement]] figure and no "
         "[[cohens-kappa|kappa]] can be reported."
     )
@@ -790,7 +789,8 @@ def _public_evidence_html() -> str:
             <tbody>
               <tr>
                 <td>Retrieval comparison</td><td>Measured</td>
-                <td>Frozen 40-question set; combined semantic + RRF arm improved it.</td>
+                <td>23 gold-scored questions; combined-arm point estimates were higher, but paired
+                uncertainty intervals include zero and establish no improvement.</td>
               </tr>
               <tr>
                 <td>Cloud Run</td><td>Live-validated</td>
@@ -820,8 +820,8 @@ def _public_evidence_html() -> str:
               </tr>
               <tr>
                 <td>Human calibration</td><td>Incomplete</td>
-                <td>Rubric and two blank 140-question templates exist. No agreement
-                figure published.</td>
+                <td>Controlled 28-seed variant bank and two blank templates exist. It is not an
+                independent human-evaluation sample; no agreement figure is published.</td>
               </tr>
             </tbody>
           </table>

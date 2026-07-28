@@ -15,9 +15,11 @@ answer quality.
 | gold_citation_recall | 0.1087 | 0.2536 |
 | mean_latency_ms | 31.77 | 311.88 |
 
-The combined semantic-embedding plus RRF configuration improved all three retrieval metrics at the
-cost of higher latency. A separate controlled run found that RRF alone did not improve the hashing
-baseline, so the result is not attributed to RRF in isolation.
+The combined semantic-embedding plus RRF configuration produced higher point estimates at the cost
+of higher latency. The paired uncertainty intervals for Recall@5 and MRR include zero, so this
+small pilot does not establish a reliable improvement. See
+[`retrieval-uncertainty.md`](retrieval-uncertainty.md). A complete published factorial comparison
+is required before attributing any difference to RRF or semantic embeddings in isolation.
 
 [`retrieval-comparison.trace.json`](retrieval-comparison.trace.json) records per-question top-k
 chunk identifiers, gold ranks, and overlap without redistributing source text.

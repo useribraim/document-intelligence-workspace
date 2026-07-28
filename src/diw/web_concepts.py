@@ -126,8 +126,9 @@ CONCEPTS: dict[str, dict] = {
         "body": [
             (
                 "A [[lexical-score|lexical score]] finds chunks that reuse the "
-                "question's words. An [[embedding|embedding]] score finds chunks that mean the "
-                "same thing in different words. Each catches failures of the other."
+                "question's words. A semantic [[embedding|embedding]] can find chunks that "
+                "mean the same thing in different words. The public demo's local hash vector "
+                "does not have that semantic capability."
             ),
             (
                 "The two rankings are merged by [[rrf|reciprocal rank fusion]]. The "
@@ -139,35 +140,35 @@ CONCEPTS: dict[str, dict] = {
     "lexical-score": {
         "title": "Lexical score",
         "gloss": (
-            "The fraction of the question's tokens that also appear in the chunk "
-            "and its heading path."
+            "A BM25 word-match score that rewards distinctive query terms while "
+            "normalising for passage length."
         ),
         "body": [
             (
                 "Tokens are lowercased and split on non-word characters, so "
                 "<em>retrieval</em> and <em>Retrieval,</em> match while "
-                "<em>retrieve</em> does not. The score is matched tokens over "
-                "question tokens, giving 0.0 to 1.0."
+                "<em>retrieve</em> does not. BM25 gives more weight to terms that occur "
+                "in fewer chunks and avoids rewarding a long passage merely for repeating a term."
             ),
             (
-                "It is precise and completely explainable, but blind to paraphrase "
-                "— which is what the [[embedding|embedding]] score is for."
+                "It is precise and completely explainable, but blind to paraphrase. Only "
+                "a semantic [[embedding|embedding]] model addresses that limitation."
             ),
         ],
     },
     "embedding": {
         "title": "Embedding",
         "gloss": (
-            "A vector standing for a passage's meaning, so that similar passages "
-            "sit close together."
+            "A model-produced vector that can encode semantic similarity; not every "
+            "vector representation has that property."
         ),
         "body": [
             (
                 "The frozen comparison used OpenAI "
                 "<code>text-embedding-3-small</code>. The public demo instead uses a "
                 "local hashing embedder at 256 dimensions, which needs no API key and "
-                "no network call — it is weaker, and the measured comparison "
-                "says so."
+                "no network call. It hashes individual tokens, so passages with no shared "
+                "tokens score zero even if they are paraphrases; it is not a semantic model."
             ),
             "Two embeddings are compared by [[cosine-similarity|cosine similarity]].",
         ],
@@ -206,9 +207,9 @@ CONCEPTS: dict[str, dict] = {
                 "[[hybrid-retrieval|both rankings]] exist."
             ),
             (
-                "On the [[frozen-set|frozen set]] RRF alone <em>degraded</em> the "
-                "hashing baseline. The measured gain came from semantic "
-                "[[embedding|embeddings]] plus RRF together."
+                "The published pilot compares a combined semantic-plus-RRF arm with a hashing "
+                "baseline. Its uncertainty interval includes zero, and the repository does not "
+                "attribute an effect to RRF in isolation."
             ),
         ],
         "widget": _rrf_widget(),
@@ -277,9 +278,10 @@ CONCEPTS: dict[str, dict] = {
                 "far more than improvements at the bottom."
             ),
             (
-                "MRR rose from 0.1935 to 0.3022 while [[recall-at-5|Recall@5]] barely "
-                "moved. Read together: the semantic arm was not finding much more gold "
-                "evidence, it was ranking the gold it already found much higher."
+                "The combined arm's MRR point estimate was 0.3022 versus 0.1935 for the "
+                "baseline, while [[recall-at-5|Recall@5]] barely moved. The paired 95% interval "
+                "for that MRR difference includes zero, so this pattern is hypothesis-generating "
+                "rather than a confirmed ranking gain."
             ),
         ],
     },
@@ -372,10 +374,9 @@ CONCEPTS: dict[str, dict] = {
                 "answer as a whole."
             ),
             (
-                "The current instrument holds 112 aligned pairs per annotator across "
-                "140 questions. Alignment is what makes "
-                "[[inter-annotator-agreement|agreement]] computable at all: both people "
-                "must have judged the same pairs."
+                "The current V2 bank holds 112 aligned pairs per annotator across 28 repeated "
+                "source seeds. Alignment makes [[inter-annotator-agreement|agreement]] computable, "
+                "but those repeated variants are not independent observations."
             ),
         ],
     },

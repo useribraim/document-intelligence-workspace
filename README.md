@@ -54,7 +54,7 @@ validation, and audit interfaces.
 
 | Area | Recorded result |
 |---|---|
-| Retrieval | On a frozen 40-question set, semantic embeddings plus reciprocal-rank fusion increased MRR from 0.1935 to 0.3022 and Recall@5 from 0.2609 to 0.2826. |
+| Retrieval | A 23-gold-question pilot observed higher point estimates for semantic embeddings plus RRF, but paired 95% bootstrap intervals for Recall@5 and MRR include zero; no superiority claim is made. |
 | Citation safety | Supported answers require exact source-aligned quotes; unsupported answers return no citations. |
 | Cloud runtime | A scale-to-zero Cloud Run service exposes the public demo while protected routes reject missing or unscoped identity. |
 | Vertex AI | A Cloud Run Job completed real `gemini-embedding-001` and `gemini-2.5-flash` calls with model, token, evidence, citation, refusal, and run provenance. |
@@ -139,9 +139,9 @@ Evaluation has two deliberately separate layers:
   partial-support, unsupported, misleading-context, and refusal cases.
 
 Each blinded calibration packet contains 140 answer records and 112 aligned claim-citation pairs.
-The deterministic builder verifies question uniqueness, case balance, source identifiers, packet
-alignment, short-excerpt limits, label blankness, and that author-designed strata do not leak into
-the reviewer files.
+The current V2 bank deliberately reuses each evidence span across controlled variants. It is useful
+for rubric development, but it is not an independent 140-item human-evaluation sample and must not
+be used for naive confidence intervals or headline accuracy claims.
 
 Raw paper text is not redistributed in this repository. The corpus manifest records canonical
 versions, licence URLs, local paths, and SHA-256 hashes so a legally obtained local corpus can be
@@ -162,6 +162,8 @@ records and preserve a separate adjudication trail.
 - Vertex AI is validated through a bounded Cloud Run Job, not the public interactive route.
 - MCP is validated through an external local stdio client, not a remote transport.
 - Human-calibrated agreement is incomplete.
+- The V2 calibration bank is clustered by source seed; an independent-item V3 study is required
+  before publishing calibration confidence intervals or accuracy claims.
 - ADK is validated as a bounded Cloud Run Job, not a public interactive multi-agent endpoint.
 - Asynchronous ingestion and production observability remain future work.
 
@@ -186,6 +188,7 @@ docs/                  architecture, operations, evaluation, and limitations
 - [Validation matrix](docs/validation-matrix.md)
 - [Cloud Run boundary](docs/cloud-run-deployment.md)
 - [Vertex AI validation](docs/integrations/vertex-ai-validation.md)
+- [Retrieval uncertainty analysis](results/evidence/retrieval-uncertainty.md)
 - [MCP stdio validation](docs/integrations/mcp-stdio-validation.md)
 - [Google ADK validation](docs/integrations/adk-validation.md)
 - [Human-calibration runbook](docs/human-calibration-runbook.md)

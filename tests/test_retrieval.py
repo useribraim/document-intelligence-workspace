@@ -1,12 +1,13 @@
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 
 from sqlalchemy.orm import Session
 
 from diw.core.embeddings import LocalHashingEmbeddingProvider
 from diw.core.ingestion import ingest_file
-from diw.core.retrieval import RetrievalResult, _rank_results, retrieve_chunks
+from diw.core.retrieval import RetrievalResult, _rank_results, bm25_scores, retrieve_chunks
 from diw.db.models import Base
 from diw.db.repository import (
     count_embeddings,
@@ -73,6 +74,38 @@ class RetrievalTests(unittest.TestCase):
                 )
         finally:
             engine.dispose()
+
+    def test_rrf_does_not_use_chunk_id_to_break_component_score_ties(self):
+        results = [
+            RetrievalResult(
+                chunk_id=chunk_id,
+                document_id="doc",
+                version_id="version",
+                chunk_index=index,
+                heading_path=[],
+                text=chunk_id,
+                lexical_score=0.2,
+                vector_score=0.0,
+                score=0.0,
+            )
+            for index, chunk_id in enumerate(["a-first", "z-last"])
+        ]
+
+        ranked = _rank_results(results, top_k=2, mode="hybrid", reranker="rrf")
+
+        self.assertEqual(ranked[0].score, ranked[1].score)
+
+    def test_bm25_rewards_a_distinctive_query_term(self):
+        chunks = [
+            SimpleNamespace(heading_path=[], text="common common common"),
+            SimpleNamespace(heading_path=[], text="common distinctive"),
+            SimpleNamespace(heading_path=[], text="common"),
+        ]
+
+        scores = bm25_scores("common distinctive", chunks)
+
+        self.assertGreater(scores[1], scores[0])
+        self.assertGreater(scores[1], scores[2])
 
     def test_embed_missing_chunks_is_idempotent(self):
         engine = build_engine("sqlite+pysqlite:///:memory:")

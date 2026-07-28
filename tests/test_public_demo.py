@@ -61,6 +61,7 @@ class PublicDemoTests(unittest.TestCase):
                 evidence = client.get("/evidence")
                 self.assertEqual(evidence.status_code, 200)
                 self.assertIn("0.3022", evidence.text)
+                self.assertIn("uncertainty intervals include zero", evidence.text)
                 self.assertIn("No human-calibrated accuracy", evidence.text)
 
                 protected = client.get(

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import re
+from collections import Counter
 from dataclasses import dataclass
+from math import log
 
 from sqlalchemy import bindparam, select, text
 from sqlalchemy.orm import Session
@@ -49,15 +51,57 @@ def tokenise_query(text: str) -> set[str]:
     return {token for token in QUERY_TOKEN_RE.findall(text.lower()) if token not in QUERY_STOPWORDS}
 
 
-def lexical_score(query: str, chunk: Chunk) -> float:
+def bm25_scores(query: str, chunks: list[Chunk | _ChunkLike]) -> list[float]:
+    """Return query-normalized BM25 scores for one candidate collection.
+
+    Normalizing within the candidate collection keeps the existing weighted
+    fusion interface bounded while replacing unweighted token-set overlap with
+    term-frequency, document-frequency, and length normalization.
+    """
+
     query_tokens = tokenise_query(query)
     if not query_tokens:
-        return 0.0
+        return [0.0] * len(chunks)
 
-    searchable = " ".join([*chunk.heading_path, chunk.text]).lower()
-    searchable_tokens = set(QUERY_TOKEN_RE.findall(searchable))
-    matched = sum(1 for token in query_tokens if token in searchable_tokens)
-    return matched / len(query_tokens)
+    token_lists = [
+        QUERY_TOKEN_RE.findall(" ".join([*chunk.heading_path, chunk.text]).lower())
+        for chunk in chunks
+    ]
+    if not token_lists:
+        return []
+    document_frequency = Counter(
+        token for tokens in token_lists for token in set(tokens) if token in query_tokens
+    )
+    average_length = sum(len(tokens) for tokens in token_lists) / len(token_lists)
+    k1, b = 1.2, 0.75
+    raw_scores: list[float] = []
+    for tokens in token_lists:
+        term_frequency = Counter(tokens)
+        length = max(len(tokens), 1)
+        score = 0.0
+        for token in query_tokens:
+            frequency = term_frequency[token]
+            if not frequency:
+                continue
+            inverse_document_frequency = log(
+                1 + (len(token_lists) - document_frequency[token] + 0.5)
+                / (document_frequency[token] + 0.5)
+            )
+            denominator = frequency + k1 * (1 - b + b * length / average_length)
+            score += inverse_document_frequency * frequency * (k1 + 1) / denominator
+        raw_scores.append(score)
+    maximum = max(raw_scores, default=0.0)
+    return [score / maximum if maximum else 0.0 for score in raw_scores]
+
+
+def lexical_score(query: str, chunk: Chunk | _ChunkLike) -> float:
+    """Return the one-chunk BM25-compatible lexical score.
+
+    Retrieval uses collection-aware BM25 scores. This compatibility helper is
+    retained for callers that only have one chunk.
+    """
+
+    return bm25_scores(query, [chunk])[0]
 
 
 def retrieve_chunks(
@@ -107,9 +151,9 @@ def retrieve_chunks(
         statement = statement.where(DocumentVersion.document_id.in_(document_ids))
     rows = session.execute(statement).all()
 
+    lexical_scores = bm25_scores(query, [chunk for chunk, _, _ in rows])
     results: list[RetrievalResult] = []
-    for chunk, embedding, version in rows:
-        lex = lexical_score(query, chunk)
+    for (chunk, embedding, version), lex in zip(rows, lexical_scores, strict=True):
         vec = cosine_similarity(query_vector, embedding.vector)
         if mode == "lexical":
             score = lex
@@ -186,13 +230,17 @@ def _retrieve_chunks_postgres_pgvector(
         params,
     ).mappings()
 
-    results: list[RetrievalResult] = []
-    for row in rows:
-        chunk = _ChunkLike(
+    row_values = list(rows)
+    chunks = [
+        _ChunkLike(
             text=str(row["text"]),
             heading_path=list(row["heading_path"]),
         )
-        lex = lexical_score(query, chunk)
+        for row in row_values
+    ]
+    lexical_scores = bm25_scores(query, chunks)
+    results: list[RetrievalResult] = []
+    for row, chunk, lex in zip(row_values, chunks, lexical_scores, strict=True):
         vec = float(row["vector_score"])
         if mode == "vector":
             score = vec
@@ -229,16 +277,8 @@ def _rank_results(
             key=lambda result: (-result.score, result.chunk_id),
         )[:top_k]
 
-    lexical_order = sorted(
-        results,
-        key=lambda result: (-result.lexical_score, result.chunk_id),
-    )
-    vector_order = sorted(
-        results,
-        key=lambda result: (-result.vector_score, result.chunk_id),
-    )
-    lexical_ranks = {result.chunk_id: rank for rank, result in enumerate(lexical_order, start=1)}
-    vector_ranks = {result.chunk_id: rank for rank, result in enumerate(vector_order, start=1)}
+    lexical_ranks = _tie_aware_ranks(results, "lexical_score")
+    vector_ranks = _tie_aware_ranks(results, "vector_score")
     rrf_k = 60
     maximum_rrf_score = 2 / (rrf_k + 1)
     fused: list[RetrievalResult] = []
@@ -261,6 +301,26 @@ def _rank_results(
             )
         )
     return sorted(fused, key=lambda result: (-result.score, result.chunk_id))[:top_k]
+
+
+def _tie_aware_ranks(
+    results: list[RetrievalResult], score_field: str
+) -> dict[str, float]:
+    """Assign average ranks so equal scores do not inherit chunk-ID ordering."""
+
+    ordered = sorted(results, key=lambda result: -float(getattr(result, score_field)))
+    ranks: dict[str, float] = {}
+    start = 0
+    while start < len(ordered):
+        score = getattr(ordered[start], score_field)
+        end = start + 1
+        while end < len(ordered) and getattr(ordered[end], score_field) == score:
+            end += 1
+        average_rank = ((start + 1) + end) / 2
+        for result in ordered[start:end]:
+            ranks[result.chunk_id] = average_rank
+        start = end
+    return ranks
 
 
 @dataclass(frozen=True)

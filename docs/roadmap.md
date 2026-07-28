@@ -29,7 +29,8 @@ experimentation cannot silently weaken the baseline.
 - A tenant-scoped agent API, read-only MCP stdio server, Google OAuth/OIDC verifier, and public
   Cloud Run deployment. The stable service URL provides a zero-login public page, deterministic
   cited demo, public evidence page, and optional live Google sign-in.
-- A frozen 40-question retrieval evaluation and a measured semantic-embedding plus RRF comparison.
+- A frozen 40-question retrieval pilot with a paired uncertainty analysis; its observed
+  semantic-plus-RRF point-estimate difference is inconclusive.
 - A bounded Google ADK ReAct-style coordinator with retrieval and citation-verification
   specialist delegation, live-validated through a Cloud Run Job with token, latency,
   throughput, and estimated-cost records.

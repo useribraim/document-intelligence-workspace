@@ -43,15 +43,16 @@ Both redacted records are under [`results/evidence/`](../results/evidence/).
 
 ## Human calibration
 
-The V2 controlled instrument contains 140 questions: 28 each for supported, partially supported,
+The V2 controlled bank contains 140 questions: 28 each for supported, partially supported,
 unsupported, misleading-context, and refusal cases. Each blinded packet has 140 answer-level
-records and 112 aligned claim-citation pairs. Deterministic generation checks the counts, hashes,
-case balance, packet alignment, label blankness, and absence of author strata from the reviewer
-files.
+records and 112 aligned claim-citation pairs. Its five variants deliberately share each of 28 source
+seeds, so it is useful for rubric development but not an independent 140-item evaluation sample.
+Deterministic generation checks counts, hashes, case balance, packet alignment, label blankness, and
+the absence of author strata from reviewer files.
 
 Human support labels remain pending. The author-designed strata and automated diagnostics are not
-used as substitutes. The independence and completion gates are defined in
-[`human-calibration-runbook.md`](human-calibration-runbook.md).
+used as substitutes. Any publishable agreement or calibration result must use the independent-item
+[V3 design](calibration-v3-design.md), not a naive V2 item-level interval.
 
 ## Anti-gaming rules
 

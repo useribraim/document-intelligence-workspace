@@ -116,7 +116,9 @@ def assess_claims(
                 quote_alignment=citation.quote_alignment if citation else None,
                 source_exists=exists, citation_relevant=relevance, support_label=support,
                 support_rationale=rationale, answer_completeness=None,
-                refusal_appropriate=(expected_evidence_status == "insufficient" and False) if exists else None,
+                # Whether declining was appropriate is an answer-level judgement. It
+                # cannot be inferred from token overlap on a cited span.
+                refusal_appropriate=None,
             ))
     return assessments
 

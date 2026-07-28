@@ -4,8 +4,10 @@ import json
 import os
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
+from functools import lru_cache
 from pathlib import Path
 from time import perf_counter
+from types import SimpleNamespace
 from uuid import uuid4
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
@@ -40,9 +42,9 @@ from diw.core.qa import compose_source_cited_answer, validate_citations
 from diw.core.retrieval import (
     RetrievalResult,
     _rank_results,
+    bm25_scores,
     retrieval_results_as_dicts,
     retrieve_chunks,
-    tokenise_query,
 )
 from diw.db.models import (
     AgentRun,
@@ -334,6 +336,42 @@ def _write_uploaded_document(
     return destination
 
 
+def _public_demo_signature(corpus_dir: Path) -> tuple[tuple[str, int, int], ...]:
+    return tuple(
+        (path.name, path.stat().st_mtime_ns, path.stat().st_size)
+        for path in sorted(corpus_dir.glob("*.md"))
+    )
+
+
+@lru_cache(maxsize=8)
+def _load_public_demo_index(
+    corpus_dir_value: str, signature: tuple[tuple[str, int, int], ...]
+) -> tuple[tuple[tuple[str, str, str, int, tuple[str, ...], str, tuple[float, ...]], ...], int]:
+    """Ingest and embed the public corpus once per immutable file signature."""
+
+    del signature  # It is intentionally part of the cache key for invalidation.
+    corpus_dir = Path(corpus_dir_value)
+    provider = LocalHashingEmbeddingProvider(dimensions=256)
+    chunks = []
+    for path in sorted(corpus_dir.glob("*.md")):
+        document = ingest_file(path, target_chars=650, overlap_chars=80)
+        for chunk in document.chunks:
+            text = str(chunk["text"])
+            heading_path = tuple(str(value) for value in chunk["heading_path"])
+            chunks.append(
+                (
+                    f"demo:{path.stem}:{int(chunk['chunk_index'])}",
+                    document.document_id,
+                    document.version_id,
+                    int(chunk["chunk_index"]),
+                    heading_path,
+                    text,
+                    tuple(embed_document(provider, " ".join([*heading_path, text]))),
+                )
+            )
+    return tuple(chunks), len({chunk[1] for chunk in chunks})
+
+
 def _retrieve_public_demo_chunks(
     query: str,
     *,
@@ -343,38 +381,39 @@ def _retrieve_public_demo_chunks(
     """Search the bundled demo corpus without a database or external service."""
     provider = LocalHashingEmbeddingProvider(dimensions=256)
     query_vector = embed_query(provider, query)
+    cached_chunks, document_count = _load_public_demo_index(
+        str(corpus_dir.resolve()), _public_demo_signature(corpus_dir)
+    )
     results: list[RetrievalResult] = []
-    document_count = 0
-
-    for path in sorted(corpus_dir.glob("*.md")):
-        document = ingest_file(path, target_chars=650, overlap_chars=80)
-        document_count += 1
-        for chunk in document.chunks:
-            text = str(chunk["text"])
-            heading_path = [str(value) for value in chunk["heading_path"]]
-            query_tokens = tokenise_query(query)
-            searchable_tokens = tokenise_query(" ".join([*heading_path, text]))
-            matched = len(query_tokens & searchable_tokens)
-            lexical = matched / len(query_tokens) if query_tokens else 0.0
-            vector = cosine_similarity(
-                query_vector,
-                embed_document(provider, " ".join([*heading_path, text])),
+    lexical_inputs = [
+        SimpleNamespace(heading_path=list(heading_path), text=text)
+        for _, _, _, _, heading_path, text, _ in cached_chunks
+    ]
+    lexical_scores = bm25_scores(query, lexical_inputs)
+    for (
+        chunk_id,
+        document_id,
+        version_id,
+        chunk_index,
+        heading_path,
+        text,
+        embedding,
+    ), lexical in zip(cached_chunks, lexical_scores, strict=True):
+        vector = cosine_similarity(query_vector, list(embedding))
+        weighted = (0.55 * lexical) + (0.45 * max(vector, 0.0))
+        results.append(
+            RetrievalResult(
+                chunk_id=chunk_id,
+                document_id=document_id,
+                version_id=version_id,
+                chunk_index=chunk_index,
+                heading_path=list(heading_path),
+                text=text,
+                lexical_score=round(lexical, 6),
+                vector_score=round(vector, 6),
+                score=round(weighted, 6),
             )
-            weighted = (0.55 * lexical) + (0.45 * max(vector, 0.0))
-            chunk_index = int(chunk["chunk_index"])
-            results.append(
-                RetrievalResult(
-                    chunk_id=f"demo:{path.stem}:{chunk_index}",
-                    document_id=document.document_id,
-                    version_id=document.version_id,
-                    chunk_index=chunk_index,
-                    heading_path=heading_path,
-                    text=text,
-                    lexical_score=round(lexical, 6),
-                    vector_score=round(vector, 6),
-                    score=round(weighted, 6),
-                )
-            )
+        )
 
     ranked = _rank_results(results, top_k=top_k, mode="hybrid", reranker="rrf")
     return ranked, document_count

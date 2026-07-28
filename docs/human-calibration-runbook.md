@@ -4,7 +4,7 @@ Automated citation checks, author-designed case strata, and model-assisted revie
 ground truth. This runbook defines the work required before publishing agreement or calibrated
 support numbers.
 
-## Instrument
+## V2 controlled bank
 
 | Item | Count |
 |---|---:|
@@ -32,7 +32,8 @@ make calibration-check
 
 The verifier fails if the suite leaves the 120–160-question range, any of the five strata is
 imbalanced, either packet has fewer than 100 pairs, records are not aligned, author strata leak
-into the packets, or a human label is prefilled.
+into the packets, or a human label is prefilled. It does not establish independent sampling:
+each five-case group deliberately reuses one evidence seed.
 
 ## Independent annotation
 
@@ -56,7 +57,12 @@ The second annotator must not see:
 
 ## Agreement and adjudication
 
-After both people complete all 252 records:
+V2 may be used to refine the rubric and inspect disagreement patterns. Do not use its 112 aligned
+pairs as 112 independent observations or publish its naive confidence interval as a human-quality
+result. Any published calibration result must follow the independent-item
+[V3 design](calibration-v3-design.md).
+
+After both people complete all 252 V2 records:
 
 ```bash
 make annotation-agreement
@@ -69,16 +75,17 @@ raw agreement, Cohen's kappa, a confusion matrix, input hashes, and every disagr
 Adjudication is a separate dated record containing both original labels, both rationales, the final
 decision, and the reason. Never overwrite either source packet.
 
-## What completion will and will not prove
+## What V2 completion will and will not prove
 
-Completing this instrument can support:
+Completing this controlled bank can support:
 
-- agreement on 112 controlled claim-citation pairs;
+- rubric-development agreement on 112 controlled claim-citation pairs;
 - label distributions and confusion patterns across the five balanced strata;
 - calibration of automated support diagnostics against adjudicated human labels.
 
-It does not by itself measure end-to-end retrieval recall, live-model answer quality, or production
-performance. Those require separate system-run evaluations over the 140-question definition.
+It does not by itself measure end-to-end retrieval recall, live-model answer quality, production
+performance, or independent human-calibration accuracy. Those require the V3 protocol and a
+separate system-run evaluation.
 
 Until two people finish and adjudicate the packet, no human accuracy, agreement, or Cohen's kappa
 is published.
