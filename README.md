@@ -191,6 +191,7 @@ docs/                  architecture, operations, evaluation, and limitations
 - [Cloud Run boundary](docs/cloud-run-deployment.md)
 - [Vertex AI validation](docs/integrations/vertex-ai-validation.md)
 - [Retrieval uncertainty analysis](results/evidence/retrieval-uncertainty.md)
+- [Retrieval-pilot incident note](docs/incidents/retrieval-pilot-overclaim.md)
 - [MCP stdio validation](docs/integrations/mcp-stdio-validation.md)
 - [Google ADK validation](docs/integrations/adk-validation.md)
 - [Human-calibration runbook](docs/human-calibration-runbook.md)
