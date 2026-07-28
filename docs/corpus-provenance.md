@@ -5,9 +5,10 @@ their canonical URLs, displayed licence URLs, expected local text paths, and SHA
 [`corpus_manifest.jsonl`](../data/audit/corpus_manifest.jsonl).
 
 Full paper text is not included in the current source tree. Earlier Git history contains removed
-corpus files, so the public repository cannot yet be described as non-redistributing; it requires
-a history rewrite before that claim is accurate. “Available without a paywall” is not treated as
-permission to redistribute a paper under this project's MIT licence.
+corpus files, so the public repository cannot yet be described as non-redistributing. A rewrite of
+the canonical remote can narrow future repository visibility but cannot retract existing clones,
+forks, caches, or mirrors. “Available without a paywall” is not treated as permission to
+redistribute a paper under this project's MIT licence.
 
 The V2 calibration packet contains only short, canonicalized excerpts tied to recorded chunk
 identifiers. They let independent reviewers judge the displayed claim-citation relationship

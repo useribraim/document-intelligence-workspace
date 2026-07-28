@@ -553,8 +553,8 @@ def _public_landing_html() -> str:
           <p class="colophon">
             Demo corpus is bundled and synthetic. The current source tree excludes paper text for
             the frozen evaluation; the manifest records canonical versions, licences, and SHA-256
-            hashes so a locally obtained corpus can be verified. Historical Git revisions require
-            a separate purge before a non-redistribution claim is accurate.
+            hashes so a locally obtained corpus can be verified. A rewrite of historical Git
+            revisions cannot retract existing clones, forks, caches, or mirrors.
           </p>
     """
     return _page(

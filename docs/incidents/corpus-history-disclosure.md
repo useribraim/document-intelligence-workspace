@@ -27,7 +27,9 @@ obtained corpus.
 
 ## Required follow-up
 
-Purge the eleven corpus files from all reachable Git history, force-push the rewritten history,
-invalidate existing clones/forks as appropriate, and verify the remote before restoring a
-non-redistribution claim. That is an externally visible destructive rewrite and is intentionally
+Rewrite the canonical remote's reachable history to remove the eleven corpus files, force-push the
+rewritten refs, invalidate any project-controlled clones/forks as appropriate, and verify the
+remote before considering a narrower current-repository claim. A rewrite cannot retract copies
+already cloned, forked, cached, or mirrored by others, so it cannot support an absolute historical
+non-redistribution claim. This is an externally visible destructive operation and is intentionally
 not performed automatically.
