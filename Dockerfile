@@ -6,7 +6,7 @@ COPY pyproject.toml README.md ./
 COPY src ./src
 COPY data/demo ./data/demo
 
-RUN pip install --no-cache-dir ".[cloud,auth,mcp]"
+RUN pip install --no-cache-dir ".[cloud,auth,mcp,adk]"
 
 ENV PYTHONUNBUFFERED=1
 ENV PORT=8080

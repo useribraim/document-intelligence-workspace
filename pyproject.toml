@@ -34,6 +34,9 @@ dev = [
 cloud = [
   "google-genai>=1.0,<3",
 ]
+adk = [
+  "google-adk>=2.0,<3",
+]
 auth = [
   "PyJWT[crypto]>=2.8,<3",
 ]
@@ -46,6 +49,7 @@ diw = "diw.cli:main"
 diw-mcp = "diw.mcp_server:main"
 diw-annotate = "diw.annotation_app:main"
 diw-vertex-smoke = "diw.vertex_smoke:main"
+diw-adk-research = "diw.adk_workflow:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
