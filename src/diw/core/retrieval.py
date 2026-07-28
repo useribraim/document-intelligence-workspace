@@ -190,10 +190,14 @@ def _retrieve_chunks_postgres_pgvector(
     document_ids: set[str] | None,
 ) -> list[RetrievalResult]:
     query_vector = embed_query(provider, query)
-    candidate_limit = top_k if mode == "vector" else max(top_k * 8, 20)
+    # Hybrid retrieval needs the same full filtered corpus for BM25 as the
+    # SQLite path. Restricting it to vector-nearest candidates silently made
+    # backend choice change lexical scores and fused rankings.
+    candidate_limit = top_k if mode == "vector" else None
     document_filter = ""
     if document_ids is not None:
         document_filter = "AND dv.document_id IN :document_ids"
+    limit_clause = "LIMIT :candidate_limit" if candidate_limit is not None else ""
     statement = text(
         f"""
             SELECT
@@ -212,7 +216,7 @@ def _retrieve_chunks_postgres_pgvector(
               AND cev.content_hash = c.content_hash
               {document_filter}
             ORDER BY cev.vector <=> CAST(:query_vector AS vector)
-            LIMIT :candidate_limit
+            {limit_clause}
             """
     )
     if document_ids is not None:
@@ -221,8 +225,9 @@ def _retrieve_chunks_postgres_pgvector(
         "query_vector": _vector_literal(query_vector),
         "embedding_model": provider.model_name,
         "dimensions": provider.dimensions,
-        "candidate_limit": candidate_limit,
     }
+    if candidate_limit is not None:
+        params["candidate_limit"] = candidate_limit
     if document_ids is not None:
         params["document_ids"] = sorted(document_ids)
     rows = session.execute(

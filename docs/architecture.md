@@ -46,8 +46,10 @@ record is returned as absent rather than leaking existence.
 ## Persistence
 
 SQLite is the credential-free local and public-demo fallback. PostgreSQL stores relational records
-and mirrors embedding vectors into pgvector for vector and hybrid retrieval. The public Cloud Run
-service does not claim durable Cloud SQL persistence.
+and mirrors embedding vectors into pgvector for vector and hybrid retrieval. Hybrid BM25 scoring
+uses the full tenant-filtered embedding corpus on both backends so the lexical candidate universe
+does not depend on SQLite versus PostgreSQL; this favors parity over large-corpus efficiency. The
+public Cloud Run service does not claim durable Cloud SQL persistence.
 
 ## Audit record
 

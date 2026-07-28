@@ -7,7 +7,13 @@ from sqlalchemy.orm import Session
 
 from diw.core.embeddings import LocalHashingEmbeddingProvider
 from diw.core.ingestion import ingest_file
-from diw.core.retrieval import RetrievalResult, _rank_results, bm25_scores, retrieve_chunks
+from diw.core.retrieval import (
+    RetrievalResult,
+    _rank_results,
+    _retrieve_chunks_postgres_pgvector,
+    bm25_scores,
+    retrieve_chunks,
+)
 from diw.db.models import Base
 from diw.db.repository import (
     count_embeddings,
@@ -106,6 +112,31 @@ class RetrievalTests(unittest.TestCase):
 
         self.assertGreater(scores[1], scores[0])
         self.assertGreater(scores[1], scores[2])
+
+    def test_postgres_hybrid_does_not_truncate_before_bm25(self):
+        class EmptyMappings:
+            def mappings(self):
+                return []
+
+        class CapturingSession:
+            def execute(self, statement, params):
+                self.statement = str(statement)
+                self.params = params
+                return EmptyMappings()
+
+        session = CapturingSession()
+        _retrieve_chunks_postgres_pgvector(
+            session,
+            "distinctive retrieval term",
+            LocalHashingEmbeddingProvider(dimensions=8),
+            top_k=5,
+            mode="hybrid",
+            reranker="weighted",
+            document_ids=None,
+        )
+
+        self.assertNotIn("LIMIT :candidate_limit", session.statement)
+        self.assertNotIn("candidate_limit", session.params)
 
     def test_embed_missing_chunks_is_idempotent(self):
         engine = build_engine("sqlite+pysqlite:///:memory:")
