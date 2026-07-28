@@ -86,6 +86,26 @@ remains deterministic and read-only.
 The post-deployment smoke check confirmed the cleaned public copy, removed career-oriented wording,
 kept protected routes fail-closed, and exposed no human agreement or accuracy claim.
 
+## 2026-07-28 Google ADK revision
+
+- Public service revision: `document-intelligence-workspace-00010-56m`
+- Traffic: 100% assigned to this revision
+- Source commit: `9e0967c`
+- Cloud Run Job: `diw-adk-smoke`
+- Successful execution: `diw-adk-smoke-bpdk8`
+- Model: `gemini-2.5-flash`
+- Workflow: ReAct-style coordinator with retrieval and citation-verification ADK specialists
+- Recorded result: 7 model calls, 3,771 input tokens, 695 output tokens, 505 thinking tokens
+- Measured workflow latency: 13,823.18 ms
+- Aggregate output throughput: 69.14 tokens/s
+- Estimated model cost: $0.00263435
+- Evidence: [`adk-cloud-run-smoke.json`](../results/evidence/adk-cloud-run-smoke.json)
+
+The first execution exposed a callback keyword-contract mismatch and failed before a model request.
+The regression fix was covered by a keyword-invocation test, deployed in the next revision, and
+the same job path then completed successfully. The cost is a pricing-snapshot estimate rather than
+a Cloud Billing export.
+
 ## Cost controls
 
 - Scale to zero

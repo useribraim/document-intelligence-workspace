@@ -1,0 +1,117 @@
+{
+  "schema_version": "google-adk-hierarchical-v1",
+  "query": "What does the corpus say answer generation should do when evidence is insufficient?",
+  "model": "gemini-2.5-flash",
+  "answer": "Answer generation should refuse when retrieved evidence does not mention the requested obligation.",
+  "delegations": [
+    {
+      "agent": "research_coordinator",
+      "tool": "retrieval_specialist",
+      "arguments": {
+        "request": "What should answer generation do when evidence is insufficient?"
+      }
+    },
+    {
+      "agent": "research_coordinator",
+      "tool": "citation_verification_specialist",
+      "arguments": {
+        "request": "Proposed claim: Answer generation should refuse when retrieved evidence does not mention the requested obligation. Citation: chunk_id: demo:rag-systems-paper:2, heading_path: [\"RAG Systems Paper\", \"Failure Analysis\"], text: Unsupported query policy: answer generation should refuse when retrieved evidence does not mention the requested obligation."
+      }
+    }
+  ],
+  "specialists": [
+    "retrieval_specialist",
+    "citation_verification_specialist"
+  ],
+  "write_tools_available": false,
+  "economics": {
+    "pricing_snapshot": "2026-07-28",
+    "model_calls": [
+      {
+        "agent": "research_coordinator",
+        "model": "gemini-2.5-flash",
+        "input_tokens": 191,
+        "cached_input_tokens": 0,
+        "output_tokens": 17,
+        "thinking_tokens": 71,
+        "latency_ms": 1533.25,
+        "output_tokens_per_second": 11.09,
+        "estimated_cost_usd": 0.00027715
+      },
+      {
+        "agent": "retrieval_specialist",
+        "model": "gemini-2.5-flash",
+        "input_tokens": 119,
+        "cached_input_tokens": 0,
+        "output_tokens": 16,
+        "thinking_tokens": 104,
+        "latency_ms": 1309.08,
+        "output_tokens_per_second": 12.22,
+        "estimated_cost_usd": 0.00038185
+      },
+      {
+        "agent": "retrieval_specialist",
+        "model": "gemini-2.5-flash",
+        "input_tokens": 1048,
+        "cached_input_tokens": 0,
+        "output_tokens": 485,
+        "thinking_tokens": 0,
+        "latency_ms": 2545.55,
+        "output_tokens_per_second": 190.53,
+        "estimated_cost_usd": 0.0004482
+      },
+      {
+        "agent": "research_coordinator",
+        "model": "gemini-2.5-flash",
+        "input_tokens": 771,
+        "cached_input_tokens": 0,
+        "output_tokens": 88,
+        "thinking_tokens": 96,
+        "latency_ms": 1579.25,
+        "output_tokens_per_second": 55.72,
+        "estimated_cost_usd": 0.00045165
+      },
+      {
+        "agent": "citation_verification_specialist",
+        "model": "gemini-2.5-flash",
+        "input_tokens": 171,
+        "cached_input_tokens": 0,
+        "output_tokens": 58,
+        "thinking_tokens": 203,
+        "latency_ms": 1750.99,
+        "output_tokens_per_second": 33.12,
+        "estimated_cost_usd": 0.00073615
+      },
+      {
+        "agent": "citation_verification_specialist",
+        "model": "gemini-2.5-flash",
+        "input_tokens": 492,
+        "cached_input_tokens": 0,
+        "output_tokens": 17,
+        "thinking_tokens": 0,
+        "latency_ms": 609.13,
+        "output_tokens_per_second": 27.91,
+        "estimated_cost_usd": 0.000084
+      },
+      {
+        "agent": "research_coordinator",
+        "model": "gemini-2.5-flash",
+        "input_tokens": 979,
+        "cached_input_tokens": 0,
+        "output_tokens": 14,
+        "thinking_tokens": 31,
+        "latency_ms": 725.26,
+        "output_tokens_per_second": 19.3,
+        "estimated_cost_usd": 0.00025535
+      }
+    ],
+    "model_call_count": 7,
+    "input_tokens": 3771,
+    "cached_input_tokens": 0,
+    "output_tokens": 695,
+    "thinking_tokens": 505,
+    "total_latency_ms": 13823.18,
+    "aggregate_output_tokens_per_second": 69.14,
+    "estimated_cost_usd": 0.00263435
+  }
+}

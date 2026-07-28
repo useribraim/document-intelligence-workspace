@@ -30,10 +30,13 @@ experimentation cannot silently weaken the baseline.
   Cloud Run deployment. The stable service URL provides a zero-login public page, deterministic
   cited demo, public evidence page, and optional live Google sign-in.
 - A frozen 40-question retrieval evaluation and a measured semantic-embedding plus RRF comparison.
+- A bounded Google ADK ReAct-style coordinator with retrieval and citation-verification
+  specialist delegation, live-validated through a Cloud Run Job with token, latency,
+  throughput, and estimated-cost records.
 
-Not implemented yet: Google ADK orchestration, Cloud SQL deployment, the persistent public write
-workflow, BigQuery metrics export, remote MCP transport, and completed human calibration. A
-bounded live Vertex workflow and external stdio MCP-client validation are complete.
+Not implemented yet: Cloud SQL deployment, the persistent public write workflow, BigQuery metrics
+export, remote MCP transport, and completed human calibration. Bounded live Vertex and Google ADK
+workflows plus external stdio MCP-client validation are complete.
 
 ## Target Architecture
 

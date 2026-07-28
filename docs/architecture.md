@@ -26,6 +26,7 @@ request, but study-task creation requires manager approval and an idempotency ke
 | `core/llm.py` | Deterministic, OpenAI, and Vertex structured-generation providers. |
 | `core/qa.py` | Citation materialization, exact-source alignment, pruning, and refusal normalization. |
 | `core/agent.py` | Typed tools, step budget, duplicate-call guard, approval request, and idempotent task flow. |
+| `adk_workflow.py` | Google ADK ReAct-style coordinator, retrieval and citation-verification specialist delegation, and per-model-call economics. |
 | `db/` | SQLAlchemy models, tenant-scoped repositories, SQLite fallback, and PostgreSQL/pgvector path. |
 | `api.py` | HTTP schemas, route policy, orchestration, and public demo boundary. |
 | `mcp_server.py` | Two tenant-pinned read-only stdio tools. |

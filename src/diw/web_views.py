@@ -808,6 +808,12 @@ def _public_evidence_html() -> str:
                 and refused an unsupported query.</td>
               </tr>
               <tr>
+                <td>Google ADK</td><td>Live-validated</td>
+                <td>ReAct-style coordinator delegated retrieval and citation verification
+                to two ADK specialists; the run recorded 7 model calls, 13.82 s,
+                69.14 output tokens/s, and $0.002634 estimated model cost.</td>
+              </tr>
+              <tr>
                 <td>MCP</td><td>Client-validated</td>
                 <td>External SDK client discovered both read-only tools; cross-tenant
                 access and tenant-argument injection failed safely.</td>
@@ -829,9 +835,9 @@ def _public_evidence_html() -> str:
           </div>
 
           <p class="colophon">
-            The public interactive demo does not use Vertex: that proof is a separate
-            Cloud Run Job over bundled sources. MCP validation uses a local stdio process,
-            not a remote deployment.
+            The public interactive demo does not use Vertex or ADK: those proofs are
+            separate Cloud Run Jobs over bundled sources. MCP validation uses a local
+            stdio process, not a remote deployment.
           </p>
     """
     return _page(

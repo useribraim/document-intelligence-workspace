@@ -32,6 +32,10 @@ flowchart LR
     U["Browser or API client"] --> A["FastAPI application"]
     A --> P["OIDC and tenant policy"]
     P --> R["Lexical + vector retrieval"]
+    P --> C["ADK ReAct coordinator"]
+    C --> RS["Retrieval specialist"]
+    C --> VS["Citation-verification specialist"]
+    RS --> R
     R --> G["Structured generation"]
     G --> V["Citation and refusal validation"]
     V --> Q["Human review queue"]
@@ -54,8 +58,9 @@ validation, and audit interfaces.
 | Citation safety | Supported answers require exact source-aligned quotes; unsupported answers return no citations. |
 | Cloud runtime | A scale-to-zero Cloud Run service exposes the public demo while protected routes reject missing or unscoped identity. |
 | Vertex AI | A Cloud Run Job completed real `gemini-embedding-001` and `gemini-2.5-flash` calls with model, token, evidence, citation, refusal, and run provenance. |
+| Google ADK | A ReAct-style coordinator delegated to retrieval and citation-verification `AgentTool` specialists on Vertex AI; one recorded run used 7 model calls, 13.82 s, 69.14 output tokens/s, and an estimated $0.002634. |
 | MCP | An external Python MCP client discovered and invoked both read-only tools; cross-tenant record lookup and tenant-argument injection failed safely. |
-| Automated verification | 95 tests pass locally; one PostgreSQL integration test is conditional on a test database. |
+| Automated verification | 104 tests pass locally; one PostgreSQL integration test is conditional on a test database. |
 
 The compact artifacts behind these statements are in [`results/evidence/`](results/evidence/).
 Automated diagnostics are not presented as human judgments.
@@ -108,6 +113,7 @@ Install only the integration extras you need:
 python -m pip install -e ".[cloud]"  # Vertex AI
 python -m pip install -e ".[auth]"   # OIDC verification
 python -m pip install -e ".[mcp]"    # MCP stdio server/client
+python -m pip install -e ".[adk]"    # Google ADK multi-agent workflow
 ```
 
 Credentials belong in environment variables or an ignored `.env.local`; tracked examples contain
@@ -118,6 +124,7 @@ make test
 make calibration-check
 make validate-mcp-stdio
 ./scripts/run_vertex_cloud_smoke.sh
+./scripts/run_adk_cloud_smoke.sh
 ```
 
 The Vertex command requires an enabled Google Cloud project and Application Default Credentials.
@@ -155,7 +162,8 @@ records and preserve a separate adjudication trail.
 - Vertex AI is validated through a bounded Cloud Run Job, not the public interactive route.
 - MCP is validated through an external local stdio client, not a remote transport.
 - Human-calibrated agreement is incomplete.
-- Google ADK orchestration, asynchronous ingestion, and production observability remain future work.
+- ADK is validated as a bounded Cloud Run Job, not a public interactive multi-agent endpoint.
+- Asynchronous ingestion and production observability remain future work.
 
 ## Repository map
 
@@ -179,6 +187,7 @@ docs/                  architecture, operations, evaluation, and limitations
 - [Cloud Run boundary](docs/cloud-run-deployment.md)
 - [Vertex AI validation](docs/integrations/vertex-ai-validation.md)
 - [MCP stdio validation](docs/integrations/mcp-stdio-validation.md)
+- [Google ADK validation](docs/integrations/adk-validation.md)
 - [Human-calibration runbook](docs/human-calibration-runbook.md)
 - [Corpus provenance and licensing](docs/corpus-provenance.md)
 

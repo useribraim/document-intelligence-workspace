@@ -12,6 +12,11 @@ DIW_ADK_MODEL="${DIW_ADK_MODEL:-gemini-2.5-flash}"
 DIW_RUNTIME_SERVICE_ACCOUNT="${DIW_RUNTIME_SERVICE_ACCOUNT:-diw-cloud-run-runtime@${DIW_GCP_PROJECT}.iam.gserviceaccount.com}"
 DIW_ADK_QUERY="${DIW_ADK_QUERY:-What does the corpus say answer generation should do when evidence is insufficient?}"
 DIW_ADK_EVIDENCE_OUT="${DIW_ADK_EVIDENCE_OUT:-results/evidence/adk-cloud-run-smoke.json}"
+if [[ -x ".venv/bin/python" ]]; then
+  DIW_PYTHON_BIN="${DIW_PYTHON_BIN:-.venv/bin/python}"
+else
+  DIW_PYTHON_BIN="${DIW_PYTHON_BIN:-python3}"
+fi
 
 service_image="$(
   "${DIW_GCLOUD_BIN}" run services describe "${DIW_CLOUD_RUN_SERVICE}" \
@@ -76,7 +81,7 @@ fi
 mkdir -p "$(dirname "${DIW_ADK_EVIDENCE_OUT}")"
 DIW_ADK_RESULT_JSON="${result_line#"${prefix}"}" \
   DIW_ADK_EVIDENCE_OUT="${DIW_ADK_EVIDENCE_OUT}" \
-  .venv/bin/python -c \
+  "${DIW_PYTHON_BIN}" -c \
   'import json, os, pathlib; path = pathlib.Path(os.environ["DIW_ADK_EVIDENCE_OUT"]); payload = json.loads(os.environ["DIW_ADK_RESULT_JSON"]); path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"); print(f"saved: {path}")'
 
 "${DIW_GCLOUD_BIN}" run jobs executions describe "${execution_name}" \
