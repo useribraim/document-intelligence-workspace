@@ -40,9 +40,11 @@ They may help prioritize inspection but cannot be used as ground truth or to rep
 
 ## Human boundary
 
-The V2 calibration instrument includes two blank 252-record templates. Agreement is calculated
-only after two distinct people complete all records, including the 112 aligned claim-citation
-pairs. See [`human-calibration-runbook.md`](human-calibration-runbook.md).
+V2 includes two blank 252-record controlled-bank templates. Its repeated source-seed variants can
+help refine a rubric, but they are not an independent human-evaluation sample. Publishable
+agreement or calibration must use the independent-item
+[V3 design](calibration-v3-design.md). See
+[`human-calibration-runbook.md`](human-calibration-runbook.md).
 
 Until that gate passes:
 

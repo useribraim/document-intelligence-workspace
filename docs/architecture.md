@@ -13,8 +13,11 @@ authenticated or public request
   -> AI-run provenance and optional human review
 ```
 
-The public demo stops after validated read-only output. The local agent path can create an approval
-request, but study-task creation requires manager approval and an idempotency key.
+The public demo stops after validated read-only output. The authenticated local workflow is a
+deterministic policy demonstration: it always retrieves first and may create an approval request
+when a rule matches a study-task query. It is not an LLM planner. Study-task creation still requires
+manager approval and an idempotency key. The Google ADK workflow is a separate read-only Cloud Run
+Job validation slice, not the public API request path.
 
 ## Components
 
@@ -25,7 +28,7 @@ request, but study-task creation requires manager approval and an idempotency ke
 | `core/retrieval.py` | Lexical/vector candidates, tenant document filters, weighted fusion, and RRF. |
 | `core/llm.py` | Deterministic, OpenAI, and Vertex structured-generation providers. |
 | `core/qa.py` | Citation materialization, exact-source alignment, pruning, and refusal normalization. |
-| `core/agent.py` | Typed tools, step budget, duplicate-call guard, approval request, and idempotent task flow. |
+| `core/agent.py` | Rule-based, bounded approval-workflow demonstration with typed tools, duplicate-call guard, and idempotent task flow; not an autonomous planner. |
 | `adk_workflow.py` | Google ADK ReAct-style coordinator, retrieval and citation-verification specialist delegation, and per-model-call economics. |
 | `db/` | SQLAlchemy models, tenant-scoped repositories, SQLite fallback, and PostgreSQL/pgvector path. |
 | `api.py` | HTTP schemas, route policy, orchestration, and public demo boundary. |

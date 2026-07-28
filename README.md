@@ -1,7 +1,9 @@
 # Document Intelligence Workspace
 
 A FastAPI research assistant that retrieves tenant-scoped evidence, produces structured answers
-with exact citations, refuses unsupported requests, and records auditable model runs.
+with exact citations, enters an insufficient-evidence state when its current retrieval gate finds
+no usable chunk, and records auditable model runs. That gate is not presented as calibrated refusal
+performance.
 
 [Live demo](https://document-intelligence-workspace-312779789755.europe-west1.run.app/) ·
 [Architecture](docs/architecture.md) ·

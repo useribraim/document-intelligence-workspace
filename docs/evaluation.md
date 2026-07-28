@@ -9,7 +9,7 @@ The test suite covers:
 
 - ingestion, normalization, chunking, and persistence;
 - lexical, vector, hybrid, and reciprocal-rank-fusion retrieval;
-- exact-quote citation validation and unsupported-evidence refusal;
+- exact-quote citation validation and insufficient-evidence gate behavior;
 - schema-shaped generation and AI-run persistence;
 - tenant-scoped document and research-record access;
 - approval and idempotency boundaries;
@@ -22,7 +22,9 @@ The optional PostgreSQL integration test runs only when `POSTGRES_TEST_DATABASE_
 ## Frozen retrieval comparison
 
 The 40-question definition includes direct extraction, synthesis, multi-claim, conflicting
-evidence, misleadingly relevant evidence, insufficient evidence, and refusal-required cases.
+evidence, misleadingly relevant evidence, insufficient evidence, and refusal-required cases. Future
+automated refusal recall is computed only on the explicit `refusal_required` category; refusal
+precision remains a human-judgement field.
 Twenty-three questions contain predeclared gold chunk identifiers and contribute to Recall@5 and
 MRR.
 

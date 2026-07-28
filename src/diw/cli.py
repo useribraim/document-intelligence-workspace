@@ -633,6 +633,7 @@ def claim_audit_command(args: argparse.Namespace) -> int:
                     {
                         "run_id": run_id,
                         "question_id": question["question_id"],
+                        "category": question.get("category"),
                         "expected_evidence_status": question.get("expected_evidence_status"),
                         "gold_evidence_chunk_ids": gold_chunk_ids,
                         "retrieval_recall_at_k": retrieval_recall_at_k,
@@ -706,23 +707,23 @@ def _summarise_claim_audit_records(records: list[dict]) -> dict[str, float | int
     summary = summarise_claim_audit(
         [ClaimCitationAssessment.model_validate(item) for item in all_assessments]
     )
-    refusal_expected = [
-        record for record in records if record["expected_evidence_status"] == "insufficient"
+    refusal_required = [
+        record for record in records if record.get("category") == "refusal_required"
     ]
     refusals = [record for record in records if record["insufficient_evidence"]]
-    appropriate_refusals = [record for record in refusal_expected if record["insufficient_evidence"]]
+    required_refusals = [record for record in refusal_required if record["insufficient_evidence"]]
     summary.update(
         {
             "answer_claim_count": sum(len(record["claims"]) for record in records),
             "refusal_rate": round(len(refusals) / len(records), 4) if records else 0.0,
-            "appropriate_refusal_recall": (
-                round(len(appropriate_refusals) / len(refusal_expected), 4)
-                if refusal_expected
+            "refusal_required_recall": (
+                round(len(required_refusals) / len(refusal_required), 4)
+                if refusal_required
                 else 0.0
             ),
-            "refusal_precision": (
-                round(len(appropriate_refusals) / len(refusals), 4) if refusals else 0.0
-            ),
+            # Precision requires a human judgement of whether declining was
+            # appropriate; automated expected-status labels are not a substitute.
+            "refusal_precision": None,
             "mean_latency_ms": round(
                 sum(record["latency_ms"] for record in records) / len(records), 2
             ) if records else 0.0,
@@ -822,6 +823,7 @@ def evidence_repair_run_command(args: argparse.Namespace) -> int:
                 "run_id": run_id,
                 "retrieval_config_hash": config_hash(config),
                 "draft_answer": baseline_record["answer"],
+                "category": baseline_record.get("category"),
                 "evidence_repair_actions": actions,
                 "answer": repaired.answer,
                 "answer_sha256": hashlib.sha256(repaired.answer.encode("utf-8")).hexdigest(),
@@ -1442,7 +1444,7 @@ def audit_comparison_command(args: argparse.Namespace) -> int:
         "unsupported_rate",
         "structural_completeness_rate",
         "refusal_precision",
-        "appropriate_refusal_recall",
+        "refusal_required_recall",
         "answer_claim_count",
         "mean_latency_ms",
         "input_tokens",

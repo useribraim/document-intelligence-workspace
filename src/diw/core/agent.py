@@ -73,7 +73,12 @@ class AgentDecisionProvider(Protocol):
 
 
 class DeterministicResearchDecisionProvider:
-    """A repeatable stand-in until ADK/Gemini owns decision selection."""
+    """Rule-based workflow policy for tests and approval-gate demonstrations.
+
+    This provider always searches first and uses a query-pattern rule for a
+    study-task proposal. It is intentionally not an autonomous planner, an LLM
+    tool-selection loop, or the separate Google ADK workflow.
+    """
 
     def decide(self, context: AgentContext) -> AgentDecision:
         if not context.completed_steps:

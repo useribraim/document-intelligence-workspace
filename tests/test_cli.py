@@ -7,12 +7,53 @@ from unittest.mock import patch
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from diw.cli import main
+from diw.cli import _summarise_claim_audit_records, main
 from diw.db.models import AIRun, AISuggestion, Base, ReviewDecision
 from diw.db.session import build_engine
 
 
 class CliTests(unittest.TestCase):
+    def test_refusal_recall_uses_only_explicit_refusal_required_cases(self):
+        summary = _summarise_claim_audit_records(
+            [
+                {
+                    "annotations_pending": [],
+                    "claims": [],
+                    "category": "insufficient_evidence",
+                    "insufficient_evidence": False,
+                    "latency_ms": 1,
+                    "input_tokens": 0,
+                    "cached_input_tokens": 0,
+                    "output_tokens": 0,
+                    "estimated_cost_usd": None,
+                    "gold_evidence_chunk_ids": [],
+                    "retrieval_recall_at_k": None,
+                    "retrieval_mrr": None,
+                    "gold_citation_recall": None,
+                    "structural_complete": False,
+                },
+                {
+                    "annotations_pending": [],
+                    "claims": [],
+                    "category": "refusal_required",
+                    "insufficient_evidence": True,
+                    "latency_ms": 1,
+                    "input_tokens": 0,
+                    "cached_input_tokens": 0,
+                    "output_tokens": 0,
+                    "estimated_cost_usd": None,
+                    "gold_evidence_chunk_ids": [],
+                    "retrieval_recall_at_k": None,
+                    "retrieval_mrr": None,
+                    "gold_citation_recall": None,
+                    "structural_complete": True,
+                },
+            ]
+        )
+
+        self.assertEqual(summary["refusal_required_recall"], 1.0)
+        self.assertIsNone(summary["refusal_precision"])
+
     def test_corpus_verify_distinguishes_manifest_only_from_strict_local_check(self):
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
