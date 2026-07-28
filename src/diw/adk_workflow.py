@@ -60,16 +60,19 @@ class ADKEconomicsRecorder:
         self._started: dict[tuple[str, str], float] = {}
         self.calls: list[ModelCallEconomics] = []
 
-    def before_model(self, context, _request) -> None:
-        self._started[(context.agent_name, context.invocation_id)] = perf_counter()
+    def before_model(self, callback_context, llm_request) -> None:
+        del llm_request
+        self._started[
+            (callback_context.agent_name, callback_context.invocation_id)
+        ] = perf_counter()
 
-    def after_model(self, context, response) -> None:
+    def after_model(self, callback_context, llm_response) -> None:
         started = self._started.pop(
-            (context.agent_name, context.invocation_id),
+            (callback_context.agent_name, callback_context.invocation_id),
             perf_counter(),
         )
         latency_ms = round((perf_counter() - started) * 1_000, 2)
-        usage = response.usage_metadata
+        usage = llm_response.usage_metadata
         input_tokens = int(getattr(usage, "prompt_token_count", 0) or 0)
         cached_input_tokens = int(getattr(usage, "cached_content_token_count", 0) or 0)
         output_tokens = int(getattr(usage, "candidates_token_count", 0) or 0)
@@ -77,10 +80,10 @@ class ADKEconomicsRecorder:
         output_rate = None
         if output_tokens and latency_ms > 0:
             output_rate = round(output_tokens / (latency_ms / 1_000), 2)
-        model = response.model_version or DEFAULT_ADK_MODEL
+        model = llm_response.model_version or DEFAULT_ADK_MODEL
         self.calls.append(
             ModelCallEconomics(
-                agent=context.agent_name,
+                agent=callback_context.agent_name,
                 model=model,
                 input_tokens=input_tokens,
                 cached_input_tokens=cached_input_tokens,

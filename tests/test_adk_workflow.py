@@ -1,4 +1,5 @@
 import unittest
+from types import SimpleNamespace
 
 from google.adk.tools import AgentTool
 
@@ -67,6 +68,29 @@ class ADKWorkflowTests(unittest.TestCase):
         self.assertEqual(summary["model_call_count"], 0)
         self.assertIsNone(summary["estimated_cost_usd"])
         self.assertIsNone(summary["aggregate_output_tokens_per_second"])
+
+    def test_economics_callbacks_accept_adk_keyword_contract(self):
+        recorder = ADKEconomicsRecorder()
+        context = SimpleNamespace(
+            agent_name="research_coordinator",
+            invocation_id="inv-1",
+        )
+        usage = SimpleNamespace(
+            prompt_token_count=100,
+            cached_content_token_count=0,
+            candidates_token_count=20,
+            thoughts_token_count=5,
+        )
+        response = SimpleNamespace(
+            usage_metadata=usage,
+            model_version="gemini-2.5-flash-001",
+        )
+
+        recorder.before_model(callback_context=context, llm_request=object())
+        recorder.after_model(callback_context=context, llm_response=response)
+
+        self.assertEqual(recorder.calls[0].agent, "research_coordinator")
+        self.assertEqual(recorder.calls[0].output_tokens, 20)
 
 
 if __name__ == "__main__":
