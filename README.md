@@ -62,7 +62,7 @@ validation, and audit interfaces.
 | Vertex AI | A Cloud Run Job completed real `gemini-embedding-001` and `gemini-2.5-flash` calls with model, token, evidence, citation, refusal, and run provenance. |
 | Google ADK | A ReAct-style coordinator delegated to retrieval and citation-verification `AgentTool` specialists on Vertex AI; one recorded run used 7 model calls, 13.82 s, 69.14 output tokens/s, and an estimated $0.002634. |
 | MCP | An external Python MCP client discovered and invoked both read-only tools; cross-tenant record lookup and tenant-argument injection failed safely. |
-| Automated verification | 104 tests pass locally; one PostgreSQL integration test is conditional on a test database. |
+| Automated verification | 108 tests pass locally; one PostgreSQL integration test is conditional on a test database. |
 
 The compact artifacts behind these statements are in [`results/evidence/`](results/evidence/).
 Automated diagnostics are not presented as human judgments.
